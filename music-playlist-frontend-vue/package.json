@@ -11,7 +11,7 @@
     "lighthouse": "lighthouse http://localhost:5173 --output html --output-path ./lighthouse-report.html"
   },
   "dependencies": {
-    "axios": "^1.8.4",
+    "axios": "^1.12.0",
     "jwt-decode": "^4.0.0",
     "pinia": "^3.0.1",
     "vue": "^3.5.13",
