@@ -542,5 +542,75 @@ describe("Music Provider Integration & Backward Compatibility Tests", () => {
       expect(res.status).toBe(403);
       expect(res.body.message).toContain("Not authorized");
     });
+
+    it("should return source information for songs when retrieving playlists via GET /api/playlists", async () => {
+      // Add a YouTube track
+      await request(app)
+        .post(`/api/playlists/${testPlaylist._id}/songs`)
+        .set("Authorization", `Bearer ${token}`)
+        .send({
+          title: "Dashboard YT Track",
+          artist: "Artist X",
+          url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        });
+
+      const res = await request(app)
+        .get("/api/playlists")
+        .set("Authorization", `Bearer ${token}`);
+
+      expect(res.status).toBe(200);
+      const playlist = res.body.find((p) => p._id === testPlaylist._id);
+      expect(playlist).toBeDefined();
+      expect(playlist.songs.length).toBeGreaterThan(0);
+      const song = playlist.songs[0];
+      expect(song.source).toBeDefined();
+      expect(song.source.provider).toBe("youtube");
+      expect(song.source.externalId).toBe("dQw4w9WgXcQ");
+      expect(song.url).toBe("https://www.youtube.com/watch?v=dQw4w9WgXcQ");
+    });
+
+    it("should preserve provider source objects when songs are reordered via PUT /api/playlists/:id/songs/reorder", async () => {
+      // 1. Add direct track
+      const res1 = await request(app)
+        .post(`/api/playlists/${testPlaylist._id}/songs`)
+        .set("Authorization", `Bearer ${token}`)
+        .send({
+          title: "Track 1 Direct",
+          artist: "Artist 1",
+          url: "https://example.com/track1.mp3",
+        });
+
+      // 2. Add YouTube track
+      const res2 = await request(app)
+        .post(`/api/playlists/${testPlaylist._id}/songs`)
+        .set("Authorization", `Bearer ${token}`)
+        .send({
+          title: "Track 2 YouTube",
+          artist: "Artist 2",
+          url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        });
+
+      const id1 = res1.body.addedSong._id;
+      const id2 = res2.body.addedSong._id;
+
+      // 3. Reorder: put track 2 first, then track 1
+      const reorderRes = await request(app)
+        .put(`/api/playlists/${testPlaylist._id}/songs/reorder`)
+        .set("Authorization", `Bearer ${token}`)
+        .send({
+          songIds: [id2, id1],
+        });
+
+      expect(reorderRes.status).toBe(200);
+      const reorderedSongs = reorderRes.body.playlist.songs;
+      expect(reorderedSongs[0]._id).toBe(id2);
+      expect(reorderedSongs[0].source.provider).toBe("youtube");
+      expect(reorderedSongs[0].source.externalId).toBe("dQw4w9WgXcQ");
+      expect(reorderedSongs[0].position).toBe(0);
+
+      expect(reorderedSongs[1]._id).toBe(id1);
+      expect(reorderedSongs[1].source.provider).toBe("direct");
+      expect(reorderedSongs[1].position).toBe(1);
+    });
   });
 });
