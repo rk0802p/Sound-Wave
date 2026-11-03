@@ -1,155 +1,90 @@
 <template>
-  <div class="auth-page-wrapper">
-    <div class="auth-card">
-      <!-- Brand Header -->
-      <div class="auth-brand">
-        <div class="brand-equalizer">
-          <span class="eq-bar bar-1"></span>
-          <span class="eq-bar bar-2"></span>
-          <span class="eq-bar bar-3"></span>
-          <span class="eq-bar bar-4"></span>
-        </div>
-        <div class="brand-text-lockup">
-          <span class="brand-title font-display">SOUNDWAVE</span>
-          <span class="brand-badge font-mono">PLAYGROUND</span>
-        </div>
+  <div class="auth-page">
+    <div class="wash"></div>
+
+    <div class="glass auth-card">
+      <div class="brand">
+        <span class="orb">🎧</span>
+        <span>Soundwave</span>
       </div>
 
       <div class="auth-intro">
-        <h1 class="auth-heading font-display">Welcome Back.</h1>
-        <p class="auth-subheading">Enter your personal music curation space.</p>
+        <h2>Welcome back.</h2>
+        <p>Sign in to sync your personal bubbles and mixtapes.</p>
       </div>
 
-      <!-- Session Expired Warning -->
-      <div v-if="sessionExpired" class="auth-alert warning font-mono">
-        Your session expired. Please sign in again.
-      </div>
-
-      <!-- Inline API Error -->
-      <div v-if="errorMessage" class="auth-alert error font-mono">
+      <div v-if="errorMessage" class="error-banner">
         {{ errorMessage }}
       </div>
 
-      <!-- Login Form -->
-      <form @submit.prevent="handleLogin" class="auth-form" novalidate>
-        <AppInput
-          label="Email address"
-          type="email"
-          v-model="email"
-          placeholder="you@example.com"
-          required
-          autocomplete="email"
-          :error="fieldErrors.email"
-        />
-
-        <div class="password-field-group">
-          <div class="password-label-row">
-            <label class="field-label font-mono">Password <span class="required-star">*</span></label>
-            <button
-              type="button"
-              class="pw-toggle-btn font-mono"
-              @click="showPassword = !showPassword"
-              tabindex="-1"
-            >
-              {{ showPassword ? 'HIDE' : 'SHOW' }}
-            </button>
-          </div>
-          <div class="pw-input-wrapper">
-            <input
-              id="login-password"
-              v-model="password"
-              :type="showPassword ? 'text' : 'password'"
-              placeholder="••••••••"
-              required
-              autocomplete="current-password"
-              class="sw-password-input"
-              :class="{ 'has-error': fieldErrors.password }"
-            />
-          </div>
-          <span v-if="fieldErrors.password" class="field-error-text font-mono">{{ fieldErrors.password }}</span>
+      <form @submit.prevent="handleLogin" class="auth-form">
+        <div class="form-group">
+          <label>Email Address</label>
+          <input
+            v-model="email"
+            type="email"
+            placeholder="curator@soundwave.io"
+            required
+            autocomplete="email"
+            class="glass-input"
+          />
         </div>
 
-        <AppButton
-          type="submit"
-          variant="primary"
-          size="lg"
-          :full-width="true"
-          :loading="loading"
-        >
-          Sign In →
-        </AppButton>
+        <div class="form-group">
+          <label>Password</label>
+          <input
+            v-model="password"
+            :type="showPassword ? 'text' : 'password'"
+            placeholder="••••••••"
+            required
+            autocomplete="current-password"
+            class="glass-input"
+          />
+        </div>
+
+        <button type="submit" class="cta submit-btn" :disabled="loading">
+          <span>{{ loading ? 'Signing in...' : 'Sign In' }}</span>
+        </button>
       </form>
 
       <div class="auth-footer">
-        <span class="footer-prompt">Don't have an account?</span>
-        <router-link to="/signup" class="switch-link">Create Account</router-link>
+        <p>New to Soundwave? <router-link to="/signup" class="auth-link">Create an account</router-link></p>
+        <router-link to="/" class="back-link">← Back to Soundwave</router-link>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
-import AppInput from '../components/common/AppInput.vue';
-import AppButton from '../components/common/AppButton.vue';
+import { useToastStore } from '../stores/toast';
 
 const router = useRouter();
-const route = useRoute();
 const authStore = useAuthStore();
+const toastStore = useToastStore();
 
 const email = ref('');
 const password = ref('');
 const showPassword = ref(false);
 const loading = ref(false);
 const errorMessage = ref('');
-const sessionExpired = ref(false);
-
-const fieldErrors = reactive({
-  email: '',
-  password: '',
-});
-
-onMounted(() => {
-  if (route.query.expired === 'true') {
-    sessionExpired.value = true;
-  }
-});
-
-const validate = () => {
-  let valid = true;
-  fieldErrors.email = '';
-  fieldErrors.password = '';
-  errorMessage.value = '';
-
-  if (!email.value.trim()) {
-    fieldErrors.email = 'Email address is required';
-    valid = false;
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim())) {
-    fieldErrors.email = 'Please provide a valid email';
-    valid = false;
-  }
-
-  if (!password.value) {
-    fieldErrors.password = 'Password is required';
-    valid = false;
-  }
-
-  return valid;
-};
 
 const handleLogin = async () => {
-  if (!validate()) return;
-
+  if (!email.value || !password.value) return;
   loading.value = true;
   errorMessage.value = '';
 
   try {
-    await authStore.login(email.value.trim(), password.value);
+    await authStore.login({
+      email: email.value.trim(),
+      password: password.value,
+    });
+    toastStore.success('Welcome back to Soundwave!');
     router.push('/');
   } catch (err) {
-    errorMessage.value = err.response?.data?.message || err.message || 'Login failed. Please verify credentials.';
+    errorMessage.value = err.response?.data?.message || err.message || 'Invalid email or password';
   } finally {
     loading.value = false;
   }
@@ -157,206 +92,127 @@ const handleLogin = async () => {
 </script>
 
 <style scoped>
-.auth-page-wrapper {
+.auth-page {
   min-height: 100vh;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--pg-bg);
-  padding: 24px;
+  display: grid;
+  place-items: center;
+  padding: 2rem 1.25rem;
+  position: relative;
 }
 
 .auth-card {
-  width: 100%;
-  max-width: 440px;
-  background: var(--pg-canvas);
-  border: 2px solid var(--pg-border);
-  border-radius: var(--pg-radius-xl);
-  padding: 44px 38px;
-  box-shadow: var(--pg-shadow-solid-lg);
-  animation: cardEnter 260ms var(--pg-ease-spring);
+  width: min(440px, 100%);
+  border-radius: 40px;
+  padding: 2.8rem 2.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.6rem;
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 25px 60px rgba(43, 29, 90, 0.2);
 }
 
-@keyframes cardEnter {
-  from {
-    opacity: 0;
-    transform: translateY(14px) scale(0.97);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-.auth-brand {
+.brand {
+  font: 800 1.5rem "Bricolage Grotesque", sans-serif;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 12px;
-  margin-bottom: 24px;
+  gap: 0.5rem;
+  color: var(--ink);
 }
 
-.brand-equalizer {
-  display: flex;
-  align-items: flex-end;
-  gap: 3px;
-  height: 22px;
-  padding: 2px 4px;
-  background: var(--pg-ink);
-  border-radius: var(--pg-radius-xs);
+.brand .orb {
+  width: 32px;
+  height: 32px;
+  font-size: 0.95rem;
 }
 
-.eq-bar {
-  width: 3.5px;
-  background: var(--pg-citron);
-  border-radius: 1px;
+.auth-intro h2 {
+  font-size: 2.2rem;
+  margin-bottom: 0.3rem;
+  color: var(--ink);
 }
 
-.bar-1 { height: 8px; }
-.bar-2 { height: 16px; }
-.bar-3 { height: 10px; }
-.bar-4 { height: 18px; }
-
-.brand-text-lockup {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.auth-intro p {
+  color: var(--muted);
+  font-size: 0.95rem;
 }
 
-.brand-title {
-  font-size: 1.15rem;
-  font-weight: 800;
-  color: var(--pg-ink);
-  letter-spacing: -0.04em;
-}
-
-.brand-badge {
-  font-size: 0.65rem;
-  font-weight: 800;
-  padding: 2px 8px;
-  background: var(--pg-coral);
-  color: #fff;
-  border: 1.5px solid var(--pg-border);
-  border-radius: var(--pg-radius-full);
-}
-
-.auth-intro {
-  text-align: center;
-  margin-bottom: 28px;
-}
-
-.auth-heading {
-  font-size: 1.8rem;
-  font-weight: 800;
-  color: var(--pg-ink);
-  letter-spacing: -0.03em;
-  margin-bottom: 6px;
-}
-
-.auth-subheading {
-  font-size: 0.9rem;
-  color: var(--pg-ink-secondary);
-}
-
-.auth-alert {
-  padding: 10px 14px;
-  border-radius: var(--pg-radius-md);
-  font-size: 0.8rem;
-  font-weight: 700;
-  margin-bottom: 20px;
-  border: 1.5px solid var(--pg-border);
-}
-
-.auth-alert.warning {
-  background: var(--pg-surface-butter);
-  color: var(--pg-ink);
-}
-
-.auth-alert.error {
-  background: var(--pg-surface-peach);
-  color: var(--pg-coral);
+.error-banner {
+  padding: 0.75rem 1rem;
+  border-radius: 16px;
+  background: rgba(255, 79, 154, 0.15);
+  border: 1px solid rgba(255, 79, 154, 0.4);
+  color: #ff2b7d;
+  font-size: 0.88rem;
+  font-weight: 600;
 }
 
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 1.2rem;
 }
 
-.password-field-group {
+.form-group {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 0.4rem;
 }
 
-.password-label-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.field-label {
-  font-size: 0.78rem;
-  font-weight: 800;
-  color: var(--pg-ink);
-}
-
-.required-star {
-  color: var(--pg-coral);
-}
-
-.pw-toggle-btn {
-  font-size: 0.7rem;
-  font-weight: 800;
-  color: var(--pg-cobalt);
-  cursor: pointer;
-  padding: 2px 6px;
-}
-
-.sw-password-input {
-  width: 100%;
-  height: 44px;
-  padding: 0 16px;
-  background: var(--pg-canvas);
-  border: 1.5px solid var(--pg-border);
-  border-radius: var(--pg-radius-sm);
-  color: var(--pg-ink);
-  font-size: 0.92rem;
-  outline: none;
-  box-shadow: 2px 2px 0px var(--pg-border);
-  transition: all var(--pg-transition-spring);
-}
-
-.sw-password-input:focus {
-  border-color: var(--pg-cobalt);
-  box-shadow: 3px 3px 0px var(--pg-cobalt);
-}
-
-.sw-password-input.has-error {
-  border-color: var(--pg-coral);
-  box-shadow: 3px 3px 0px var(--pg-coral);
-}
-
-.field-error-text {
-  font-size: 0.75rem;
+.form-group label {
+  font-size: 0.8rem;
   font-weight: 700;
-  color: var(--pg-coral);
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.glass-input {
+  width: 100%;
+  padding: 0.85rem 1.2rem;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1.5px solid rgba(255, 255, 255, 0.9);
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 500;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.glass-input:focus {
+  background: #ffffff;
+  border-color: var(--ink);
+  box-shadow: 0 0 0 3px rgba(43, 29, 90, 0.1);
+}
+
+.submit-btn {
+  width: 100%;
+  justify-content: center;
+  margin-top: 0.6rem;
 }
 
 .auth-footer {
-  margin-top: 28px;
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--muted);
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  font-size: 0.88rem;
-  color: var(--pg-ink-secondary);
+  flex-direction: column;
+  gap: 0.6rem;
 }
 
-.switch-link {
-  color: var(--pg-cobalt);
-  font-weight: 800;
+.auth-link {
+  color: var(--ink);
+  font-weight: 700;
   text-decoration: underline;
+}
+
+.back-link {
+  color: var(--muted);
+  font-size: 0.85rem;
+  transition: color 0.2s;
+}
+
+.back-link:hover {
+  color: var(--ink);
 }
 </style>

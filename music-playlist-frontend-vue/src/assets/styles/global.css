@@ -1,33 +1,50 @@
 @import './tokens.css';
 
-*, *::before, *::after {
+html {
+  scroll-padding-top: env(safe-area-inset-top, 0px);
+  scroll-behavior: smooth;
   box-sizing: border-box;
+}
+
+*, *::before, *::after {
+  box-sizing: inherit;
   margin: 0;
   padding: 0;
 }
 
-html, body {
-  width: 100%;
-  min-height: 100%;
-  background-color: var(--pg-bg);
-  color: var(--pg-ink);
-  font-family: var(--pg-font-sans);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background-image: radial-gradient(rgba(20, 16, 30, 0.06) 1px, transparent 1px);
-  background-size: 28px 28px;
+body {
+  margin: 0;
+  color: var(--ink);
+  font: 500 1.05rem/1.55 Figtree, system-ui, sans-serif;
+  overflow-x: hidden;
+  background-color: transparent;
 }
 
 #app {
-  width: 100%;
   min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+  width: 100%;
 }
 
-::selection {
-  background-color: var(--pg-citron);
-  color: var(--pg-ink);
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  border: 0;
+  background: none;
+}
+
+:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 3px;
+}
+
+h1, h2, h3 {
+  font-family: "Bricolage Grotesque", Figtree, sans-serif;
+  font-weight: 800;
+  margin: 0;
+  letter-spacing: -0.03em;
+  line-height: 0.95;
+  color: var(--ink);
 }
 
 a {
@@ -35,89 +52,104 @@ a {
   text-decoration: none;
 }
 
-button {
-  font-family: inherit;
-  border: none;
-  background: none;
-  cursor: pointer;
-  color: inherit;
+/* Background Wash with dynamic tint */
+.wash {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-color: #ffe3f3;
+  transition: background-color 0.9s cubic-bezier(0.2, 0.8, 0.3, 1);
 }
 
-input, textarea, select {
-  font-family: inherit;
-  color: inherit;
+.wash::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.82));
 }
 
-button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible {
-  outline: 2px solid var(--pg-cobalt);
-  outline-offset: 2px;
+/* Scroll progress bar */
+#prog {
+  position: fixed;
+  top: env(safe-area-inset-top, 0px);
+  left: 0;
+  height: 5px;
+  width: 0%;
+  z-index: 50;
+  background: linear-gradient(90deg, #ff6fb5, #ffa24c, #3fe0b0, #4cb8ff, #9b7bff);
+  border-radius: 0 5px 5px 0;
 }
 
-/* Monospaced Tabular Figures for All Numerics & Timestamps */
-.tabular-nums {
-  font-family: var(--pg-font-mono);
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em;
+/* Glossy 3D Bubble Sphere */
+.orb {
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 24%, #fff 0 5%, rgba(255, 255, 255, 0) 26%),
+              radial-gradient(circle at 70% 78%, rgba(255, 255, 255, 0.4), transparent 40%),
+              radial-gradient(circle at 50% 45%, var(--o1), var(--o2) 78%);
+  box-shadow: inset -14px -20px 34px rgba(0, 0, 0, 0.16),
+              inset 12px 16px 26px rgba(255, 255, 255, 0.6),
+              0 32px 50px var(--sh);
+  display: grid;
+  place-items: center;
 }
 
-/* Editorial Display Headings */
-h1, h2, h3 {
-  font-family: var(--pg-font-display);
-  letter-spacing: -0.03em;
-  color: var(--pg-ink);
+/* Glass Panel */
+.glass {
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1.5px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 20px 50px rgba(120, 80, 200, 0.15);
 }
 
-.font-display {
-  font-family: var(--pg-font-display);
-  letter-spacing: -0.03em;
+/* Floating Particle Bubbles on Burst */
+.bub {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 25%, #fff 0 12%, rgba(255, 255, 255, 0.2) 30%),
+              radial-gradient(circle, rgba(255, 255, 255, 0.1), var(--bc));
+  border: 1.5px solid rgba(255, 255, 255, 0.9);
 }
 
-.font-title {
-  font-family: var(--pg-font-title);
-  letter-spacing: -0.02em;
-}
-
-/* Custom Editorial Scrollbars */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--pg-bg-alt);
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--pg-ink);
-  border: 2px solid var(--pg-bg-alt);
-  border-radius: var(--pg-radius-full);
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--pg-cobalt);
-}
-
-/* Global Vue Page Transitions */
-.sw-page-enter-active,
-.sw-page-leave-active {
-  transition: opacity 200ms var(--pg-ease-out), transform 200ms var(--pg-ease-spring);
-}
-
-.sw-page-enter-from {
+/* Scroll reveal helper */
+.rv {
   opacity: 0;
-  transform: translateY(12px) scale(0.99);
+  transform: translateY(70px) scale(0.9);
+  transition: opacity 0.7s, transform 0.8s cubic-bezier(0.2, 1.5, 0.3, 1);
+  transition-delay: var(--d, 0ms);
 }
 
-.sw-page-leave-to {
-  opacity: 0;
-  transform: translateY(-8px);
+.rv.in {
+  opacity: 1;
+  transform: none;
 }
 
-/* Reduced Motion Override */
+svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+
+/* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+    animation: none !important;
+    transition: none !important;
+  }
+  html {
+    scroll-behavior: auto;
+  }
+  .rv, .hero h1 span {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .txt.on {
+    opacity: 1 !important;
+  }
+  .big.on {
+    opacity: 1 !important;
+    transform: none !important;
   }
 }

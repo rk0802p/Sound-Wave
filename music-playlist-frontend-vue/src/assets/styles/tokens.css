@@ -1,185 +1,46 @@
 :root {
-  /* ==========================================================================
-     SOUNDWAVE / PLAYGROUND — Design Tokens
-     Warm Ivory Surfaces, Crisp Obsidian Ink, and Hyper-Expressive Accents
-     ========================================================================== */
+  color-scheme: light;
+  --ink: #2b1d5a;
+  --muted: #6f63a0;
+  --o1: #ff9bd2;
+  --o2: #ff6fb5;
+  --sh: rgba(255, 111, 181, 0.45);
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 
-  /* 1. Surfaces & Canvas */
-  --pg-bg: #FFF9EE;                /* Primary Warm Ivory Background */
-  --pg-bg-alt: #FFF4DF;            /* Secondary Warm Ivory Tint */
-  --pg-canvas: #FFFDF8;            /* Pristine Off-White Paper Canvas */
-  --pg-surface: #FFFFFF;           /* Card White */
-  --pg-surface-soft: #FAF4E8;      /* Soft Card Sand */
-  --pg-surface-hover: #F4ECE0;     /* Card Hover Tint */
-  --pg-surface-active: #EDE2D0;    /* Card Active Pressed */
+  /* Fonts */
+  --font-display: "Bricolage Grotesque", Figtree, sans-serif;
+  --font-body: Figtree, system-ui, sans-serif;
 
-  /* Color-Blocked Editorial Surface Tints */
-  --pg-surface-peach: #FFEFE7;     /* Soft Peach Block */
-  --pg-surface-butter: #FFF7D1;    /* Butter Yellow Block */
-  --pg-surface-lavender: #F1ECFF;  /* Pale Lavender Block */
-  --pg-surface-mint: #E7FAF2;      /* Fresh Mint Block */
-  --pg-surface-ice: #E8F4FF;       /* Pale Ice Blue Block */
-
-  /* 2. Razor-Sharp Inks (AAA Accessibility) */
-  --pg-ink: #14101E;               /* Primary Obsidian Ink */
-  --pg-ink-secondary: #4A4458;     /* Secondary Editorial Ink */
-  --pg-ink-muted: #79718A;         /* Metadata & Timestamps */
-  --pg-ink-dim: #A8A1B5;           /* Dim Lines & Placeholders */
-  --pg-ink-invert: #FFFDF8;        /* Reverse Paper Text */
-
-  /* 3. Expressive Music Accents */
-  --pg-coral: #FF3E6C;             /* Electric Coral */
-  --pg-coral-hover: #E62A56;
-  --pg-coral-soft: rgba(255, 62, 108, 0.12);
-
-  --pg-cobalt: #3B4BFF;            /* Hyper Cobalt */
-  --pg-cobalt-hover: #2938E0;
-  --pg-cobalt-soft: rgba(59, 75, 255, 0.12);
-
-  --pg-tangerine: #FF7A00;         /* Tangerine Blaze */
-  --pg-tangerine-hover: #E66D00;
-  --pg-tangerine-soft: rgba(255, 122, 0, 0.12);
-
-  --pg-citron: #E2F705;            /* Acid Citron / Neon Yellow */
-  --pg-citron-hover: #CDE200;
-  --pg-citron-soft: rgba(226, 247, 5, 0.2);
-
-  --pg-mint: #05F7A4;              /* Hyper Mint */
-  --pg-mint-hover: #00DB90;
-  --pg-mint-soft: rgba(5, 247, 164, 0.15);
-
-  --pg-violet: #8438FF;            /* Vivid Violet */
-  --pg-violet-hover: #6E22E6;
-  --pg-violet-soft: rgba(132, 56, 255, 0.12);
-
-  --pg-bubblegum: #FF70B8;         /* Bubblegum Pink */
-
-  /* 4. Architectural Borders & Tactile Drop Shadows */
-  --pg-border: #14101E;
-  --pg-border-hairline: rgba(20, 16, 30, 0.14);
-  --pg-border-dashed: 2px dashed #14101E;
-
-  --pg-shadow-solid: 4px 4px 0px #14101E;
-  --pg-shadow-solid-sm: 2px 2px 0px #14101E;
-  --pg-shadow-solid-lg: 6px 6px 0px #14101E;
-  --pg-shadow-solid-xl: 8px 8px 0px #14101E;
-
-  --pg-shadow-coral: 4px 4px 0px #FF3E6C;
-  --pg-shadow-cobalt: 4px 4px 0px #3B4BFF;
-  --pg-shadow-citron: 4px 4px 0px #E2F705;
-  --pg-shadow-soft: 0 10px 30px rgba(20, 16, 30, 0.08);
-
-  /* 5. Typography */
-  --pg-font-display: 'Syne', 'Space Grotesk', -apple-system, sans-serif;
-  --pg-font-title: 'Bricolage Grotesque', 'Space Grotesk', -apple-system, sans-serif;
-  --pg-font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-  --pg-font-mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
-
-  --font-display: var(--pg-font-display);
-  --font-title: var(--pg-font-title);
-  --font-sans: var(--pg-font-sans);
-  --font-mono: var(--pg-font-mono);
-
-  /* 6. Radii */
-  --pg-radius-xs: 4px;
-  --pg-radius-sm: 8px;
-  --pg-radius-md: 14px;
-  --pg-radius-lg: 20px;
-  --pg-radius-xl: 32px;
-  --pg-radius-full: 9999px;
-
-  /* 7. Spacing */
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 20px;
-  --space-6: 24px;
-  --space-8: 32px;
-  --space-10: 40px;
-  --space-12: 48px;
-  --space-16: 64px;
-
-  /* 8. Kinetic Springs & Motion */
-  --pg-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --pg-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --pg-duration-fast: 150ms;
-  --pg-duration-normal: 240ms;
-  --pg-duration-slow: 380ms;
-
-  --pg-transition-fast: var(--pg-duration-fast) var(--pg-ease-out);
-  --pg-transition-spring: var(--pg-duration-normal) var(--pg-ease-spring);
-
-  /* ==========================================================================
-     Backward Compatibility Mapping (--sw-* mapped to --pg-*)
-     Ensures existing components render beautifully in the new Playground system
-     ========================================================================== */
-  --sw-void: var(--pg-bg-alt);
-  --sw-bg: var(--pg-bg);
-  --sw-sidebar: var(--pg-surface-soft);
-  --sw-surface: var(--pg-surface);
-  --sw-surface-hover: var(--pg-surface-hover);
-  --sw-surface-active: var(--pg-surface-active);
-  --sw-surface-glass: rgba(255, 253, 248, 0.94);
-  --sw-player-bg: rgba(255, 253, 248, 0.96);
-
-  --sw-border: var(--pg-border);
-  --sw-border-subtle: var(--pg-border-hairline);
-  --sw-border-hover: var(--pg-ink);
-  --sw-border-focus: var(--pg-cobalt);
-
-  --sw-accent: var(--pg-cobalt);
-  --sw-accent-hover: var(--pg-cobalt-hover);
-  --sw-accent-soft: var(--pg-cobalt-soft);
-  --sw-accent-glow: rgba(59, 75, 255, 0.25);
-  --sw-accent-muted: #5A67FF;
-
-  --sw-warm: var(--pg-coral);
-  --sw-warm-hover: var(--pg-coral-hover);
-  --sw-warm-soft: var(--pg-coral-soft);
-  --sw-warm-glow: rgba(255, 62, 108, 0.25);
-
-  --sw-magenta: var(--pg-violet);
-  --sw-cream: var(--pg-canvas);
-
-  --sw-font-display: var(--pg-font-display);
-  --sw-font-sans: var(--pg-font-sans);
-  --sw-font-mono: var(--pg-font-mono);
-
-  --sw-text-primary: var(--pg-ink);
-  --sw-text-secondary: var(--pg-ink-secondary);
-  --sw-text-muted: var(--pg-ink-muted);
-  --sw-text-dim: var(--pg-ink-dim);
-
-  --sw-success: var(--pg-mint);
-  --sw-warning: var(--pg-tangerine);
-  --sw-danger: var(--pg-coral);
-  --sw-info: var(--pg-cobalt);
-
-  --sw-radius-xs: var(--pg-radius-xs);
-  --sw-radius-sm: var(--pg-radius-sm);
-  --sw-radius-md: var(--pg-radius-md);
-  --sw-radius-lg: var(--pg-radius-lg);
-  --sw-radius-xl: var(--pg-radius-xl);
-  --sw-radius-full: var(--pg-radius-full);
-
-  --sw-shadow-sm: var(--pg-shadow-solid-sm);
-  --sw-shadow-md: var(--pg-shadow-solid);
-  --sw-shadow-lg: var(--pg-shadow-solid-lg);
-  --sw-shadow-glow: var(--pg-shadow-cobalt);
-  --sw-shadow-coral: var(--pg-shadow-coral);
-  --sw-shadow-vinyl: var(--pg-shadow-solid-lg);
-
-  --sw-ease-out: var(--pg-ease-out);
-  --sw-ease-spring: var(--pg-ease-spring);
-  --sw-duration-fast: var(--pg-duration-fast);
-  --sw-duration-normal: var(--pg-duration-normal);
-  --sw-duration-slow: var(--pg-duration-slow);
-
-  --sw-transition-fast: var(--pg-transition-fast);
-  --sw-transition-normal: var(--pg-duration-normal) var(--pg-ease-out);
-  --sw-transition-slow: var(--pg-duration-slow) var(--pg-ease-out);
-  --sw-transition-spring: var(--pg-transition-spring);
-
-  --sw-player-height: 84px;
+  /* Backward Compatibility Aliases */
+  --sw-void: #ffe3f3;
+  --sw-bg: #ffe3f3;
+  --sw-canvas: #ffffff;
+  --sw-surface: rgba(255, 255, 255, 0.55);
+  --sw-surface-hover: rgba(255, 255, 255, 0.75);
+  --sw-surface-active: rgba(255, 255, 255, 0.95);
+  --sw-border: rgba(255, 255, 255, 0.9);
+  --sw-border-hover: #ffffff;
+  --sw-text-primary: #2b1d5a;
+  --sw-text-secondary: #6f63a0;
+  --sw-text-muted: #6f63a0;
+  --sw-accent: #ff6fb5;
+  --sw-accent-hover: #ff4f9a;
+  --sw-accent-soft: rgba(255, 111, 181, 0.2);
+  --sw-warm: #ffa24c;
+  --sw-cyan: #3fe0b0;
+  --sw-blue: #4cb8ff;
+  --sw-purple: #9b7bff;
+  --sw-font-display: var(--font-display);
+  --sw-font-sans: var(--font-body);
+  --sw-font-mono: monospace;
+  --sw-radius-sm: 8px;
+  --sw-radius-md: 20px;
+  --sw-radius-lg: 38px;
+  --sw-radius-xl: 48px;
+  --sw-radius-full: 99px;
+  --sw-ease-out: cubic-bezier(0.2, 1.5, 0.3, 1);
+  --sw-transition-fast: 0.2s ease;
+  --sw-transition-normal: 0.3s ease;
 }
