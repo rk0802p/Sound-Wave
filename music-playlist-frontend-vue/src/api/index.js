@@ -1,44 +1,42 @@
 import axios from 'axios';
 
-console.log('API URL being used:', import.meta.env.VITE_API_URL);
-
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000',
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: false
+  timeout: 15000,
 });
 
+// Request interceptor: attach token
 api.interceptors.request.use(
   (config) => {
-    console.log('Making request to:', config.url);
-    
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  (error) => {
-    console.error('Request error:', error);
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
+// Response interceptor: handle 401s and token expiration gracefully
 api.interceptors.response.use(
-  (response) => {
-    console.log('Received response:', response.status);
-    return response;
-  },
+  (response) => response,
   (error) => {
-    console.error('Response error:', {
-      status: error.response?.status,
-      data: error.response?.data,
-      config: error.config
-    });
+    if (error.response && error.response.status === 401) {
+      const code = error.response.data?.code;
+      if (code === 'TOKEN_EXPIRED' || code === 'INVALID_TOKEN' || code === 'NO_TOKEN') {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        // If not already on auth pages, redirect
+        if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/signup')) {
+          window.location.href = '/login?expired=true';
+        }
+      }
+    }
     return Promise.reject(error);
   }
 );
 
-export default api; 
+export default api;

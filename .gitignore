@@ -4,3 +4,5 @@ server/.env
 music-playlist-frontend-vue/.env
 coverage/
 server/coverage/
+dist/
+music-playlist-frontend-vue/dist/

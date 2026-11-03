@@ -1,69 +1,102 @@
 import { defineStore } from 'pinia';
-import axios from 'axios';
-
-const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
-  headers: {
-    'Content-Type': 'application/json'
-  }
-});
+import { authApi } from '../api/auth';
+import { jwtDecode } from 'jwt-decode';
 
 export const useAuthStore = defineStore('auth', {
-  state: () => ({
-    token: localStorage.getItem('token') || '',
-    user: null,
-  }),
+  state: () => {
+    const token = localStorage.getItem('token') || '';
+    let user = null;
+    try {
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        user = JSON.parse(storedUser);
+      } else if (token) {
+        const decoded = jwtDecode(token);
+        user = {
+          id: decoded.id,
+          username: decoded.username || 'Music Lover',
+          email: decoded.email || '',
+        };
+      }
+    } catch {
+      user = null;
+    }
+
+    return {
+      token,
+      user,
+      isLoading: false,
+      error: null,
+    };
+  },
+
+  getters: {
+    isAuthenticated: (state) => Boolean(state.token && state.user),
+    username: (state) => state.user?.username || 'User',
+    userEmail: (state) => state.user?.email || '',
+  },
+
   actions: {
     async login(email, password) {
+      this.isLoading = true;
+      this.error = null;
       try {
-        const res = await api.post('/api/auth/login', {
-          email,
-          password
-        });
-        
-        if (res.data && res.data.token) {
-          this.token = res.data.token;
-          localStorage.setItem('token', this.token);
-          api.defaults.headers.common['Authorization'] = `Bearer ${this.token}`;
-          return res.data;
-        } else {
-          throw new Error('Invalid response from server');
-        }
-      } catch (error) {
-        console.error('Login error:', error.response?.data || error.message);
-        throw error;
+        const data = await authApi.login({ email, password });
+        this.setSession(data.token, data.user);
+        return data;
+      } catch (err) {
+        const msg = err.response?.data?.message || err.message || 'Login failed';
+        this.error = msg;
+        throw err;
+      } finally {
+        this.isLoading = false;
       }
     },
 
     async signup(username, email, password) {
+      this.isLoading = true;
+      this.error = null;
       try {
-        const res = await api.post('/api/auth/signup', {
-          username,
-          email,
-          password
-        });
-        
-        if (res.data && res.data.token) {
-          this.token = res.data.token;
-          localStorage.setItem('token', this.token);
-          api.defaults.headers.common['Authorization'] = `Bearer ${this.token}`;
-          return res.data;
-        } else {
-          throw new Error('Invalid response from server');
+        const data = await authApi.signup({ username, email, password });
+        this.setSession(data.token, data.user);
+        return data;
+      } catch (err) {
+        const msg = err.response?.data?.message || err.message || 'Signup failed';
+        this.error = msg;
+        throw err;
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    setSession(token, user) {
+      this.token = token;
+      this.user = user;
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
+    },
+
+    async checkAuth() {
+      if (!this.token) return false;
+      try {
+        const data = await authApi.getMe();
+        if (data.user) {
+          this.user = data.user;
+          localStorage.setItem('user', JSON.stringify(data.user));
+          return true;
         }
-      } catch (error) {
-        console.error('Signup error:', error.response?.data || error.message);
-        throw error;
+      } catch {
+        this.logout();
+        return false;
       }
     },
 
     logout() {
       this.token = '';
       this.user = null;
+      this.error = null;
       localStorage.removeItem('token');
-      delete api.defaults.headers.common['Authorization'];
-    }
+      localStorage.removeItem('user');
+    },
   },
 });
-
-console.log('API URL:', import.meta.env.VITE_API_URL);
