@@ -1,44 +1,60 @@
 :root {
-  /* Colors - Midnight Studio Palette */
-  --bg-app: #09090C;
-  --bg-sidebar: #0D0D12;
-  --bg-surface: #101117;
-  --bg-elevated: #191922;
-  --bg-hover: #24242F;
-  --accent-primary: #766BFF;
-  --accent-hover: #887EFF;
-  --accent-soft: #24213F;
-  --text-primary: #F4F3FA;
-  --text-secondary: #A1A1AA;
-  --text-muted: #71717A;
-  --border-default: #25252F;
-  --border-focus: #766BFF;
-  --success: #42C89A;
-  --danger: #F07178;
+  /* Application backgrounds */
+  --sw-bg: #09090c;
+  --sw-sidebar: #0d0d13;
+  --sw-surface: #12121a;
+  --sw-surface-hover: #191923;
+  --sw-surface-active: #20202c;
+
+  /* Borders */
+  --sw-border: #242430;
+  --sw-border-subtle: #1b1b25;
+
+  /* Brand / Accent */
+  --sw-accent: #7968ff;
+  --sw-accent-hover: #8a7cff;
+  --sw-accent-soft: #211d42;
+  --sw-accent-muted: #aaa0ff;
 
   /* Typography */
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --sw-text-primary: #f4f3f8;
+  --sw-text-secondary: #a1a0af;
+  --sw-text-muted: #707080;
 
-  /* Spacing */
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 20px;
-  --space-6: 24px;
-  --space-8: 32px;
-  --space-10: 40px;
-  --space-12: 48px;
-
-  /* Radii */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 18px;
-  --radius-full: 9999px;
+  /* Feedback */
+  --sw-success: #53c99b;
+  --sw-warning: #e7b86b;
+  --sw-danger: #ed747d;
 
   /* Layout */
-  --sidebar-width: 240px;
-  --topbar-height: 64px;
-  --player-height: 84px;
+  --sw-sidebar-width: 248px;
+  --sw-sidebar-collapsed: 76px;
+  --sw-player-height: 88px;
+  --sw-topbar-height: 68px;
+
+  /* Radius */
+  --sw-radius-sm: 8px;
+  --sw-radius-md: 12px;
+  --sw-radius-lg: 18px;
+  --sw-radius-xl: 24px;
+
+  /* Motion */
+  --sw-transition-fast: 150ms ease;
+  --sw-transition-normal: 220ms ease;
+  --sw-transition-slow: 320ms ease;
+
+  /* Compatibility aliases for previous token names */
+  --bg-app: var(--sw-bg);
+  --bg-sidebar: var(--sw-sidebar);
+  --bg-surface: var(--sw-surface);
+  --bg-elevated: var(--sw-surface-hover);
+  --bg-hover: var(--sw-surface-active);
+  --border-default: var(--sw-border);
+  --border-focus: var(--sw-accent);
+  --accent-primary: var(--sw-accent);
+  --accent-hover: var(--sw-accent-hover);
+  --accent-soft: var(--sw-accent-soft);
+  --text-primary: var(--sw-text-primary);
+  --text-secondary: var(--sw-text-secondary);
+  --text-muted: var(--sw-text-muted);
 }
