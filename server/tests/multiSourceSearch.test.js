@@ -139,9 +139,9 @@ describe('SOUNDWAVE Multi-Source Music Aggregation & Resilience Tests', () => {
     });
 
     it('Scenario 3 & 10: should cleanly skip unconfigured providers without throwing errors', async () => {
-      // Audius is unconfigured by default
-      const audius = registry.get('audius');
-      expect(audius.isConfigured()).toBe(false);
+      // Jamendo is unconfigured by default (requires JAMENDO_CLIENT_ID)
+      const jamendo = registry.get('jamendo');
+      expect(jamendo.isConfigured()).toBe(false);
 
       global.fetch = jest.fn(async (url) => {
         if (String(url).includes('archive.org/advancedsearch.php')) {
@@ -162,8 +162,61 @@ describe('SOUNDWAVE Multi-Source Music Aggregation & Resilience Tests', () => {
 
       const res = await request(app).get('/api/search?q=bach');
       expect(res.status).toBe(200);
-      expect(res.body.providers.audius.status).toBe('unconfigured');
-      expect(res.body.providers.audius.count).toBe(0);
+      expect(res.body.providers.jamendo.status).toBe('unconfigured');
+      expect(res.body.providers.jamendo.count).toBe(0);
+    });
+
+    it('Scenario 3b: should support Audius unauthenticated read-only search and respect creator permissions', async () => {
+      const audius = registry.get('audius');
+      expect(audius.isConfigured()).toBe(true); // Public read-only endpoints supported without key
+
+      global.fetch = jest.fn(async (url) => {
+        const u = String(url);
+        if (u.includes('api.audius.co/v1/tracks/search')) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              data: [
+                {
+                  id: 'aud_streamable_1',
+                  title: 'Streamable Hit',
+                  user: { name: 'Audius Creator' },
+                  genre: 'Electronic',
+                  duration: 210,
+                  is_streamable: true,
+                  stream_conditions: null,
+                },
+                {
+                  id: 'aud_restricted_2',
+                  title: 'Restricted Audio',
+                  user: { name: 'Exclusive Creator' },
+                  genre: 'Ambient',
+                  duration: 180,
+                  is_streamable: false, // Creator restricted
+                  stream_conditions: { usdc_purchase: true },
+                },
+              ],
+            }),
+          };
+        }
+        return { ok: true, status: 200, json: async () => ({ response: { docs: [] } }) };
+      });
+
+      const res = await request(app).get('/api/search?q=electronic&providers=audius');
+      expect(res.status).toBe(200);
+      expect(res.body.providers.audius.status).toBe('available');
+      expect(res.body.providers.audius.count).toBe(2);
+
+      const streamable = res.body.results.find((t) => t.id === 'audius:aud_streamable_1');
+      expect(streamable).toBeDefined();
+      expect(streamable.isPlayable).toBe(true);
+      expect(streamable.playbackCapabilities.playbackType).toBe('direct');
+
+      const restricted = res.body.results.find((t) => t.id === 'audius:aud_restricted_2');
+      expect(restricted).toBeDefined();
+      expect(restricted.isPlayable).toBe(false);
+      expect(restricted.playbackCapabilities.playbackType).toBe('unsupported');
     });
 
     it('Scenario 4: should handle provider timeout without hanging or failing the whole search', async () => {
@@ -270,6 +323,62 @@ describe('SOUNDWAVE Multi-Source Music Aggregation & Resilience Tests', () => {
       expect(res.body.results).toEqual([]);
       expect(res.body.totalResults).toBe(0);
       expect(res.body.providers.archive.status).toBe('unavailable');
+    });
+
+    it('Scenario 13: Circuit Breaker should trip OPEN after consecutive failures and fast-fail', async () => {
+      const breaker = registry.getBreaker('archive');
+      expect(breaker).toBeDefined();
+      breaker.reset();
+
+      // Breaker threshold is 3
+      breaker.recordFailure('Connection timeout');
+      breaker.recordFailure('Connection timeout');
+      expect(breaker.getStatus().state).toBe('CLOSED');
+
+      breaker.recordFailure('Connection timeout');
+      // 3rd failure trips the breaker to OPEN
+      expect(breaker.getStatus().state).toBe('OPEN');
+      expect(breaker.canExecute()).toBe(false);
+
+      // Now query should fast-fail with circuit_broken without hitting fetch
+      global.fetch = jest.fn();
+      const res = await request(app).get('/api/search?q=circuit_test&providers=archive');
+      expect(res.status).toBe(200);
+      expect(res.body.providers.archive.status).toBe('circuit_broken');
+      expect(global.fetch).not.toHaveBeenCalled();
+
+      // Clean up breaker for subsequent tests
+      breaker.reset();
+    });
+
+    it('Scenario 14: Search ranking should prioritize exact artist/title and playable songs over short noise clips', () => {
+      const unranked = [
+        {
+          id: 'archive:noise_clip',
+          title: 'A Random 3 Second Sound',
+          artist: 'Random Person',
+          duration: 3,
+          isPlayable: true,
+        },
+        {
+          id: 'audius:eminem_lose_yourself',
+          title: 'Lose Yourself',
+          artist: 'Eminem',
+          duration: 326,
+          isPlayable: true,
+        },
+        {
+          id: 'archive:eminem_podcast_clip',
+          title: 'Eminem Talk Show Discussion Episode 4',
+          artist: 'Podcast Host',
+          duration: 900,
+          isPlayable: true,
+        },
+      ];
+
+      const ranked = registry.rankTracks(unranked, 'Eminem');
+      expect(ranked[0].id).toBe('audius:eminem_lose_yourself');
+      expect(ranked[ranked.length - 1].id).toBe('archive:noise_clip');
     });
   });
 
