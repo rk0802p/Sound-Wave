@@ -194,32 +194,37 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  color: #9ca3af;
+  color: var(--sw-text-secondary);
   text-decoration: none;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-weight: 500;
-  transition: all 0.2s;
+  transition: all var(--sw-transition-fast);
   padding: 6px 12px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.03);
+  border-radius: var(--sw-radius-sm);
+  background: var(--sw-surface);
+  border: 1px solid var(--sw-border-subtle);
 }
 
 .back-link:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.08);
+  color: var(--sw-text-primary);
+  background: var(--sw-surface-hover);
+  border-color: var(--sw-border);
 }
 
 .loading-state,
 .error-state {
   text-align: center;
   padding: 80px 20px;
+  background: var(--sw-surface);
+  border: 1px dashed var(--sw-border);
+  border-radius: var(--sw-radius-lg);
 }
 
 .spinner {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border: 3px solid rgba(255, 255, 255, 0.1);
-  border-top-color: #6366f1;
+  border-top-color: var(--sw-accent);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
   margin: 0 auto 16px auto;
@@ -236,21 +241,21 @@ onMounted(() => {
 
 .error-state h2 {
   font-size: 1.5rem;
-  color: #fff;
+  color: var(--sw-text-primary);
   margin-bottom: 8px;
 }
 
 .error-state p {
-  color: #9ca3af;
+  color: var(--sw-text-secondary);
   margin-bottom: 24px;
 }
 
 .btn-home {
   padding: 10px 22px;
-  background: #6366f1;
+  background: var(--sw-accent);
   color: #fff;
   text-decoration: none;
-  border-radius: 20px;
+  border-radius: var(--sw-radius-sm);
   font-weight: 600;
 }
 </style>
