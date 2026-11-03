@@ -1,5 +1,4 @@
 @import './tokens.css';
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 *, *::before, *::after {
   box-sizing: border-box;
@@ -10,9 +9,9 @@
 html, body {
   width: 100%;
   min-height: 100%;
-  background-color: var(--bg-app);
-  color: var(--text-primary);
-  font-family: var(--font-sans);
+  background-color: var(--sw-bg);
+  color: var(--sw-text-primary);
+  font-family: var(--sw-font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -29,8 +28,76 @@ a {
 
 button {
   font-family: inherit;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: inherit;
 }
 
+input, textarea, select {
+  font-family: inherit;
+  color: inherit;
+}
+
+button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible {
+  outline: 2px solid var(--sw-accent);
+  outline-offset: 2px;
+}
+
+/* Monospaced Tabular Figures for All Numerics & Timestamps */
 .tabular-nums {
+  font-family: var(--sw-font-mono);
   font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+/* Editorial Display Headings */
+h1, h2, h3, .font-display {
+  font-family: var(--sw-font-display);
+  letter-spacing: -0.03em;
+}
+
+/* Custom Sleek Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: var(--sw-radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* Global Vue Page Transitions */
+.sw-page-enter-active,
+.sw-page-leave-active {
+  transition: opacity 220ms var(--sw-ease-out), transform 220ms var(--sw-ease-out);
+}
+
+.sw-page-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.sw-page-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+/* Reduced Motion Override */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

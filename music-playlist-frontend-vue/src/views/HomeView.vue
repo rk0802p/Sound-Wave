@@ -1,24 +1,48 @@
 <template>
   <div class="sw-dashboard-view">
-    <!-- Greeting Section -->
+    <!-- Editorial Greeting Section -->
     <GreetingSection
       :username="authStore.username"
       :playlist-count="playlistStore.playlists.length"
       :track-count="playlistStore.totalTracksCount"
     />
 
-    <!-- Featured Playlist Banner (Only when playlists exist) -->
+    <!-- Featured Playlist Banner (Only when user has playlists) -->
     <section v-if="featuredPlaylist" class="dashboard-featured-section">
       <FeaturedPlaylist :playlist="featuredPlaylist" />
     </section>
 
-    <!-- Main Collection Section -->
+    <!-- Curated Sonic Moods & Frequencies Portal -->
+    <section class="mood-exploration-section">
+      <div class="section-title-row">
+        <span class="section-kicker font-mono">CURATED FREQUENCIES</span>
+        <h3 class="section-heading font-display">Acoustic Atmospheres</h3>
+      </div>
+      <div class="mood-tiles-grid">
+        <div
+          v-for="vibe in quickVibes"
+          :key="vibe.name"
+          class="mood-tile"
+          @click="handleVibeClick(vibe.query)"
+        >
+          <div class="mood-tile-glow" :style="{ background: vibe.color }"></div>
+          <span class="mood-tile-icon">{{ vibe.icon }}</span>
+          <div class="mood-tile-text">
+            <span class="mood-name font-display">{{ vibe.name }}</span>
+            <span class="mood-sub">{{ vibe.desc }}</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Playlists Collection Grid -->
     <section class="dashboard-collection-section">
       <div class="section-top-bar">
         <div class="section-titles">
-          <h2 class="section-heading">Your Playlists</h2>
-          <span class="section-count-badge" v-if="playlistStore.playlists.length">
-            {{ playlistStore.playlists.length }} {{ playlistStore.playlists.length === 1 ? 'playlist' : 'playlists' }}
+          <span class="section-kicker font-mono">YOUR ARCHIVE</span>
+          <h2 class="section-heading font-display">Playlists</h2>
+          <span class="section-count-badge font-mono" v-if="playlistStore.playlists.length">
+            {{ playlistStore.playlists.length }} {{ playlistStore.playlists.length === 1 ? 'collection' : 'collections' }}
           </span>
         </div>
 
@@ -29,7 +53,7 @@
             @click="showCreateModal = true"
           >
             <template #icon-left>+</template>
-            New Playlist
+            Create Playlist
           </AppButton>
         </div>
       </div>
@@ -45,32 +69,39 @@
 
       <!-- Empty State -->
       <div v-else-if="playlistStore.playlists.length === 0" class="sw-empty-library">
-        <div class="empty-icon-art">🎧</div>
-        <h3 class="empty-title">Your library starts here.</h3>
+        <div class="empty-icon-art">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M9 18V5l12-2v13"></path>
+            <circle cx="6" cy="18" r="3"></circle>
+            <circle cx="18" cy="16" r="3"></circle>
+          </svg>
+        </div>
+        <h3 class="empty-title font-display">Your sound atelier is silent.</h3>
         <p class="empty-desc">
-          Create your first custom playlist, or generate a starter collection with verified playable audio.
+          Create your first custom playlist, or generate a starter collection with verified high-fidelity playable audio.
         </p>
         <div class="empty-btn-group">
           <AppButton
             variant="primary"
-            size="md"
+            size="lg"
             @click="showCreateModal = true"
           >
-            + Create Playlist
+            <template #icon-left>+</template>
+            Create First Playlist
           </AppButton>
 
           <AppButton
-            variant="secondary"
-            size="md"
+            variant="warm"
+            size="lg"
             :loading="seeding"
             @click="seedStarterPlaylist"
           >
-            ✨ Create Starter Playlist
+            ✨ Generate Starter Archive
           </AppButton>
         </div>
       </div>
 
-      <!-- Playlists Cards Grid -->
+      <!-- Populated Playlists Grid -->
       <div v-else class="cards-grid">
         <PlaylistCard
           v-for="(playlist, index) in playlistStore.playlists"
@@ -110,6 +141,17 @@ const toastStore = useToastStore();
 const showCreateModal = ref(false);
 const seeding = ref(false);
 
+const quickVibes = [
+  { name: 'Late Night Lo-Fi', desc: 'Analog tape warmth', icon: '🌙', query: 'Lo-Fi', color: 'rgba(56, 189, 248, 0.2)' },
+  { name: 'Deep Space Ambient', desc: 'Infinite reverberations', icon: '🌌', query: 'Ambient', color: 'rgba(168, 85, 247, 0.2)' },
+  { name: 'Velvet Midnight Jazz', desc: 'Acoustic brass & smoke', icon: '🎷', query: 'Jazz', color: 'rgba(245, 158, 11, 0.2)' },
+  { name: 'Retro Synthwave', desc: '80s analog neon pulse', icon: '⚡', query: 'Synthwave', color: 'rgba(244, 63, 94, 0.2)' },
+];
+
+const handleVibeClick = (query) => {
+  router.push({ path: '/search', query: { q: query } });
+};
+
 // Deterministic featured playlist: first playlist that has tracks, or the first playlist
 const featuredPlaylist = computed(() => {
   if (!playlistStore.playlists.length) return null;
@@ -121,13 +163,13 @@ const seedStarterPlaylist = async () => {
   seeding.value = true;
   try {
     const starter = await playlistStore.createPlaylist({
-      name: 'Nocturnal Focus Beats',
-      description: 'Handcrafted selection of timeless classical and ambient audio streams.',
+      name: 'Nocturnal Resonance Atelier',
+      description: 'Handcrafted selection of verified high-fidelity ambient, classical, and electronic audio streams.',
       coverImage: PLAYLIST_COVER_PRESETS[1].url,
       isPublic: true,
       songs: CURATED_DEMO_TRACKS,
     });
-    toastStore.success('Created starter playlist with playable audio!');
+    toastStore.success('Generated starter playlist with playable lossless audio!');
     router.push(`/playlists/${starter._id}`);
   } catch (err) {
     toastStore.error(err.response?.data?.message || 'Failed to generate starter playlist');
@@ -143,13 +185,98 @@ const seedStarterPlaylist = async () => {
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: 36px;
 }
 
 .dashboard-featured-section {
   width: 100%;
 }
 
+/* Mood Tiles */
+.mood-exploration-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.section-title-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.section-kicker {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--sw-accent);
+  letter-spacing: 0.12em;
+}
+
+.section-heading {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--sw-text-primary);
+  letter-spacing: -0.02em;
+}
+
+.mood-tiles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.mood-tile {
+  position: relative;
+  overflow: hidden;
+  background: var(--sw-surface);
+  border: 1px solid var(--sw-border);
+  border-radius: var(--sw-radius-lg);
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  transition: all var(--sw-transition-fast);
+}
+
+.mood-tile:hover {
+  background: var(--sw-surface-hover);
+  border-color: var(--sw-border-hover);
+  transform: translateY(-2px);
+}
+
+.mood-tile-glow {
+  position: absolute;
+  top: -20px;
+  right: -20px;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  filter: blur(24px);
+  pointer-events: none;
+}
+
+.mood-tile-icon {
+  font-size: 1.6rem;
+}
+
+.mood-tile-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.mood-name {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--sw-text-primary);
+}
+
+.mood-sub {
+  font-size: 0.74rem;
+  color: var(--sw-text-secondary);
+}
+
+/* Collections Grid Section */
 .dashboard-collection-section {
   display: flex;
   flex-direction: column;
@@ -158,7 +285,7 @@ const seedStarterPlaylist = async () => {
 
 .section-top-bar {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
@@ -166,34 +293,27 @@ const seedStarterPlaylist = async () => {
 
 .section-titles {
   display: flex;
-  align-items: baseline;
-  gap: 12px;
-}
-
-.section-heading {
-  font-size: 1.35rem;
-  font-weight: 700;
-  color: var(--sw-text-primary);
-  letter-spacing: -0.3px;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .section-count-badge {
-  font-size: 0.82rem;
+  font-size: 0.75rem;
   color: var(--sw-text-muted);
 }
 
 .cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-  gap: 22px;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 24px;
 }
 
 /* Skeletons */
 .skeleton-card {
   background: var(--sw-surface);
   border: 1px solid var(--sw-border);
-  border-radius: var(--sw-radius-md);
-  padding: 14px;
+  border-radius: var(--sw-radius-xl);
+  padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -202,52 +322,63 @@ const seedStarterPlaylist = async () => {
 .skeleton-thumb {
   width: 100%;
   aspect-ratio: 1;
-  background: var(--sw-surface-hover);
-  border-radius: var(--sw-radius-sm);
-  animation: pulse 1.4s infinite;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02));
+  background-size: 200% 100%;
+  border-radius: var(--sw-radius-md);
+  animation: swShimmer 1.8s infinite;
 }
 
 .skeleton-text {
   height: 14px;
-  background: var(--sw-surface-hover);
+  background: rgba(255, 255, 255, 0.04);
   border-radius: 4px;
-  animation: pulse 1.4s infinite;
 }
 
 .w-75 { width: 75%; }
 .w-40 { width: 40%; }
 
-@keyframes pulse {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 0.8; }
+@keyframes swShimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
 
 /* Empty State */
 .sw-empty-library {
   text-align: center;
-  padding: 64px 24px;
+  padding: 64px 28px;
   background: var(--sw-surface);
   border: 1px dashed var(--sw-border);
-  border-radius: var(--sw-radius-lg);
+  border-radius: var(--sw-radius-xl);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .empty-icon-art {
-  font-size: 3rem;
-  margin-bottom: 12px;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sw-accent);
+  margin-bottom: 16px;
 }
 
 .empty-title {
-  font-size: 1.35rem;
+  font-size: 1.6rem;
   font-weight: 700;
   color: var(--sw-text-primary);
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .empty-desc {
-  font-size: 0.88rem;
+  font-size: 0.92rem;
   color: var(--sw-text-secondary);
-  max-width: 440px;
-  margin: 0 auto 24px auto;
+  max-width: 480px;
+  margin-bottom: 28px;
   line-height: 1.5;
 }
 
@@ -255,7 +386,7 @@ const seedStarterPlaylist = async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 14px;
+  gap: 16px;
   flex-wrap: wrap;
 }
 </style>

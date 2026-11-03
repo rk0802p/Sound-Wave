@@ -1,49 +1,102 @@
 :root {
-  /* Application backgrounds */
-  --sw-bg: #09090c;
-  --sw-sidebar: #0d0d13;
-  --sw-surface: #12121a;
-  --sw-surface-hover: #191923;
-  --sw-surface-active: #20202c;
+  /* Obsidian & Nocturnal Surfaces */
+  --sw-void: #060709;
+  --sw-bg: #0a0c10;
+  --sw-sidebar: #0d1017;
+  --sw-surface: #131722;
+  --sw-surface-hover: #1a202e;
+  --sw-surface-active: #222a3d;
+  --sw-surface-glass: rgba(19, 23, 34, 0.75);
+  --sw-player-bg: rgba(13, 16, 23, 0.92);
 
-  /* Borders */
-  --sw-border: #242430;
-  --sw-border-subtle: #1b1b25;
+  /* Borders & Dividers */
+  --sw-border: #202636;
+  --sw-border-subtle: #161a25;
+  --sw-border-hover: #2f384f;
+  --sw-border-focus: #38bdf8;
 
-  /* Brand / Accent */
-  --sw-accent: #7968ff;
-  --sw-accent-hover: #8a7cff;
-  --sw-accent-soft: #211d42;
-  --sw-accent-muted: #aaa0ff;
+  /* Luminous Acoustic Accents (Cyan Resonance & Amber Warmth) */
+  --sw-accent: #38bdf8;
+  --sw-accent-hover: #60a5fa;
+  --sw-accent-soft: rgba(56, 189, 248, 0.12);
+  --sw-accent-glow: rgba(56, 189, 248, 0.28);
+  --sw-accent-muted: #7dd3fc;
 
-  /* Typography */
-  --sw-text-primary: #f4f3f8;
-  --sw-text-secondary: #a1a0af;
-  --sw-text-muted: #707080;
+  --sw-warm: #f59e0b;
+  --sw-warm-soft: rgba(245, 158, 11, 0.14);
+  --sw-warm-glow: rgba(245, 158, 11, 0.28);
 
-  /* Feedback */
-  --sw-success: #53c99b;
-  --sw-warning: #e7b86b;
-  --sw-danger: #ed747d;
+  --sw-lime: #10b981;
+  --sw-lime-soft: rgba(16, 185, 129, 0.14);
 
-  /* Layout */
-  --sw-sidebar-width: 248px;
-  --sw-sidebar-collapsed: 76px;
-  --sw-player-height: 88px;
-  --sw-topbar-height: 68px;
+  /* Typography Families */
+  --sw-font-display: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --sw-font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --sw-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
-  /* Radius */
+  /* Typography Scale */
+  --font-display: var(--sw-font-display);
+  --font-sans: var(--sw-font-sans);
+  --font-mono: var(--sw-font-mono);
+
+  /* Text Colors */
+  --sw-text-primary: #f8fafc;
+  --sw-text-secondary: #94a3b8;
+  --sw-text-muted: #64748b;
+  --sw-text-dim: #475569;
+
+  /* State & Feedback */
+  --sw-success: #10b981;
+  --sw-warning: #f59e0b;
+  --sw-danger: #f43f5e;
+  --sw-info: #38bdf8;
+
+  /* Spacing Scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* Border Radii */
+  --sw-radius-xs: 4px;
   --sw-radius-sm: 8px;
   --sw-radius-md: 12px;
-  --sw-radius-lg: 18px;
-  --sw-radius-xl: 24px;
+  --sw-radius-lg: 16px;
+  --sw-radius-xl: 22px;
+  --sw-radius-full: 9999px;
 
-  /* Motion */
-  --sw-transition-fast: 150ms ease;
-  --sw-transition-normal: 220ms ease;
-  --sw-transition-slow: 320ms ease;
+  /* Shadows & Holographic Depth */
+  --sw-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --sw-shadow-md: 0 8px 24px -4px rgba(0, 0, 0, 0.5), 0 2px 6px -1px rgba(0, 0, 0, 0.3);
+  --sw-shadow-lg: 0 20px 40px -8px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  --sw-shadow-glow: 0 0 35px -5px rgba(56, 189, 248, 0.25);
+  --sw-shadow-vinyl: 0 15px 35px -5px rgba(0, 0, 0, 0.8), inset 0 0 0 2px rgba(255, 255, 255, 0.08);
 
-  /* Compatibility aliases for previous token names */
+  /* Motion & Easing Curves */
+  --sw-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --sw-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --sw-duration-fast: 150ms;
+  --sw-duration-normal: 240ms;
+  --sw-duration-slow: 380ms;
+
+  --sw-transition-fast: var(--sw-duration-fast) var(--sw-ease-out);
+  --sw-transition-normal: var(--sw-duration-normal) var(--sw-ease-out);
+  --sw-transition-slow: var(--sw-duration-slow) var(--sw-ease-out);
+  --sw-transition-spring: var(--sw-duration-normal) var(--sw-ease-spring);
+
+  /* Layout Dimensions */
+  --sw-sidebar-width: 260px;
+  --sw-sidebar-collapsed: 74px;
+  --sw-player-height: 88px;
+  --sw-topbar-height: 64px;
+
+  /* Compatibility Aliases */
   --bg-app: var(--sw-bg);
   --bg-sidebar: var(--sw-sidebar);
   --bg-surface: var(--sw-surface);

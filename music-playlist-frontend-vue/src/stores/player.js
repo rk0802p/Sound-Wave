@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
-import { audioEngine } from '../services/audioEngine';
+import { soundController } from '../services/providers';
 import { isPlayableAudioUrl, isExternalMediaUrl } from '../data/demoTracks';
+import { detectProviderType, extractSpotifyEmbedUrl } from '../services/providers/detector';
 
 export const usePlayerStore = defineStore('player', {
   state: () => {
@@ -25,6 +26,15 @@ export const usePlayerStore = defineStore('player', {
       isExpanded: false,
       isQueueOpen: false,
       isEngineReady: false,
+      providerCapabilities: {
+        canSeek: true,
+        canVolume: true,
+        hasTimeEvents: true,
+        isEmbedded: false,
+        providerName: 'Direct Audio',
+        badge: 'FLAC/MP3',
+        embedUrl: null,
+      },
     };
   },
 
@@ -36,7 +46,12 @@ export const usePlayerStore = defineStore('player', {
     },
     isCurrentTrackPlayable: (state) => {
       if (!state.currentTrack?.url) return false;
-      return isPlayableAudioUrl(state.currentTrack.url);
+      const type = detectProviderType(state.currentTrack.url);
+      return type === 'direct' || type === 'youtube' || type === 'spotify';
+    },
+    currentProviderType: (state) => {
+      if (!state.currentTrack?.url) return 'direct';
+      return detectProviderType(state.currentTrack.url);
     },
     hasNext: (state) => {
       if (state.repeatMode === 'all' || state.shuffle) return state.queue.length > 0;
@@ -51,7 +66,7 @@ export const usePlayerStore = defineStore('player', {
     init() {
       if (this.isEngineReady) return;
 
-      audioEngine.init({
+      soundController.init({
         onPlay: () => {
           this.isPlaying = true;
           this.isLoading = false;
@@ -70,22 +85,29 @@ export const usePlayerStore = defineStore('player', {
           this.currentTime = time;
         },
         onLoadedMetadata: (dur) => {
-          this.duration = dur || this.currentTrack?.duration || 0;
+          if (dur && dur > 0) {
+            this.duration = dur;
+          } else if (this.currentTrack?.duration) {
+            this.duration = this.currentTrack.duration;
+          }
           this.isLoading = false;
         },
         onEnded: () => {
           this.handleEnded();
         },
         onError: (err) => {
-          console.warn('AudioEngine error:', err);
+          console.warn('SoundController error:', err);
           this.isPlaying = false;
           this.isLoading = false;
           this.error = 'Audio source could not be played.';
         },
+        onCapabilities: (caps) => {
+          this.providerCapabilities = { ...this.providerCapabilities, ...caps };
+        },
       });
 
-      audioEngine.setVolume(this.volume);
-      audioEngine.setMuted(this.muted);
+      soundController.setVolume(this.volume);
+      soundController.setMuted(this.muted);
       this.isEngineReady = true;
     },
 
@@ -98,32 +120,64 @@ export const usePlayerStore = defineStore('player', {
       if (Array.isArray(queue) && queue.length > 0) {
         this.queue = [...queue];
         this.queueIndex = index !== null ? index : queue.findIndex((t) => t._id === track._id);
+      } else if (!this.queue.some((t) => t._id === track._id)) {
+        this.queue = [track];
+        this.queueIndex = 0;
       }
 
       this.currentTrack = track;
       this.currentTrackId = track._id;
       if (playlistId) this.currentPlaylistId = playlistId;
 
-      if (!isPlayableAudioUrl(track.url)) {
-        audioEngine.pause();
-        this.isPlaying = false;
-        this.isLoading = false;
-        if (isExternalMediaUrl(track.url)) {
-          this.error = 'External track link. Click "Open Link" to view in original player.';
-        } else {
-          this.error = 'Unavailable audio stream.';
-        }
-        return;
+      const providerType = detectProviderType(track.url);
+      if (providerType === 'spotify') {
+        const embedUrl = extractSpotifyEmbedUrl(track.url);
+        this.providerCapabilities = {
+          canSeek: false,
+          canVolume: false,
+          hasTimeEvents: false,
+          isEmbedded: true,
+          providerName: 'Spotify',
+          badge: 'Spotify',
+          embedUrl,
+        };
+      } else if (providerType === 'youtube') {
+        this.providerCapabilities = {
+          canSeek: true,
+          canVolume: true,
+          hasTimeEvents: true,
+          isEmbedded: true,
+          providerName: 'YouTube Stream',
+          badge: 'YouTube',
+          embedUrl: null,
+        };
+      } else {
+        this.providerCapabilities = {
+          canSeek: true,
+          canVolume: true,
+          hasTimeEvents: true,
+          isEmbedded: false,
+          providerName: 'Direct Audio',
+          badge: 'FLAC/MP3',
+          embedUrl: null,
+        };
       }
+
+      this.duration = track.duration || 0;
+      this.currentTime = 0;
 
       try {
         this.isLoading = true;
-        await audioEngine.loadAndPlay(track.url);
+        await soundController.loadAndPlay(track);
       } catch (err) {
         console.warn('Play request interrupted:', err);
         this.isPlaying = false;
         this.isLoading = false;
-        this.error = 'Playback was prevented. Click play to resume.';
+        if (providerType === 'external') {
+          this.error = 'External track link. Click "Open Link" to view in original player.';
+        } else {
+          this.error = 'Playback was prevented. Click play to resume.';
+        }
       }
     },
 
@@ -137,14 +191,10 @@ export const usePlayerStore = defineStore('player', {
       }
 
       if (this.isPlaying) {
-        audioEngine.pause();
+        soundController.pause();
       } else {
-        if (!this.isCurrentTrackPlayable) {
-          this.error = 'This track cannot be played directly.';
-          return;
-        }
         try {
-          await audioEngine.play();
+          soundController.play();
         } catch (err) {
           console.warn('Resume play failed:', err);
         }
@@ -152,12 +202,13 @@ export const usePlayerStore = defineStore('player', {
     },
 
     seek(seconds) {
-      audioEngine.seek(seconds);
+      if (!this.providerCapabilities.canSeek) return;
+      soundController.seek(seconds);
       this.currentTime = seconds;
     },
 
     seekByPercentage(percent) {
-      if (!this.duration) return;
+      if (!this.duration || !this.providerCapabilities.canSeek) return;
       const target = (Math.max(0, Math.min(100, percent)) / 100) * this.duration;
       this.seek(target);
     },
@@ -167,7 +218,7 @@ export const usePlayerStore = defineStore('player', {
 
       if (this.repeatMode === 'one' && this.currentTrack) {
         this.seek(0);
-        audioEngine.play();
+        soundController.play();
         return;
       }
 
@@ -182,10 +233,10 @@ export const usePlayerStore = defineStore('player', {
 
       if (nextIdx < this.queue.length) {
         this.queueIndex = nextIdx;
-        this.playTrack(this.queue[nextIdx], this.queue, nextIdx);
+        this.playTrack(this.queue[nextIdx], this.queue, nextIdx, this.currentPlaylistId);
       } else if (this.repeatMode === 'all' && this.queue.length > 0) {
         this.queueIndex = 0;
-        this.playTrack(this.queue[0], this.queue, 0);
+        this.playTrack(this.queue[0], this.queue, 0, this.currentPlaylistId);
       } else {
         this.isPlaying = false;
       }
@@ -200,7 +251,7 @@ export const usePlayerStore = defineStore('player', {
       if (this.queueIndex > 0) {
         const prevIdx = this.queueIndex - 1;
         this.queueIndex = prevIdx;
-        this.playTrack(this.queue[prevIdx], this.queue, prevIdx);
+        this.playTrack(this.queue[prevIdx], this.queue, prevIdx, this.currentPlaylistId);
       } else if (this.queue.length > 0) {
         this.seek(0);
       }
@@ -209,7 +260,7 @@ export const usePlayerStore = defineStore('player', {
     handleEnded() {
       if (this.repeatMode === 'one') {
         this.seek(0);
-        audioEngine.play();
+        soundController.play();
       } else {
         this.next();
       }
@@ -219,7 +270,7 @@ export const usePlayerStore = defineStore('player', {
       const clamped = Math.max(0, Math.min(1, vol));
       this.volume = clamped;
       this.muted = false;
-      audioEngine.setVolume(clamped);
+      soundController.setVolume(clamped);
       if (typeof window !== 'undefined') {
         localStorage.setItem('soundwave_volume', String(clamped));
       }
@@ -227,7 +278,7 @@ export const usePlayerStore = defineStore('player', {
 
     toggleMute() {
       this.muted = !this.muted;
-      audioEngine.setMuted(this.muted);
+      soundController.setMuted(this.muted);
     },
 
     toggleShuffle() {
@@ -261,12 +312,16 @@ export const usePlayerStore = defineStore('player', {
     },
 
     cleanup() {
-      audioEngine.destroy();
+      soundController.destroy();
       this.currentTrack = null;
       this.currentTrackId = null;
       this.isPlaying = false;
       this.isExpanded = false;
       this.isQueueOpen = false;
+    },
+
+    resetPlayer() {
+      this.cleanup();
     },
   },
 });

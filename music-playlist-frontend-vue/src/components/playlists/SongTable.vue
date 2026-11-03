@@ -1,6 +1,6 @@
 <template>
   <div class="sw-song-table-container">
-    <!-- Filter bar -->
+    <!-- Filter Bar & Table Toolbar -->
     <div class="table-toolbar">
       <div class="filter-box">
         <svg class="search-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -13,42 +13,50 @@
           placeholder="Filter tracks by title, artist, or album..."
           class="filter-input"
         />
-        <button v-if="localQuery" class="clear-btn" @click="localQuery = ''">✕</button>
+        <button v-if="localQuery" class="clear-btn" @click="localQuery = ''" aria-label="Clear filter">✕</button>
       </div>
 
-      <div class="toolbar-stats">
+      <div class="toolbar-stats font-mono">
         <span>{{ filteredSongs.length }} of {{ songs.length }} tracks</span>
       </div>
     </div>
 
-    <!-- Empty State if no tracks -->
-    <div v-if="songs.length === 0" class="empty-state">
-      <div class="empty-icon">🎶</div>
-      <h3>This playlist is quiet</h3>
-      <p>Add your favorite tracks, or pick from our curated royalty-free sound catalog.</p>
+    <!-- Empty State: No Tracks in Playlist -->
+    <div v-if="songs.length === 0" class="empty-state-console">
+      <div class="empty-console-icon">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M9 18V5l12-2v13"></path>
+          <circle cx="6" cy="18" r="3"></circle>
+          <circle cx="18" cy="16" r="3"></circle>
+        </svg>
+      </div>
+      <h3 class="font-display">This playlist is silent.</h3>
+      <p>Add your personal favorite tracks, Spotify/YouTube links, or choose from our verified sound catalog.</p>
       <AppButton variant="primary" size="md" @click="$emit('open-add-song')">
-        + Add First Track
+        <template #icon-left>+</template>
+        Add First Track
       </AppButton>
     </div>
 
-    <!-- Empty Filter Results -->
-    <div v-else-if="filteredSongs.length === 0" class="empty-state">
-      <p>No tracks match "{{ localQuery }}"</p>
+    <!-- Empty State: No Filter Results -->
+    <div v-else-if="filteredSongs.length === 0" class="empty-state-console">
+      <h3 class="font-display">No tracks match "{{ localQuery }}"</h3>
+      <p>Try clearing your filter or searching for another term.</p>
       <AppButton variant="secondary" size="sm" @click="localQuery = ''">
         Clear Filter
       </AppButton>
     </div>
 
-    <!-- Song Table -->
+    <!-- Song Table Card -->
     <div v-else class="table-card">
       <table class="song-table">
         <thead>
           <tr>
-            <th class="th-num">#</th>
-            <th class="th-title">TITLE</th>
-            <th class="th-artist">ARTIST</th>
-            <th class="th-album">ALBUM</th>
-            <th class="th-duration">
+            <th class="th-num font-mono">#</th>
+            <th class="th-title font-mono">TRACK</th>
+            <th class="th-artist font-mono">ARTIST</th>
+            <th class="th-album font-mono">ALBUM</th>
+            <th class="th-duration font-mono">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10"></circle>
                 <polyline points="12 6 12 12 16 14"></polyline>
@@ -81,20 +89,20 @@
                 <div
                   v-if="!localQuery"
                   class="drag-handle"
-                  title="Drag to reorder"
+                  title="Drag to reorder position"
                 >
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                    <circle cx="8" cy="6" r="2.2"></circle>
-                    <circle cx="16" cy="6" r="2.2"></circle>
-                    <circle cx="8" cy="12" r="2.2"></circle>
-                    <circle cx="16" cy="12" r="2.2"></circle>
-                    <circle cx="8" cy="18" r="2.2"></circle>
-                    <circle cx="16" cy="18" r="2.2"></circle>
+                    <circle cx="8" cy="6" r="2"></circle>
+                    <circle cx="16" cy="6" r="2"></circle>
+                    <circle cx="8" cy="12" r="2"></circle>
+                    <circle cx="16" cy="12" r="2"></circle>
+                    <circle cx="8" cy="18" r="2"></circle>
+                    <circle cx="16" cy="18" r="2"></circle>
                   </svg>
                 </div>
 
                 <div class="num-container" @click="handlePlayRow(song, index)">
-                  <span v-if="!isCurrentTrack(song)" class="row-index tabular-nums">{{ index + 1 }}</span>
+                  <span v-if="!isCurrentTrack(song)" class="row-index tabular-nums font-mono">{{ index + 1 }}</span>
                   <span v-else-if="playerStore.isPlaying" class="playing-bars">
                     <span></span><span></span><span></span>
                   </span>
@@ -112,23 +120,33 @@
               </div>
             </td>
 
-            <!-- Title & Thumbnail -->
+            <!-- Title & Cover Thumbnail -->
             <td class="td-title" @click="handlePlayRow(song, index)">
               <div class="track-title-cell">
-                <img
-                  :src="getTrackArt(song, index)"
+                <ArtworkCover
+                  :src="song.coverImage"
                   :alt="song.title"
-                  class="song-mini-thumb"
-                  @error="onImgError($event, index)"
+                  size="xs"
+                  :isPlaying="isCurrentTrack(song) && playerStore.isPlaying"
+                  :fallbackSeed="song.title"
                 />
                 <div class="title-info">
-                  <span class="song-title-text" :class="{ 'highlight-active': isCurrentTrack(song) }">
+                  <span class="song-title-text font-display" :class="{ 'highlight-active': isCurrentTrack(song) }">
                     {{ song.title }}
                   </span>
-                  <div v-if="isExternalMedia(song.url)" class="ext-badge-row">
-                    <span class="ext-pill">{{ getService(song.url) }}</span>
-                    <a :href="song.url" target="_blank" rel="noopener noreferrer" class="ext-link" @click.stop>
-                      Open Link ↗
+                  <div class="provider-pill-row">
+                    <span class="track-provider-pill" :class="getProviderPillClass(song.url)">
+                      {{ getServiceName(song.url) }}
+                    </span>
+                    <a
+                      v-if="isExternal(song.url)"
+                      :href="song.url"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="ext-link"
+                      @click.stop
+                    >
+                      Source ↗
                     </a>
                   </div>
                 </div>
@@ -147,10 +165,10 @@
 
             <!-- Duration -->
             <td class="td-duration">
-              <span class="cell-text tabular-nums">{{ formatDuration(song.duration) }}</span>
+              <span class="cell-text tabular-nums font-mono">{{ formatDuration(song.duration) }}</span>
             </td>
 
-            <!-- Actions: Reorder, Edit, Delete -->
+            <!-- Actions: Move Up, Move Down, Edit, Delete -->
             <td class="td-actions">
               <div class="row-actions">
                 <button
@@ -158,6 +176,7 @@
                   :disabled="index === 0 || Boolean(localQuery)"
                   @click.stop="moveSong(index, -1)"
                   title="Move Up"
+                  aria-label="Move Track Up"
                 >
                   ▲
                 </button>
@@ -167,18 +186,29 @@
                   :disabled="index === songs.length - 1 || Boolean(localQuery)"
                   @click.stop="moveSong(index, 1)"
                   title="Move Down"
+                  aria-label="Move Track Down"
                 >
                   ▼
                 </button>
 
-                <button class="action-btn" @click.stop="$emit('edit-song', song)" title="Edit Track">
+                <button
+                  class="action-btn"
+                  @click.stop="$emit('edit-song', song)"
+                  title="Edit Track"
+                  aria-label="Edit Track"
+                >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                   </svg>
                 </button>
 
-                <button class="action-btn del-btn" @click.stop="$emit('delete-song', song)" title="Remove Track">
+                <button
+                  class="action-btn del-btn"
+                  @click.stop="$emit('delete-song', song)"
+                  title="Remove Track"
+                  aria-label="Remove Track"
+                >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="3 6 5 6 21 6"></polyline>
                     <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -196,12 +226,9 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { usePlayerStore } from '../../stores/player';
-import {
-  formatDuration,
-  isExternalMediaUrl,
-  getExternalServiceName,
-  getDistinctArtwork,
-} from '../../data/demoTracks';
+import { formatDuration, isExternalMediaUrl, getExternalServiceName } from '../../data/demoTracks';
+import { detectProviderType } from '../../services/providers/detector';
+import ArtworkCover from '../common/ArtworkCover.vue';
 import AppButton from '../common/AppButton.vue';
 
 const props = defineProps({
@@ -223,7 +250,7 @@ const localQuery = ref('');
 // Drag & Drop State
 const draggedIndex = ref(null);
 const dragOverIndex = ref(null);
-const dragOverPosition = ref('bottom'); // 'top' | 'bottom'
+const dragOverPosition = ref('bottom');
 
 const filteredSongs = computed(() => {
   if (!localQuery.value.trim()) return props.songs;
@@ -240,15 +267,28 @@ const isCurrentTrack = (song) => {
   return playerStore.currentTrack && playerStore.currentTrack._id === song._id;
 };
 
-const getTrackArt = (song, idx) => {
-  return getDistinctArtwork(song, idx);
+const isExternal = (url) => isExternalMediaUrl(url);
+
+const getServiceName = (url) => {
+  const type = detectProviderType(url);
+  if (type === 'youtube') return 'YouTube';
+  if (type === 'spotify') return 'Spotify';
+  if (type === 'direct') return 'FLAC/MP3';
+  return getExternalServiceName(url);
+};
+
+const getProviderPillClass = (url) => {
+  const type = detectProviderType(url);
+  if (type === 'youtube') return 'pill-yt';
+  if (type === 'spotify') return 'pill-sp';
+  return 'pill-flac';
 };
 
 const handlePlayRow = (song, index) => {
   if (isCurrentTrack(song)) {
     playerStore.togglePlay();
   } else {
-    playerStore.playTrack(song, props.songs, index);
+    playerStore.playTrack(song, props.songs, index, props.playlistId);
   }
 };
 
@@ -326,13 +366,6 @@ const handleDragEnd = () => {
   draggedIndex.value = null;
   dragOverIndex.value = null;
 };
-
-const isExternalMedia = (url) => isExternalMediaUrl(url);
-const getService = (url) => getExternalServiceName(url);
-
-const onImgError = (e, idx) => {
-  e.target.src = getDistinctArtwork(null, idx + 2);
-};
 </script>
 
 <style scoped>
@@ -348,89 +381,94 @@ const onImgError = (e, idx) => {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  flex-wrap: wrap;
 }
 
 .filter-box {
-  position: relative;
-  max-width: 380px;
-  width: 100%;
-}
-
-.search-svg {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--sw-text-muted);
-  pointer-events: none;
-}
-
-.filter-input {
-  width: 100%;
-  height: 38px;
-  padding: 0 32px 0 36px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   background: var(--sw-surface);
   border: 1px solid var(--sw-border);
-  border-radius: var(--sw-radius-sm);
-  color: var(--sw-text-primary);
-  font-size: 0.85rem;
-  outline: none;
+  border-radius: var(--sw-radius-md);
+  padding: 8px 14px;
+  width: 100%;
+  max-width: 400px;
   transition: all var(--sw-transition-fast);
 }
 
-.filter-input:focus {
+.filter-box:focus-within {
   border-color: var(--sw-accent);
   background: var(--sw-surface-hover);
 }
 
-.clear-btn {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
+.search-svg {
+  color: var(--sw-text-muted);
+}
+
+.filter-input {
   background: transparent;
   border: none;
+  outline: none;
+  color: var(--sw-text-primary);
+  font-size: 0.84rem;
+  width: 100%;
+}
+
+.clear-btn {
   color: var(--sw-text-muted);
   cursor: pointer;
   font-size: 0.8rem;
 }
 
 .toolbar-stats {
-  font-size: 0.82rem;
+  font-size: 0.74rem;
   color: var(--sw-text-muted);
 }
 
-.empty-state {
+/* Empty State */
+.empty-state-console {
   text-align: center;
-  padding: 60px 24px;
+  padding: 56px 24px;
   background: var(--sw-surface);
   border: 1px dashed var(--sw-border);
-  border-radius: var(--sw-radius-md);
+  border-radius: var(--sw-radius-xl);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
 }
 
-.empty-icon {
-  font-size: 2.5rem;
-  margin-bottom: 10px;
+.empty-console-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sw-accent);
+  margin-bottom: 4px;
 }
 
-.empty-state h3 {
-  font-size: 1.25rem;
-  font-weight: 700;
+.empty-state-console h3 {
+  font-size: 1.3rem;
   color: var(--sw-text-primary);
-  margin-bottom: 6px;
 }
 
-.empty-state p {
-  color: var(--sw-text-secondary);
+.empty-state-console p {
   font-size: 0.88rem;
-  margin-bottom: 20px;
+  color: var(--sw-text-secondary);
+  max-width: 440px;
+  line-height: 1.5;
+  margin-bottom: 12px;
 }
 
+/* Table Card */
 .table-card {
   background: var(--sw-surface);
   border: 1px solid var(--sw-border);
-  border-radius: var(--sw-radius-md);
+  border-radius: var(--sw-radius-xl);
   overflow-x: auto;
 }
 
@@ -441,24 +479,18 @@ const onImgError = (e, idx) => {
 }
 
 .song-table th {
-  padding: 12px 16px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 1px;
+  padding: 12px 18px;
+  font-size: 0.68rem;
   color: var(--sw-text-muted);
-  border-bottom: 1px solid var(--sw-border-subtle);
+  border-bottom: 1px solid var(--sw-border);
+  letter-spacing: 0.08em;
 }
 
-.th-num { width: 72px; text-align: center; }
-.th-title { min-width: 240px; }
-.th-artist { min-width: 160px; }
-.th-album { min-width: 140px; }
-.th-duration { width: 70px; text-align: right; }
-.th-actions { width: 140px; text-align: right; }
-
 .song-row {
+  border-bottom: 1px solid var(--sw-border-subtle);
   transition: background var(--sw-transition-fast);
-  cursor: pointer;
+  cursor: default;
+  position: relative;
 }
 
 .song-row:hover {
@@ -466,69 +498,58 @@ const onImgError = (e, idx) => {
 }
 
 .song-row.is-active {
-  background: var(--sw-accent-soft);
+  background: rgba(56, 189, 248, 0.06);
 }
 
 .song-row.is-dragging {
-  opacity: 0.35;
-  background: rgba(121, 104, 255, 0.2) !important;
+  opacity: 0.4;
 }
 
-.song-row.drag-over-top td {
-  border-top: 2px solid var(--sw-accent) !important;
+.song-row.drag-over-top {
+  border-top: 2px solid var(--sw-accent);
 }
 
-.song-row.drag-over-bottom td {
-  border-bottom: 2px solid var(--sw-accent) !important;
+.song-row.drag-over-bottom {
+  border-bottom: 2px solid var(--sw-accent);
 }
 
-.song-row td {
-  padding: 10px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-  vertical-align: middle;
-  font-size: 0.88rem;
+.song-table td {
+  padding: 10px 18px;
+  font-size: 0.84rem;
+  color: var(--sw-text-secondary);
 }
 
+/* # / Play Button Container */
 .row-num-flex {
   display: flex;
   align-items: center;
-  gap: 6px;
-  justify-content: center;
+  gap: 8px;
 }
 
 .drag-handle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   cursor: grab;
   color: var(--sw-text-muted);
-  padding: 4px 2px;
-  border-radius: 4px;
-  opacity: 0.35;
+  opacity: 0;
   transition: opacity var(--sw-transition-fast);
 }
 
 .song-row:hover .drag-handle {
-  opacity: 0.85;
-  color: var(--sw-text-secondary);
-}
-
-.drag-handle:active {
-  cursor: grabbing;
+  opacity: 1;
 }
 
 .num-container {
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
-  width: 26px;
-  height: 26px;
+  cursor: pointer;
 }
 
 .row-index {
+  font-size: 0.78rem;
   color: var(--sw-text-muted);
-  font-size: 0.82rem;
 }
 
 .hover-play-btn {
@@ -548,79 +569,96 @@ const onImgError = (e, idx) => {
 
 .song-row:hover .hover-play-btn {
   display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .playing-bars {
   display: flex;
+  align-items: flex-end;
   gap: 2px;
   height: 12px;
-  align-items: flex-end;
 }
 
 .playing-bars span {
   width: 2px;
   background: var(--sw-accent);
   border-radius: 1px;
-  animation: barEqualizer 0.7s infinite alternate;
+  animation: eqBounce 0.8s ease-in-out infinite alternate;
 }
 
-.playing-bars span:nth-child(1) { height: 40%; }
-.playing-bars span:nth-child(2) { height: 100%; animation-delay: 0.2s; }
-.playing-bars span:nth-child(3) { height: 60%; animation-delay: 0.1s; }
+.playing-bars span:nth-child(1) { height: 40%; animation-delay: 0.1s; }
+.playing-bars span:nth-child(2) { height: 100%; animation-delay: 0.3s; }
+.playing-bars span:nth-child(3) { height: 60%; animation-delay: 0.2s; }
 
-@keyframes barEqualizer {
+@keyframes eqBounce {
   0% { height: 20%; }
   100% { height: 100%; }
 }
 
+.paused-indicator {
+  font-size: 0.75rem;
+  color: var(--sw-accent);
+}
+
+/* Track Title & Cell */
 .track-title-cell {
   display: flex;
   align-items: center;
   gap: 12px;
-}
-
-.song-mini-thumb {
-  width: 38px;
-  height: 38px;
-  border-radius: 6px;
-  object-fit: cover;
-  flex-shrink: 0;
+  cursor: pointer;
 }
 
 .title-info {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-width: 0;
 }
 
 .song-title-text {
-  font-weight: 500;
+  font-size: 0.88rem;
+  font-weight: 600;
   color: var(--sw-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .song-title-text.highlight-active {
-  color: var(--sw-accent-muted);
-  font-weight: 600;
+  color: var(--sw-accent);
 }
 
-.ext-badge-row {
+.provider-pill-row {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.72rem;
 }
 
-.ext-pill {
-  background: var(--sw-surface-hover);
-  border: 1px solid var(--sw-border-subtle);
-  padding: 1px 6px;
-  border-radius: 4px;
-  color: var(--sw-accent-muted);
+.track-provider-pill {
+  font-family: var(--sw-font-mono);
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
+  text-transform: uppercase;
+}
+
+.pill-flac {
+  background: rgba(56, 189, 248, 0.1);
+  color: var(--sw-accent);
+}
+
+.pill-yt {
+  background: rgba(244, 63, 94, 0.1);
+  color: #fb7185;
+}
+
+.pill-sp {
+  background: rgba(16, 185, 129, 0.1);
+  color: #34d399;
 }
 
 .ext-link {
+  font-size: 0.65rem;
   color: var(--sw-text-muted);
   text-decoration: underline;
 }
@@ -630,46 +668,62 @@ const onImgError = (e, idx) => {
 }
 
 .cell-text {
-  color: var(--sw-text-secondary);
-  font-size: 0.85rem;
+  font-size: 0.84rem;
 }
 
 .cell-text.dim {
   color: var(--sw-text-muted);
 }
 
+/* Actions */
 .row-actions {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 4px;
+  opacity: 0;
+  transition: opacity var(--sw-transition-fast);
+}
+
+.song-row:hover .row-actions {
+  opacity: 1;
 }
 
 .action-btn {
   background: transparent;
   border: none;
   color: var(--sw-text-muted);
-  cursor: pointer;
-  padding: 5px;
+  padding: 4px 6px;
   border-radius: 4px;
-  display: inline-flex;
+  cursor: pointer;
+  display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 0.75rem;
   transition: all var(--sw-transition-fast);
 }
 
 .action-btn:hover:not(:disabled) {
-  background: var(--sw-surface-hover);
   color: var(--sw-text-primary);
+  background: var(--sw-surface-active);
 }
 
-.action-btn.del-btn:hover:not(:disabled) {
+.action-btn.del-btn:hover {
   color: var(--sw-danger);
-  background: rgba(237, 116, 125, 0.15);
+  background: rgba(244, 63, 94, 0.12);
 }
 
 .action-btn:disabled {
   opacity: 0.2;
   cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .th-album, .td-album {
+    display: none;
+  }
+  .row-actions {
+    opacity: 1;
+  }
 }
 </style>
