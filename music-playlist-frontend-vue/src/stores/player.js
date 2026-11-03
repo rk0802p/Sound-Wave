@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { soundController } from '../services/providers';
 import { isPlayableAudioUrl, isExternalMediaUrl, CURATED_DEMO_TRACKS } from '../data/demoTracks';
-import { detectProviderType, extractSpotifyEmbedUrl } from '../services/providers/detector';
+import { detectProviderType, extractSpotifyEmbedUrl, resolvePlayableAudioUrl } from '../services/providers/detector';
 
 export const usePlayerStore = defineStore('player', {
   state: () => {
@@ -47,10 +47,15 @@ export const usePlayerStore = defineStore('player', {
     },
     isCurrentTrackPlayable: (state) => {
       if (!state.currentTrack) return false;
+      const track = state.currentTrack;
       const type =
-        state.currentTrack.source?.provider ||
-        (state.currentTrack.url ? detectProviderType(state.currentTrack.url) : null);
-      return ['direct', 'youtube', 'spotify', 'archive', 'jamendo', 'audius'].includes(type);
+        track.source?.provider ||
+        (track.url ? detectProviderType(track.url) : null);
+      if (type === 'youtube') return false;
+      if (type === 'spotify') {
+        return Boolean(track.source?.externalId || (track.url && extractSpotifyEmbedUrl(track.url)));
+      }
+      return Boolean(resolvePlayableAudioUrl(track));
     },
     currentProviderType: (state) => {
       if (!state.currentTrack) return 'direct';
@@ -162,6 +167,21 @@ export const usePlayerStore = defineStore('player', {
         track.source?.provider ||
         (track.url ? detectProviderType(track.url) : 'direct');
 
+      if (providerType === 'youtube') {
+        this.isPlaying = false;
+        this.isLoading = false;
+        this.error = 'YouTube streaming is no longer supported.';
+        return;
+      }
+
+      const playableAudioUrl = resolvePlayableAudioUrl(track);
+      if (providerType !== 'spotify' && !playableAudioUrl) {
+        this.isPlaying = false;
+        this.isLoading = false;
+        this.error = 'This track has no audio stream source. Please add a valid audio URL.';
+        return;
+      }
+
       if (providerType === 'spotify') {
         const embedUrl = track.source?.externalId
           ? `https://open.spotify.com/embed/track/${track.source.externalId}?utm_source=generator&theme=0`
@@ -175,14 +195,14 @@ export const usePlayerStore = defineStore('player', {
           badge: 'Spotify',
           embedUrl,
         };
-      } else if (providerType === 'youtube') {
+      } else if (providerType === 'featured') {
         this.providerCapabilities = {
           canSeek: true,
           canVolume: true,
           hasTimeEvents: true,
-          isEmbedded: true,
-          providerName: 'YouTube Stream',
-          badge: 'YouTube',
+          isEmbedded: false,
+          providerName: 'Curated Featured Stream',
+          badge: 'FEATURED',
           embedUrl: null,
         };
       } else if (providerType === 'archive') {
@@ -273,6 +293,15 @@ export const usePlayerStore = defineStore('player', {
       if (!this.currentTrack) {
         if (this.queue.length > 0) {
           await this.playTrack(this.queue[0], this.queue, 0);
+        }
+        return;
+      }
+
+      if (!this.isCurrentTrackPlayable) {
+        if (this.currentProviderType === 'youtube') {
+          this.error = 'YouTube streaming is no longer supported.';
+        } else {
+          this.error = 'This track has no audio stream source. Please add a valid audio URL.';
         }
         return;
       }

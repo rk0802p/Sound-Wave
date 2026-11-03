@@ -271,7 +271,10 @@ const isEmbeddedProvider = computed(() => playerStore.providerCapabilities.isEmb
 
 const providerLabel = computed(() => {
   const prov = playerStore.currentProviderType;
-  if (prov === 'youtube') return 'YOUTUBE';
+  if (prov === 'featured') return 'CURATED ARCHIVE';
+  if (prov === 'archive') return 'INTERNET ARCHIVE';
+  if (prov === 'jamendo') return 'JAMENDO CC';
+  if (prov === 'audius') return 'AUDIUS STREAM';
   if (prov === 'spotify') {
     return playerStore.providerCapabilities.isEmbedded ? 'SPOTIFY EMBED' : 'SPOTIFY PREMIUM';
   }
@@ -281,7 +284,7 @@ const providerLabel = computed(() => {
 const providerBadgeClass = computed(() => {
   const prov = playerStore.currentProviderType;
   return {
-    'badge-direct': prov === 'direct',
+    'badge-direct': ['direct', 'featured', 'archive', 'jamendo', 'audius'].includes(prov),
     'badge-youtube': prov === 'youtube',
     'badge-spotify': prov === 'spotify',
   };

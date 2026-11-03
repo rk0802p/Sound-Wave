@@ -267,6 +267,10 @@ const getProviderLabel = (input) => {
   const type = typeof input === 'object'
     ? (input.source?.provider || (input.url ? detectProviderType(input.url) : 'direct'))
     : detectProviderType(input);
+  if (type === 'featured') return 'CURATED';
+  if (type === 'archive') return 'ARCHIVE';
+  if (type === 'jamendo') return 'JAMENDO';
+  if (type === 'audius') return 'AUDIUS';
   if (type === 'youtube') return 'YOUTUBE';
   if (type === 'spotify') return 'SPOTIFY';
   return 'LOSSLESS';

@@ -1,13 +1,11 @@
 import { detectProviderType } from './detector';
 import { DirectAudioProvider } from './DirectAudioProvider';
-import { YouTubeProvider } from './YouTubeProvider';
 import { SpotifyProvider } from './SpotifyProvider';
 
 export class UnifiedSoundController {
   constructor() {
     this.providers = {
       direct: new DirectAudioProvider(),
-      youtube: new YouTubeProvider(),
       spotify: new SpotifyProvider(),
     };
     this.activeType = 'direct';
@@ -42,20 +40,21 @@ export class UnifiedSoundController {
   detectType(track) {
     if (track?.source?.provider) {
       const p = String(track.source.provider).toLowerCase();
-      if (p === 'youtube' || p === 'spotify') {
-        return p;
+      if (p === 'spotify') {
+        return 'spotify';
       }
       return 'direct';
     }
     const rawUrl = track?.url || track?.source?.url || '';
     if (!rawUrl) return 'direct';
     const type = detectProviderType(rawUrl);
-    if (type === 'youtube' || type === 'spotify') return type;
+    if (type === 'spotify') return 'spotify';
     return 'direct';
   }
 
   async loadAndPlay(track) {
-    const targetType = this.detectType(track);
+    const rawTargetType = this.detectType(track);
+    const targetType = this.providers[rawTargetType] ? rawTargetType : 'direct';
 
     // Cleanly switch providers if target provider changes
     if (targetType !== this.activeType) {

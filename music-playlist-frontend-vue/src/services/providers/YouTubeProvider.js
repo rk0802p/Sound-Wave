@@ -68,9 +68,8 @@ export class YouTubeProvider {
   }
 
   ensureIFrameAPI() {
-    loadYouTubeIframeAPI()
-      .then(() => this.initPlayer())
-      .catch((err) => this.callbacks.onError?.(err));
+    // YouTube playback decommissioned
+    this.callbacks.onError?.(new Error('YouTube streaming is no longer supported'));
   }
 
   initPlayer() {

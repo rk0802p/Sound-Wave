@@ -94,10 +94,10 @@
             <input
               v-model="form.url"
               type="text"
-              placeholder="Direct MP3 URL, YouTube link, or Spotify link"
+              placeholder="Direct MP3 URL, Internet Archive link, or Spotify link"
               class="sw-field"
             />
-            <span class="field-hint">Direct .mp3 audio streams play natively in the persistent player; YouTube & Spotify streams play via integrated embedded players.</span>
+            <span class="field-hint">Direct .mp3 audio streams play natively in the persistent player; Spotify streams play via the integrated Spotify player.</span>
           </div>
 
           <div class="form-group">
@@ -188,7 +188,7 @@ const isResolving = ref(false);
 const previewProviderName = computed(() => {
   if (isResolving.value) return 'RESOLVING LINK...';
   const t = previewProviderType.value;
-  if (t === 'youtube') return 'YOUTUBE STREAM';
+  if (t === 'youtube') return 'YOUTUBE (UNSUPPORTED)';
   if (t === 'spotify') return 'SPOTIFY EMBED';
   if (t === 'direct') return 'DIRECT FLAC/MP3';
   return 'EXTERNAL AUDIO LINK';

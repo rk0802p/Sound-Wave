@@ -68,3 +68,29 @@ export const extractSpotifyEmbedUrl = (url) => {
   }
   return null;
 };
+
+/**
+ * Resolves a direct audio stream URL from various track object formats or strings.
+ * Inspects all possible audio stream properties in priority order.
+ */
+export const resolvePlayableAudioUrl = (track) => {
+  if (!track) return null;
+  if (typeof track === 'string') {
+    const trimmed = track.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+  const candidate =
+    track.streamUrl ||
+    track.audioUrl ||
+    track.playback?.url ||
+    track.playbackUrl ||
+    track.source?.audioUrl ||
+    track.source?.streamUrl ||
+    track.url ||
+    track.source?.url;
+
+  if (typeof candidate === 'string' && candidate.trim().length > 0) {
+    return candidate.trim();
+  }
+  return null;
+};

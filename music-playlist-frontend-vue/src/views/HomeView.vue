@@ -33,7 +33,7 @@
         </div>
         <div class="telemetry-pill accent-citron desktop-only">
           <span class="pill-label">ENGINE</span>
-          <span class="pill-value">FLAC • YOUTUBE • SPOTIFY</span>
+          <span class="pill-value">FLAC • ARCHIVE • SPOTIFY</span>
         </div>
       </div>
     </header>
@@ -122,6 +122,9 @@
         </div>
       </div>
     </section>
+
+    <!-- 2.5 Discover — Curated Static Music Collection -->
+    <FeaturedMusicSection @create-mixtape="showCreateModal = true" />
 
     <!-- 3. Atmospheric Sonic Portals (Genre Blocks) -->
     <section class="pg-portals-section">
@@ -236,6 +239,7 @@ import { usePlaylistStore } from '../stores/playlist';
 import { usePlayerStore } from '../stores/player';
 import { useToastStore } from '../stores/toast';
 import CreatePlaylistModal from '../components/playlists/CreatePlaylistModal.vue';
+import FeaturedMusicSection from '../components/featured/FeaturedMusicSection.vue';
 import { CURATED_DEMO_TRACKS, PLAYLIST_COVER_PRESETS } from '../data/demoTracks';
 
 const router = useRouter();

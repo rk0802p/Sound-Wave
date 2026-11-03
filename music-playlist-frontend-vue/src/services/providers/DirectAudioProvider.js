@@ -1,3 +1,5 @@
+import { resolvePlayableAudioUrl } from './detector';
+
 export class DirectAudioProvider {
   constructor() {
     this.audio = typeof window !== 'undefined' ? new Audio() : null;
@@ -18,7 +20,10 @@ export class DirectAudioProvider {
     let badge = 'FLAC/MP3';
     let providerName = 'Direct Audio';
     const p = track?.source?.provider || track?.provider;
-    if (p === 'archive') {
+    if (p === 'featured') {
+      badge = 'FEATURED';
+      providerName = 'Curated Featured Stream';
+    } else if (p === 'archive') {
       badge = 'ARCHIVE';
       providerName = 'Internet Archive Stream';
     } else if (p === 'jamendo') {
@@ -65,8 +70,10 @@ export class DirectAudioProvider {
   async load(track) {
     if (!this.audio) return;
     this.currentTrack = track;
-    const url = track?.url || track?.streamUrl || track?.source?.url;
-    if (!url) throw new Error('No audio URL provided');
+    const url = resolvePlayableAudioUrl(track);
+    if (!url) {
+      throw new Error('No audio URL provided');
+    }
 
     if (this.audio.src !== url) {
       this.audio.src = url;
