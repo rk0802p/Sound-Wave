@@ -5,6 +5,8 @@ import HomeView from '../views/HomeView.vue';
 import LoginView from '../views/LoginView.vue';
 import SignupView from '../views/SignupView.vue';
 import PlayListView from '../views/PlayListView.vue';
+import LibraryView from '../views/LibraryView.vue';
+import SearchView from '../views/SearchView.vue';
 
 const routes = [
   {
@@ -14,10 +16,32 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
+    path: '/dashboard',
+    name: 'Dashboard',
+    component: HomeView,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/library',
+    name: 'Library',
+    component: LibraryView,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/search',
+    name: 'Search',
+    component: SearchView,
+    meta: { requiresAuth: true },
+  },
+  {
     path: '/playlists/:id',
     name: 'PlaylistView',
     component: PlayListView,
     meta: { requiresAuth: true },
+  },
+  {
+    path: '/playlist/:id',
+    redirect: (to) => `/playlists/${to.params.id}`,
   },
   {
     path: '/login',
@@ -30,10 +54,6 @@ const routes = [
     name: 'Signup',
     component: SignupView,
     meta: { guestOnly: true },
-  },
-  {
-    path: '/dashboard',
-    redirect: '/',
   },
   {
     path: '/:pathMatch(.*)*',

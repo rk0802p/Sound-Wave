@@ -1,69 +1,36 @@
-body {
-  background: #0e0e10;
-  color: #f1f1f1;
-  font-family: 'Poppins', 'Segoe UI', sans-serif;
+@import './tokens.css';
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+*, *::before, *::after {
+  box-sizing: border-box;
   margin: 0;
   padding: 0;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
 }
 
-.glass-card {
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 20px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  padding: 2rem;
-  width: 90%;
-  max-width: 800px;
-  margin-bottom: 2rem;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+html, body {
+  width: 100%;
+  min-height: 100%;
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#app {
+  width: 100%;
+  min-height: 100vh;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
 }
 
 button {
-  font-weight: 600;
-  border-radius: 12px;
-  padding: 0.4rem 1rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  border: none;
+  font-family: inherit;
 }
 
-button:hover {
-  transform: scale(1.05);
-  opacity: 0.95;
-}
-
-.btn-pink {
-  background: #ff007a;
-  color: white;
-}
-
-.btn-green {
-  background: #00e676;
-  color: black;
-}
-
-.btn-blue {
-  background: #00b0ff;
-  color: white;
-}
-
-.btn-red {
-  background: #ff1744;
-  color: white;
-}
-
-input {
-  background: rgba(255, 255, 255, 0.07);
-  border: none;
-  padding: 0.6rem 1rem;
-  border-radius: 12px;
-  color: #fff;
-  width: 100%;
-  margin-top: 0.5rem;
-  margin-bottom: 1rem;
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
 }

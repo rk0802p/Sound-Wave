@@ -4,11 +4,11 @@
     <header class="home-hero-banner">
       <div class="banner-text">
         <div class="banner-greeting">
-          <span>Welcome back,</span>
+          <span>{{ greeting }},</span>
           <h1>{{ authStore.username }}</h1>
         </div>
         <p class="banner-subtext">
-          Manage your playlists, explore curated soundscapes, and keep your audio flowing.
+          Find your frequency. Your playlists, your atmosphere.
         </p>
       </div>
 
@@ -121,7 +121,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import { usePlaylistStore } from '../stores/playlist';
@@ -135,6 +135,18 @@ const authStore = useAuthStore();
 const playlistStore = usePlaylistStore();
 const playerStore = usePlayerStore();
 const toastStore = useToastStore();
+
+const greeting = computed(() => {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 18) return 'Good afternoon';
+  return 'Good evening';
+});
+
+const recentPlaylists = computed(() => {
+  // Use playlists with songs or recently updated
+  return playlistStore.playlists.slice(0, 4);
+});
 
 const showCreateModal = ref(false);
 const seeding = ref(false);

@@ -60,25 +60,53 @@
             v-for="(song, index) in filteredSongs"
             :key="song._id || index"
             class="song-row"
-            :class="{ 'is-active': isCurrentTrack(song) }"
+            :class="{
+              'is-active': isCurrentTrack(song),
+              'is-dragging': draggedIndex === index,
+              'drag-over-top': dragOverIndex === index && dragOverPosition === 'top',
+              'drag-over-bottom': dragOverIndex === index && dragOverPosition === 'bottom'
+            }"
+            :draggable="!localQuery"
+            @dragstart="handleDragStart($event, index)"
+            @dragover.prevent="handleDragOver($event, index)"
+            @dragleave="handleDragLeave(index)"
+            @drop="handleDrop($event, index)"
+            @dragend="handleDragEnd"
           >
-            <!-- # / Play on hover -->
+            <!-- # / Play on hover / Drag handle -->
             <td class="td-num">
-              <div class="num-container" @click="handlePlayRow(song, index)">
-                <span v-if="!isCurrentTrack(song)" class="row-index">{{ index + 1 }}</span>
-                <span v-else-if="playerStore.isPlaying" class="playing-bars">
-                  <span></span><span></span><span></span>
-                </span>
-                <span v-else class="paused-indicator">⏸</span>
+              <div class="row-num-flex">
+                <div
+                  v-if="!localQuery"
+                  class="drag-handle"
+                  title="Drag to reorder"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="8" cy="6" r="2.2"></circle>
+                    <circle cx="16" cy="6" r="2.2"></circle>
+                    <circle cx="8" cy="12" r="2.2"></circle>
+                    <circle cx="16" cy="12" r="2.2"></circle>
+                    <circle cx="8" cy="18" r="2.2"></circle>
+                    <circle cx="16" cy="18" r="2.2"></circle>
+                  </svg>
+                </div>
 
-                <button class="hover-play-btn" :title="isCurrentTrack(song) && playerStore.isPlaying ? 'Pause' : 'Play'">
-                  <svg v-if="isCurrentTrack(song) && playerStore.isPlaying" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
-                  </svg>
-                  <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M8 5v14l11-7z"/>
-                  </svg>
-                </button>
+                <div class="num-container" @click="handlePlayRow(song, index)">
+                  <span v-if="!isCurrentTrack(song)" class="row-index">{{ index + 1 }}</span>
+                  <span v-else-if="playerStore.isPlaying" class="playing-bars">
+                    <span></span><span></span><span></span>
+                  </span>
+                  <span v-else class="paused-indicator">⏸</span>
+
+                  <button class="hover-play-btn" :title="isCurrentTrack(song) && playerStore.isPlaying ? 'Pause' : 'Play'">
+                    <svg v-if="isCurrentTrack(song) && playerStore.isPlaying" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                    </svg>
+                    <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M8 5v14l11-7z"/>
+                    </svg>
+                  </button>
+                </div>
               </div>
             </td>
 
@@ -188,6 +216,73 @@ const emit = defineEmits(['open-add-song', 'edit-song', 'delete-song', 'reorder-
 const playerStore = usePlayerStore();
 const localQuery = ref('');
 const defaultSongCover = 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=200&auto=format&fit=crop';
+
+// Drag & Drop State
+const draggedIndex = ref(null);
+const dragOverIndex = ref(null);
+const dragOverPosition = ref('bottom'); // 'top' | 'bottom'
+
+const handleDragStart = (e, index) => {
+  if (localQuery.value.trim()) {
+    e.preventDefault();
+    return;
+  }
+  draggedIndex.value = index;
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', String(index));
+};
+
+const handleDragOver = (e, index) => {
+  if (draggedIndex.value === null || draggedIndex.value === index) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+
+  const row = e.currentTarget;
+  const rect = row.getBoundingClientRect();
+  const midY = rect.top + rect.height / 2;
+  dragOverIndex.value = index;
+  dragOverPosition.value = e.clientY < midY ? 'top' : 'bottom';
+};
+
+const handleDragLeave = (index) => {
+  if (dragOverIndex.value === index) {
+    dragOverIndex.value = null;
+  }
+};
+
+const handleDrop = (e, targetIndex) => {
+  e.preventDefault();
+  if (draggedIndex.value === null || draggedIndex.value === targetIndex) {
+    handleDragEnd();
+    return;
+  }
+
+  const fromIndex = draggedIndex.value;
+  const currentSongIds = props.songs.map((s) => s._id);
+  const [movedId] = currentSongIds.splice(fromIndex, 1);
+
+  let targetInsertIndex = targetIndex;
+  if (fromIndex < targetIndex) {
+    targetInsertIndex = targetIndex - 1;
+    if (dragOverPosition.value === 'bottom') {
+      targetInsertIndex += 1;
+    }
+  } else {
+    if (dragOverPosition.value === 'bottom') {
+      targetInsertIndex += 1;
+    }
+  }
+
+  targetInsertIndex = Math.max(0, Math.min(targetInsertIndex, currentSongIds.length));
+  currentSongIds.splice(targetInsertIndex, 0, movedId);
+  emit('reorder-songs', currentSongIds);
+  handleDragEnd();
+};
+
+const handleDragEnd = () => {
+  draggedIndex.value = null;
+  dragOverIndex.value = null;
+};
 
 const filteredSongs = computed(() => {
   if (!localQuery.value.trim()) return props.songs;
@@ -366,7 +461,7 @@ const onImgError = (e) => {
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.th-num { width: 50px; text-align: center; }
+.th-num { width: 72px; text-align: center; }
 .th-title { min-width: 220px; }
 .th-artist { min-width: 150px; }
 .th-album { min-width: 140px; }
@@ -375,7 +470,7 @@ const onImgError = (e) => {
 
 .song-row {
   border-radius: 8px;
-  transition: background 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease;
   cursor: pointer;
 }
 
@@ -384,13 +479,60 @@ const onImgError = (e) => {
 }
 
 .song-row.is-active {
-  background: rgba(99, 102, 241, 0.1);
+  background: rgba(118, 107, 255, 0.1);
+}
+
+.song-row.is-dragging {
+  opacity: 0.3;
+  background: rgba(118, 107, 255, 0.15) !important;
+}
+
+.song-row.drag-over-top td {
+  border-top: 2px solid #766bff !important;
+}
+
+.song-row.drag-over-bottom td {
+  border-bottom: 2px solid #766bff !important;
 }
 
 .song-row td {
   padding: 10px 14px;
   vertical-align: middle;
   border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.row-num-flex {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: center;
+}
+
+.drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  color: #6b7280;
+  padding: 4px 2px;
+  border-radius: 4px;
+  opacity: 0.35;
+  transition: opacity 0.15s, color 0.15s;
+}
+
+.song-row:hover .drag-handle {
+  opacity: 0.85;
+  color: #a1a1aa;
+}
+
+.drag-handle:hover {
+  opacity: 1;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.drag-handle:active {
+  cursor: grabbing;
 }
 
 /* Row Num / Play */

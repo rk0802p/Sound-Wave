@@ -14,8 +14,9 @@
         <input
           v-model="playlistStore.searchQuery"
           type="text"
-          placeholder="Search playlists or songs..."
+          placeholder="Search playlists or songs... (Press Enter for Global Search)"
           class="search-input"
+          @keydown.enter="handleSearchEnter"
         />
         <button
           v-if="playlistStore.searchQuery"
@@ -36,13 +37,21 @@
 </template>
 
 <script setup>
+import { useRouter } from 'vue-router';
 import { useAuthStore } from '../../stores/auth';
 import { usePlaylistStore } from '../../stores/playlist';
 
 defineEmits(['toggle-sidebar']);
 
+const router = useRouter();
 const authStore = useAuthStore();
 const playlistStore = usePlaylistStore();
+
+const handleSearchEnter = () => {
+  if (playlistStore.searchQuery.trim()) {
+    router.push('/search');
+  }
+};
 </script>
 
 <style scoped>

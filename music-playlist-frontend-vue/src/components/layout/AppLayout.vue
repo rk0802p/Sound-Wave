@@ -19,6 +19,12 @@
     <!-- Persistent Bottom Audio Player -->
     <AudioPlayer />
 
+    <!-- Expanded Now Playing Modal -->
+    <ExpandedPlayer />
+
+    <!-- Queue Slide-out Drawer -->
+    <QueueDrawer />
+
     <!-- Global Toast Container -->
     <ToastContainer />
 
@@ -35,6 +41,8 @@ import { ref, onMounted } from 'vue';
 import Sidebar from './Sidebar.vue';
 import TopBar from './TopBar.vue';
 import AudioPlayer from '../player/AudioPlayer.vue';
+import ExpandedPlayer from '../player/ExpandedPlayer.vue';
+import QueueDrawer from '../player/QueueDrawer.vue';
 import ToastContainer from '../common/ToastContainer.vue';
 import CreatePlaylistModal from '../playlists/CreatePlaylistModal.vue';
 import { usePlaylistStore } from '../../stores/playlist';

@@ -1,67 +1,107 @@
 <template>
-  <div class="auth-page-wrapper">
-    <div class="auth-card">
-      <div class="auth-brand">
-        <div class="logo-bars">
-          <span></span><span></span><span></span><span></span>
+  <div class="auth-split-wrapper">
+    <!-- Left Visual Artwork Panel (Desktop) -->
+    <div class="auth-visual-panel">
+      <div class="visual-overlay"></div>
+      <div class="visual-content">
+        <div class="visual-brand">
+          <div class="brand-bars">
+            <span></span><span></span><span></span><span></span>
+          </div>
+          <span class="brand-text">SOUNDWAVE</span>
         </div>
-        <h1 class="brand-title">SOUNDWAVE</h1>
+        <div class="visual-hero-text">
+          <span class="hero-tag">CREATE YOUR SPACE</span>
+          <h2>Build a library that sounds like you.</h2>
+          <p>Curate tracks, organize soundscapes, and listen without distractions in an immersive audio workstation.</p>
+        </div>
+        <div class="visual-footer">
+          <span>Personal Music Workstation</span>
+        </div>
       </div>
+    </div>
 
-      <div class="auth-header">
-        <h2>Create Account</h2>
-        <p>Join the next-generation music playlist manager</p>
-      </div>
-
-      <div v-if="errorMessage" class="auth-alert error">
-        {{ errorMessage }}
-      </div>
-
-      <form @submit.prevent="handleSignup" class="auth-form">
-        <div class="form-group">
-          <label>Username</label>
-          <input
-            v-model="username"
-            type="text"
-            required
-            minlength="2"
-            placeholder="e.g. Audiophile"
-            autocomplete="username"
-          />
+    <!-- Right Form Panel -->
+    <div class="auth-form-panel">
+      <div class="form-container">
+        <!-- Mobile Brand -->
+        <div class="mobile-brand">
+          <div class="brand-bars">
+            <span></span><span></span><span></span><span></span>
+          </div>
+          <span class="brand-text">SOUNDWAVE</span>
         </div>
 
-        <div class="form-group">
-          <label>Email Address</label>
-          <input
-            v-model="email"
-            type="email"
-            required
-            placeholder="you@example.com"
-            autocomplete="email"
-          />
+        <div class="form-header">
+          <h1>Create your space.</h1>
+          <p>Sign up to start organizing your playlists.</p>
         </div>
 
-        <div class="form-group">
-          <label>Password</label>
-          <input
-            v-model="password"
-            type="password"
-            required
-            minlength="6"
-            placeholder="At least 6 characters"
-            autocomplete="new-password"
-          />
+        <!-- Error Message -->
+        <div v-if="errorMessage" class="auth-message error">
+          {{ errorMessage }}
         </div>
 
-        <button type="submit" class="btn-auth-submit" :disabled="loading">
-          <span v-if="loading">Creating Account...</span>
-          <span v-else>Sign Up</span>
-        </button>
-      </form>
+        <form @submit.prevent="handleSignup" class="auth-form">
+          <div class="form-group">
+            <label for="signup-username">Username</label>
+            <input
+              id="signup-username"
+              v-model="username"
+              type="text"
+              required
+              minlength="2"
+              placeholder="e.g. Audiophile"
+              autocomplete="username"
+            />
+          </div>
 
-      <div class="auth-footer">
-        <span>Already have an account?</span>
-        <router-link to="/login" class="auth-switch-link">Sign In</router-link>
+          <div class="form-group">
+            <label for="signup-email">Email address</label>
+            <input
+              id="signup-email"
+              v-model="email"
+              type="email"
+              required
+              placeholder="you@example.com"
+              autocomplete="email"
+            />
+          </div>
+
+          <div class="form-group">
+            <div class="label-row">
+              <label for="signup-password">Password</label>
+              <button
+                type="button"
+                class="pw-toggle-btn"
+                @click="showPassword = !showPassword"
+              >
+                {{ showPassword ? 'Hide' : 'Show' }}
+              </button>
+            </div>
+            <div class="pw-input-wrapper">
+              <input
+                id="signup-password"
+                v-model="password"
+                :type="showPassword ? 'text' : 'password'"
+                required
+                minlength="6"
+                placeholder="At least 6 characters"
+                autocomplete="new-password"
+              />
+            </div>
+          </div>
+
+          <button type="submit" class="btn-primary" :disabled="loading">
+            <span v-if="loading">Creating account...</span>
+            <span v-else>Create Account</span>
+          </button>
+        </form>
+
+        <div class="form-footer">
+          <span>Already have an account?</span>
+          <router-link to="/login" class="switch-link">Sign In</router-link>
+        </div>
       </div>
     </div>
   </div>
@@ -78,6 +118,7 @@ const authStore = useAuthStore();
 const username = ref('');
 const email = ref('');
 const password = ref('');
+const showPassword = ref(false);
 const errorMessage = ref('');
 const loading = ref(false);
 
@@ -94,7 +135,8 @@ const handleSignup = async () => {
     await authStore.signup(username.value, email.value, password.value);
     router.push('/');
   } catch (err) {
-    errorMessage.value = err.response?.data?.message || err.message || 'Signup failed. Please try again.';
+    errorMessage.value =
+      err.response?.data?.message || err.message || 'Signup failed. Please try again.';
   } finally {
     loading.value = false;
   }
@@ -102,172 +144,256 @@ const handleSignup = async () => {
 </script>
 
 <style scoped>
-.auth-page-wrapper {
+.auth-split-wrapper {
+  display: flex;
   min-height: 100vh;
+  width: 100vw;
+  background-color: var(--bg-app);
+}
+
+/* Left Visual Panel */
+.auth-visual-panel {
+  flex: 1.1;
+  position: relative;
+  background-image: url('https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop');
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  flex-direction: column;
+  padding: 48px;
+}
+
+.visual-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(9, 9, 12, 0.75) 0%, rgba(9, 9, 12, 0.92) 100%);
+  backdrop-filter: blur(2px);
+}
+
+.visual-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+}
+
+.visual-brand,
+.mobile-brand {
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 24px;
-  background: radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 40%),
-              radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 40%),
-              #0a0b10;
+  gap: 10px;
 }
 
-.auth-card {
-  width: 100%;
-  max-width: 420px;
-  background: rgba(18, 19, 29, 0.85);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 24px;
-  padding: 40px 32px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
-  color: #fff;
-}
-
-.auth-brand {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  margin-bottom: 24px;
-}
-
-.logo-bars {
+.brand-bars {
   display: flex;
   align-items: center;
   gap: 3px;
-  height: 24px;
+  height: 20px;
 }
 
-.logo-bars span {
+.brand-bars span {
   width: 3px;
-  background: #6366f1;
+  background: var(--accent-primary);
   border-radius: 2px;
 }
 
-.logo-bars span:nth-child(1) { height: 12px; }
-.logo-bars span:nth-child(2) { height: 24px; }
-.logo-bars span:nth-child(3) { height: 16px; }
-.logo-bars span:nth-child(4) { height: 10px; }
+.brand-bars span:nth-child(1) { height: 10px; }
+.brand-bars span:nth-child(2) { height: 20px; }
+.brand-bars span:nth-child(3) { height: 14px; }
+.brand-bars span:nth-child(4) { height: 8px; }
 
-.brand-title {
-  font-size: 1.3rem;
+.brand-text {
+  font-size: 1.15rem;
   font-weight: 800;
   letter-spacing: 1.5px;
-  background: linear-gradient(135deg, #fff, #a5b4fc);
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-  margin: 0;
+  color: var(--text-primary);
 }
 
-.auth-header {
-  text-align: center;
+.visual-hero-text {
+  max-width: 480px;
+}
+
+.hero-tag {
+  display: inline-block;
+  font-size: 0.75rem;
+  letter-spacing: 2px;
+  color: var(--accent-primary);
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.visual-hero-text h2 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.15;
+  margin-bottom: 16px;
+  letter-spacing: -0.5px;
+}
+
+.visual-hero-text p {
+  font-size: 1.05rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.visual-footer {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* Right Form Panel */
+.auth-form-panel {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  background-color: var(--bg-app);
+}
+
+.form-container {
+  width: 100%;
+  max-width: 420px;
+}
+
+.mobile-brand {
+  display: none;
   margin-bottom: 28px;
 }
 
-.auth-header h2 {
-  font-size: 1.6rem;
+.form-header {
+  margin-bottom: 28px;
+}
+
+.form-header h1 {
+  font-size: 2rem;
   font-weight: 700;
-  margin: 0 0 6px 0;
+  color: var(--text-primary);
+  margin-bottom: 8px;
 }
 
-.auth-header p {
+.form-header p {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+}
+
+.auth-message {
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
   font-size: 0.88rem;
-  color: #9ca3af;
-  margin: 0;
-}
-
-.auth-alert {
-  padding: 10px 14px;
-  border-radius: 10px;
-  font-size: 0.85rem;
   margin-bottom: 20px;
-  text-align: center;
 }
 
-.auth-alert.error {
-  background: rgba(248, 113, 113, 0.12);
-  color: #f87171;
-  border: 1px solid rgba(248, 113, 113, 0.25);
+.auth-message.error {
+  background: rgba(240, 113, 120, 0.12);
+  color: var(--danger);
+  border: 1px solid rgba(240, 113, 120, 0.25);
 }
 
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 20px;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
+}
+
+.label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .form-group label {
-  font-size: 0.82rem;
+  font-size: 0.85rem;
   font-weight: 600;
-  color: #9ca3af;
+  color: var(--text-secondary);
+}
+
+.pw-toggle-btn {
+  background: transparent;
+  border: none;
+  color: var(--accent-primary);
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0;
 }
 
 .form-group input {
-  padding: 12px 14px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-  color: #fff;
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
   font-size: 0.95rem;
   transition: all 0.2s;
 }
 
 .form-group input:focus {
   outline: none;
-  border-color: #6366f1;
-  box-shadow: 0 0 12px rgba(99, 102, 241, 0.25);
+  border-color: var(--border-focus);
+  background: var(--bg-elevated);
 }
 
-.btn-auth-submit {
+.btn-primary {
+  height: 46px;
   margin-top: 8px;
-  padding: 13px;
-  background: #6366f1;
+  background: var(--accent-primary);
   color: #fff;
   border: none;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   font-size: 0.95rem;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 4px 18px rgba(99, 102, 241, 0.4);
-  transition: all 0.2s;
+  transition: background 0.2s;
 }
 
-.btn-auth-submit:hover:not(:disabled) {
-  background: #4f46e5;
-  transform: translateY(-2px);
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent-hover);
 }
 
-.btn-auth-submit:disabled {
+.btn-primary:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.auth-footer {
+.form-footer {
+  margin-top: 28px;
   text-align: center;
-  margin-top: 24px;
-  font-size: 0.88rem;
-  color: #9ca3af;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
   display: flex;
   justify-content: center;
   gap: 6px;
 }
 
-.auth-switch-link {
-  color: #818cf8;
-  text-decoration: none;
+.switch-link {
+  color: var(--accent-primary);
   font-weight: 600;
 }
 
-.auth-switch-link:hover {
+.switch-link:hover {
   text-decoration: underline;
+}
+
+@media (max-width: 900px) {
+  .auth-visual-panel {
+    display: none;
+  }
+  .mobile-brand {
+    display: flex;
+  }
+  .auth-form-panel {
+    padding: 32px 20px;
+  }
 }
 </style>
