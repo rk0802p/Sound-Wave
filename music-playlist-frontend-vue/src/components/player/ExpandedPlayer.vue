@@ -3,7 +3,7 @@
     <!-- Ambient Glow Layer -->
     <div
       class="ambient-backdrop"
-      :style="{ backgroundImage: `url(${playerStore.currentTrack?.coverImage || defaultCover})` }"
+      :style="{ backgroundImage: `url(${trackArtwork})` }"
     ></div>
     <div class="ambient-dark-wash"></div>
 
@@ -33,7 +33,7 @@
       <div class="art-showcase">
         <div class="art-card">
           <img
-            :src="playerStore.currentTrack?.coverImage || defaultCover"
+            :src="trackArtwork"
             :alt="playerStore.currentTrack?.title"
             class="art-image"
           />
@@ -168,14 +168,17 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from 'vue';
+import { ref, computed, onMounted, nextTick } from 'vue';
 import { usePlayerStore } from '../../stores/player';
-import { formatDuration } from '../../data/demoTracks';
+import { formatDuration, getDistinctArtwork } from '../../data/demoTracks';
 
 const playerStore = usePlayerStore();
 const modalRef = ref(null);
 const scrubRef = ref(null);
-const defaultCover = 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=800&auto=format&fit=crop';
+
+const trackArtwork = computed(() => {
+  return getDistinctArtwork(playerStore.currentTrack, 0);
+});
 
 const handleScrubClick = (e) => {
   if (!scrubRef.value || !playerStore.duration) return;

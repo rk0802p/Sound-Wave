@@ -118,12 +118,12 @@ const saveSong = async () => {
 .modal-card {
   width: 100%;
   max-width: 540px;
-  background: #12131d;
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+  background: var(--sw-surface);
+  border-radius: var(--sw-radius-lg);
+  border: 1px solid var(--sw-border);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
   padding: 28px;
-  color: #fff;
+  color: var(--sw-text-primary);
 }
 
 .modal-header {
@@ -137,14 +137,19 @@ const saveSong = async () => {
   font-size: 1.3rem;
   font-weight: 700;
   margin: 0;
+  color: var(--sw-text-primary);
 }
 
 .close-btn {
   background: transparent;
   border: none;
-  color: #9ca3af;
+  color: var(--sw-text-muted);
   font-size: 1.2rem;
   cursor: pointer;
+}
+
+.close-btn:hover {
+  color: var(--sw-text-primary);
 }
 
 .song-form {
@@ -170,22 +175,22 @@ const saveSong = async () => {
 .form-group label {
   font-size: 0.8rem;
   font-weight: 600;
-  color: #9ca3af;
+  color: var(--sw-text-secondary);
 }
 
 .form-group input {
   padding: 10px 14px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-  color: #fff;
+  background: var(--sw-surface-hover);
+  border: 1px solid var(--sw-border);
+  border-radius: var(--sw-radius-sm);
+  color: var(--sw-text-primary);
   font-size: 0.9rem;
-  transition: all 0.2s;
+  transition: all var(--sw-transition-fast);
 }
 
 .form-group input:focus {
   outline: none;
-  border-color: #6366f1;
+  border-color: var(--sw-accent);
 }
 
 .modal-footer {
@@ -194,28 +199,36 @@ const saveSong = async () => {
   justify-content: flex-end;
   gap: 12px;
   margin-top: 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--sw-border-subtle);
 }
 
 .btn-cancel {
-  padding: 10px 18px;
+  padding: 9px 18px;
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: #fff;
-  border-radius: 10px;
+  border: 1px solid var(--sw-border);
+  color: var(--sw-text-secondary);
+  border-radius: var(--sw-radius-sm);
   cursor: pointer;
+}
+
+.btn-cancel:hover {
+  background: var(--sw-surface-hover);
+  color: var(--sw-text-primary);
 }
 
 .btn-submit {
-  padding: 10px 22px;
-  background: #6366f1;
+  padding: 9px 22px;
+  background: var(--sw-accent);
   color: #fff;
   border: none;
-  border-radius: 10px;
+  border-radius: var(--sw-radius-sm);
   font-weight: 600;
   cursor: pointer;
+  transition: background var(--sw-transition-fast);
 }
 
 .btn-submit:hover:not(:disabled) {
-  background: #4f46e5;
+  background: var(--sw-accent-hover);
 }
 </style>

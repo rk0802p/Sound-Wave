@@ -225,14 +225,14 @@ const addCatalogTrack = async (track) => {
 .modal-card {
   width: 100%;
   max-width: 580px;
-  background: #12131d;
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+  background: var(--sw-surface);
+  border-radius: var(--sw-radius-lg);
+  border: 1px solid var(--sw-border);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
   padding: 28px;
   max-height: 90vh;
   overflow-y: auto;
-  color: #fff;
+  color: var(--sw-text-primary);
 }
 
 .modal-header {
@@ -281,8 +281,8 @@ const addCatalogTrack = async (track) => {
 }
 
 .tab-btn.active {
-  background: rgba(99, 102, 241, 0.15);
-  color: #818cf8;
+  background: var(--sw-accent-soft);
+  color: var(--sw-accent-muted);
 }
 
 .duplicate-alert {
@@ -392,25 +392,30 @@ const addCatalogTrack = async (track) => {
 .btn-cancel {
   padding: 10px 18px;
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: #fff;
-  border-radius: 10px;
+  border: 1px solid var(--sw-border);
+  color: var(--sw-text-secondary);
+  border-radius: var(--sw-radius-sm);
   cursor: pointer;
+}
+
+.btn-cancel:hover {
+  background: var(--sw-surface-hover);
+  color: var(--sw-text-primary);
 }
 
 .btn-submit {
   padding: 10px 22px;
-  background: #6366f1;
+  background: var(--sw-accent);
   color: #fff;
   border: none;
-  border-radius: 10px;
+  border-radius: var(--sw-radius-sm);
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background var(--sw-transition-fast);
 }
 
 .btn-submit:hover:not(:disabled) {
-  background: #4f46e5;
+  background: var(--sw-accent-hover);
 }
 
 /* Catalog */

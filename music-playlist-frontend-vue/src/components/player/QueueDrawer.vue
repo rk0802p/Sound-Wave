@@ -21,8 +21,8 @@
           :class="{ 'is-now-playing': index === playerStore.queueIndex }"
           @click="playerStore.playTrack(track, playerStore.queue, index)"
         >
-          <span class="track-index">{{ index + 1 }}</span>
-          <img :src="track.coverImage || defaultCover" :alt="track.title" class="track-thumb" />
+          <span class="track-index tabular-nums">{{ index + 1 }}</span>
+          <img :src="getTrackCover(track, index)" :alt="track.title" class="track-thumb" />
           <div class="track-info">
             <span class="track-name">{{ track.title }}</span>
             <span class="track-artist">{{ track.artist }}</span>
@@ -36,10 +36,13 @@
 
 <script setup>
 import { usePlayerStore } from '../../stores/player';
-import { formatDuration } from '../../data/demoTracks';
+import { formatDuration, getDistinctArtwork } from '../../data/demoTracks';
 
 const playerStore = usePlayerStore();
-const defaultCover = 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=200&auto=format&fit=crop';
+
+const getTrackCover = (track, idx) => {
+  return getDistinctArtwork(track, idx);
+};
 </script>
 
 <style scoped>

@@ -6,7 +6,7 @@
         <template v-if="playerStore.currentTrack">
           <div class="track-art-wrapper" @click="playerStore.toggleExpanded()" title="Open Expanded Player">
             <img
-              :src="playerStore.currentTrack.coverImage || defaultCover"
+              :src="trackCover"
               :alt="playerStore.currentTrack.title"
               class="track-cover"
               @error="onImgError"
@@ -181,12 +181,19 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { usePlayerStore } from '../../stores/player';
-import { formatDuration, isExternalMediaUrl, getExternalServiceName } from '../../data/demoTracks';
+import {
+  formatDuration,
+  isExternalMediaUrl,
+  getExternalServiceName,
+  getDistinctArtwork,
+} from '../../data/demoTracks';
 
 const playerStore = usePlayerStore();
 const scrubberRef = ref(null);
 
-const defaultCover = 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=400&auto=format&fit=crop';
+const trackCover = computed(() => {
+  return getDistinctArtwork(playerStore.currentTrack, 0);
+});
 
 const isExternal = computed(() => {
   return playerStore.currentTrack ? isExternalMediaUrl(playerStore.currentTrack.url) : false;
