@@ -18,7 +18,7 @@ class ArchiveProvider extends BaseProvider {
    * @returns {Promise<{ results: Array, error: string|null, status: string }>}
    */
   async search(query, options = {}) {
-    const limit = Math.min(20, Math.max(1, parseInt(options.limit) || 10));
+    const limit = Math.min(10, Math.max(1, parseInt(options.limit) || 8));
     const cleanQuery = String(query || '').trim().replace(/[^\w\s-]/g, ' ').replace(/\s+/g, ' ');
 
     if (!cleanQuery) {
@@ -26,8 +26,10 @@ class ArchiveProvider extends BaseProvider {
     }
 
     try {
+      // Improved relevance: target title or creator explicitly and exclude podcasts/news
+      const luceneQuery = `mediatype:audio AND (title:(${cleanQuery}) OR creator:(${cleanQuery})) AND -collection:(podcasts OR audio_news)`;
       const searchUrl = `${this.baseUrl}/advancedsearch.php?` + new URLSearchParams({
-        q: `mediatype:audio AND (${cleanQuery})`,
+        q: luceneQuery,
         'fl[]': 'identifier,title,creator,description,year,licenseurl,downloads',
         'sort[]': 'downloads desc',
         rows: String(limit),
@@ -40,17 +42,18 @@ class ArchiveProvider extends BaseProvider {
           'User-Agent': 'SOUNDWAVE-Audio-Discovery/1.0 (https://github.com/rk0802p/music_playlist)',
           Accept: 'application/json',
         },
-      }, 5000);
+        signal: options.signal,
+      }, 4500);
 
       if (!res.ok) {
         throw new Error(`Internet Archive returned HTTP status ${res.status}`);
       }
 
       const data = await res.json();
-      const docs = data.response?.docs || [];
+      const docs = (data.response?.docs || []).slice(0, 6);
 
       // Resolve audio streams in parallel with bounded timeout
-      const trackPromises = docs.map((doc) => this.resolveDocToTrack(doc));
+      const trackPromises = docs.map((doc) => this.resolveDocToTrack(doc, options.signal));
       const settled = await Promise.allSettled(trackPromises);
 
       const results = [];
@@ -85,9 +88,10 @@ class ArchiveProvider extends BaseProvider {
   /**
    * Resolve an item identifier to a playable track with audio file stream
    * @param {object} doc
+   * @param {AbortSignal} [signal]
    * @returns {Promise<object|null>}
    */
-  async resolveDocToTrack(doc) {
+  async resolveDocToTrack(doc, signal) {
     const identifier = doc.identifier;
     if (!identifier) return null;
 
@@ -97,8 +101,8 @@ class ArchiveProvider extends BaseProvider {
       try {
         const metaRes = await this.fetchWithTimeout(
           `${this.baseUrl}/metadata/${encodeURIComponent(identifier)}/files`,
-          { headers: { Accept: 'application/json' } },
-          3500
+          { headers: { Accept: 'application/json' }, signal },
+          3000
         );
         if (metaRes.ok) {
           const metaData = await metaRes.json();
@@ -140,6 +144,12 @@ class ArchiveProvider extends BaseProvider {
     const title = fileTitle || doc.title || identifier;
     const artist = doc.creator || 'Internet Archive Contributor';
 
+    // Transparent license disclosure: do not assume automatic public domain
+    const licenseText = doc.licenseurl
+      ? 'Archival License'
+      : 'Community Upload (Verify Copyright)';
+    const licenseUrl = doc.licenseurl || 'https://archive.org/about/terms.php';
+
     return {
       id: `archive:${identifier}`,
       title: title.slice(0, 100),
@@ -152,9 +162,10 @@ class ArchiveProvider extends BaseProvider {
       providerTrackUrl: `${this.baseUrl}/details/${encodeURIComponent(identifier)}`,
       url: streamUrl,
       streamUrl,
-      license: doc.licenseurl || 'Creative Commons / Public Domain',
-      licenseUrl: doc.licenseurl || 'https://creativecommons.org/publicdomain/mark/1.0/',
-      attribution: 'Internet Archive (archive.org)',
+      isPlayable: Boolean(streamUrl),
+      license: licenseText,
+      licenseUrl,
+      attribution: 'Internet Archive (archive.org community archive)',
       playbackCapabilities: {
         canSeek: true,
         canVolume: true,

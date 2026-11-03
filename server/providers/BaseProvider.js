@@ -42,6 +42,7 @@ class BaseProvider {
 
   /**
    * Safe fetch with bounded timeout and AbortController to prevent hanging connections
+   * Chains external signal if provided in options
    * @param {string} url
    * @param {object} options
    * @param {number} timeoutMs
@@ -51,14 +52,26 @@ class BaseProvider {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
+    // If caller provided an external AbortSignal, chain it
+    let externalAbortHandler = null;
+    if (options.signal) {
+      if (options.signal.aborted) {
+        controller.abort();
+      } else {
+        externalAbortHandler = () => controller.abort();
+        options.signal.addEventListener('abort', externalAbortHandler, { once: true });
+      }
+    }
+
     try {
-      const response = await fetch(url, {
-        ...options,
-        signal: controller.signal,
-      });
+      const fetchOptions = { ...options, signal: controller.signal };
+      const response = await fetch(url, fetchOptions);
       return response;
     } finally {
       clearTimeout(timeoutId);
+      if (options.signal && externalAbortHandler) {
+        options.signal.removeEventListener('abort', externalAbortHandler);
+      }
     }
   }
 

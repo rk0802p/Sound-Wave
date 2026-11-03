@@ -52,6 +52,7 @@ class JamendoProvider extends BaseProvider {
           'User-Agent': 'SOUNDWAVE-Audio-Discovery/1.0',
           Accept: 'application/json',
         },
+        signal: options.signal,
       }, 5000);
 
       if (res.status === 429) {
@@ -90,9 +91,10 @@ class JamendoProvider extends BaseProvider {
         providerTrackUrl: item.shareurl || `https://www.jamendo.com/track/${item.id}`,
         url: item.audio || '',
         streamUrl: item.audio || '',
-        license: item.license_ccurl ? 'Creative Commons' : 'Jamendo Free Listening',
+        isPlayable: Boolean(item.audio),
+        license: item.license_ccurl ? 'Creative Commons' : 'Jamendo Free Listening (Non-Commercial)',
         licenseUrl: item.license_ccurl || 'https://creativecommons.org/licenses/',
-        attribution: `${item.artist_name || 'Artist'} via Jamendo Music`,
+        attribution: `${item.artist_name || 'Artist'} via Jamendo Music (Non-commercial use)`,
         playbackCapabilities: {
           canSeek: true,
           canVolume: true,
