@@ -1,5 +1,204 @@
-// Verified playable public-domain audio streams for the 5 glossy bubble mood playlists
-export const MOOD_PLAYLISTS = [
+/**
+ * SOUNDWAVE — Library & Mood Playlists Architecture
+ *
+ * Sourced from the user's music library collection.
+ * Pure offline data architecture with many-to-many mood playlist mappings.
+ * Zero external API dependencies (no Spotify API, OAuth, or catalog services required).
+ */
+
+// 1. Centralized Master Library Collection (Single Source of Truth)
+export const LIBRARY_SONGS = [
+  {
+    id: 'song-one-kiss',
+    _id: 'song-one-kiss',
+    title: 'One Kiss (with Dua Lipa)',
+    artist: 'Calvin Harris, Dua Lipa',
+    album: 'One Kiss',
+    duration: 214, // 3:34
+    genre: 'Dance Pop / Nu-Disco',
+    coverImage: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=400&auto=format&fit=crop',
+    url: '',
+    localAudioSource: '',
+    source: { provider: 'direct', externalId: null, url: '' },
+  },
+  {
+    id: 'song-lily',
+    _id: 'song-lily',
+    title: 'Lily',
+    artist: 'Alan Walker, K-391, Emelie Hollow',
+    album: 'Different World',
+    duration: 195, // 3:15
+    genre: 'Electronic / Atmospheric Pop',
+    coverImage: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=400&auto=format&fit=crop',
+    url: '',
+    localAudioSource: '',
+    source: { provider: 'direct', externalId: null, url: '' },
+  },
+  {
+    id: 'song-not-you',
+    _id: 'song-not-you',
+    title: 'Not You',
+    artist: 'Alan Walker, Emma Steinbakken',
+    album: 'World of Walker',
+    duration: 180, // 3:00
+    genre: 'Melodic Pop / Ballad',
+    coverImage: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?q=80&w=400&auto=format&fit=crop',
+    url: '',
+    localAudioSource: '',
+    source: { provider: 'direct', externalId: null, url: '' },
+  },
+  {
+    id: 'song-faded',
+    _id: 'song-faded',
+    title: 'Faded',
+    artist: 'Alan Walker',
+    album: 'Different World',
+    duration: 212, // 3:32
+    genre: 'Electro House / Dream Pop',
+    coverImage: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=400&auto=format&fit=crop',
+    url: '',
+    localAudioSource: '',
+    source: { provider: 'direct', externalId: null, url: '' },
+  },
+  {
+    id: 'song-on-my-way',
+    _id: 'song-on-my-way',
+    title: 'On My Way',
+    artist: 'Alan Walker, Sabrina Carpenter, Farruko',
+    album: 'World of Walker',
+    duration: 193, // 3:13
+    genre: 'Dance Pop / Latin',
+    coverImage: 'https://images.unsplash.com/photo-1445985543468-3944654d2b39?q=80&w=400&auto=format&fit=crop',
+    url: '',
+    localAudioSource: '',
+    source: { provider: 'direct', externalId: null, url: '' },
+  },
+  {
+    id: 'song-alone',
+    _id: 'song-alone',
+    title: 'Alone',
+    artist: 'Alan Walker',
+    album: 'Different World',
+    duration: 161, // 2:41
+    genre: 'Electropop / EDM',
+    coverImage: 'https://images.unsplash.com/photo-1539375665275-f9de415ef9ac?q=80&w=400&auto=format&fit=crop',
+    url: '',
+    localAudioSource: '',
+    source: { provider: 'direct', externalId: null, url: '' },
+  },
+  {
+    id: 'song-see-you-again',
+    _id: 'song-see-you-again',
+    title: 'See You Again',
+    artist: 'Wiz Khalifa, Charlie Puth',
+    album: 'Furious 7 Soundtrack',
+    duration: 229, // 3:49
+    genre: 'Pop / Piano Ballad',
+    coverImage: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=400&auto=format&fit=crop',
+    url: '',
+    localAudioSource: '',
+    source: { provider: 'direct', externalId: null, url: '' },
+  },
+  {
+    id: 'song-dandelions',
+    _id: 'song-dandelions',
+    title: 'Dandelions',
+    artist: 'Ruth B.',
+    album: 'Safe Haven',
+    duration: 233, // 3:53
+    genre: 'Acoustic Pop / Piano',
+    coverImage: 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?q=80&w=400&auto=format&fit=crop',
+    url: '',
+    localAudioSource: '',
+    source: { provider: 'direct', externalId: null, url: '' },
+  },
+  {
+    id: 'song-senorita',
+    _id: 'song-senorita',
+    title: 'Señorita',
+    artist: 'Shawn Mendes, Camila Cabello',
+    album: 'Shawn Mendes (Deluxe)',
+    duration: 190, // 3:10
+    genre: 'Latin Pop / Acoustic',
+    coverImage: 'https://images.unsplash.com/photo-1511192336575-5a79af67a629?q=80&w=400&auto=format&fit=crop',
+    url: '',
+    localAudioSource: '',
+    source: { provider: 'direct', externalId: null, url: '' },
+  },
+  {
+    id: 'song-shape-of-you',
+    _id: 'song-shape-of-you',
+    title: 'Shape of You',
+    artist: 'Ed Sheeran',
+    album: '÷ (Divide)',
+    duration: 233, // 3:53
+    genre: 'Tropical Pop / R&B',
+    coverImage: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=400&auto=format&fit=crop',
+    url: '',
+    localAudioSource: '',
+    source: { provider: 'direct', externalId: null, url: '' },
+  },
+  {
+    id: 'song-lovely',
+    _id: 'song-lovely',
+    title: 'lovely (with Khalid)',
+    artist: 'Billie Eilish, Khalid',
+    album: '13 Reasons Why (Season 2)',
+    duration: 200, // 3:20
+    genre: 'Chamber Pop / Acoustic Strings',
+    coverImage: 'https://images.unsplash.com/photo-1520523839898-50712825e3a7?q=80&w=400&auto=format&fit=crop',
+    url: '',
+    localAudioSource: '',
+    source: { provider: 'direct', externalId: null, url: '' },
+  },
+  {
+    id: 'song-im-alive',
+    _id: 'song-im-alive',
+    title: "I'm Alive - Radio Edit",
+    artist: 'Kyle Bourke, Rob Vegas',
+    album: "I'm Alive",
+    duration: 172, // 2:52
+    genre: 'Electro House / Festival EDM',
+    coverImage: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=400&auto=format&fit=crop',
+    url: '',
+    localAudioSource: '',
+    source: { provider: 'direct', externalId: null, url: '' },
+  },
+  {
+    id: 'song-night-we-met',
+    _id: 'song-night-we-met',
+    title: 'The Night We Met',
+    artist: 'Lord Huron',
+    album: 'Strange Trails',
+    duration: 208, // 3:28
+    genre: 'Indie Folk / Acoustic',
+    coverImage: 'https://images.unsplash.com/photo-1518495973542-4542c06a5843?q=80&w=400&auto=format&fit=crop',
+    url: '',
+    localAudioSource: '',
+    source: { provider: 'direct', externalId: null, url: '' },
+  },
+  {
+    id: 'song-malibu',
+    _id: 'song-malibu',
+    title: 'Malibu',
+    artist: 'Miley Cyrus',
+    album: 'Younger Now',
+    duration: 231, // 3:51
+    genre: 'Pop Rock / Indie Pop',
+    coverImage: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=400&auto=format&fit=crop',
+    url: '',
+    localAudioSource: '',
+    source: { provider: 'direct', externalId: null, url: '' },
+  },
+];
+
+// Fast indexed lookup for library songs
+export const getSongById = (id) => {
+  return LIBRARY_SONGS.find((s) => s.id === id || s._id === id) || null;
+};
+
+// 2. Curated Mood Playlist Definitions (Many-to-many relationship using songIds)
+export const MOOD_PLAYLIST_DEFINITIONS = [
   {
     id: 'mood-acoustic-mornings',
     _id: 'archive-67c000000000000000000001',
@@ -12,43 +211,11 @@ export const MOOD_PLAYLISTS = [
     tint: '#ffe9c9',
     description: 'Soft strings for slow starts.',
     line: 'Soft strings for slow starts.',
-    songs: [
-      {
-        _id: 'track-am-1',
-        title: 'Clair de Lune',
-        artist: 'Claude Debussy',
-        album: 'Suite bergamasque',
-        duration: 304,
-        url: 'https://upload.wikimedia.org/wikipedia/commons/2/29/Clair_de_lune_%28Claude_Debussy%29_Suite_bergamasque.ogg',
-        coverImage: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?q=80&w=400&auto=format&fit=crop',
-      },
-      {
-        _id: 'track-am-2',
-        title: 'Canon in D Major',
-        artist: 'Johann Pachelbel',
-        album: 'Baroque Classics',
-        duration: 278,
-        url: 'https://upload.wikimedia.org/wikipedia/commons/5/52/Pachelbel%27s_Canon_in_D.ogg',
-        coverImage: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=400&auto=format&fit=crop',
-      },
-      {
-        _id: 'track-am-3',
-        title: 'Gymnopédie No. 1',
-        artist: 'Erik Satie',
-        album: 'Trois Gymnopédies',
-        duration: 186,
-        url: 'https://upload.wikimedia.org/wikipedia/commons/3/34/Erik_Satie_-_Gymnop%C3%A9die_No.1.ogg',
-        coverImage: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=400&auto=format&fit=crop',
-      },
-      {
-        _id: 'track-am-4',
-        title: 'Air on the G String',
-        artist: 'J.S. Bach',
-        album: 'Orchestral Suite No. 3',
-        duration: 330,
-        url: 'https://upload.wikimedia.org/wikipedia/commons/2/29/Clair_de_lune_%28Claude_Debussy%29_Suite_bergamasque.ogg',
-        coverImage: 'https://images.unsplash.com/photo-1445985543468-3944654d2b39?q=80&w=400&auto=format&fit=crop',
-      },
+    songIds: [
+      'song-dandelions',
+      'song-night-we-met',
+      'song-lovely',
+      'song-not-you',
     ],
   },
   {
@@ -63,34 +230,12 @@ export const MOOD_PLAYLISTS = [
     tint: '#e6dcff',
     description: 'Dreamy piano for empty roads.',
     line: 'Dreamy piano for empty roads.',
-    songs: [
-      {
-        _id: 'track-lnd-1',
-        title: 'Nocturne Op. 9 No. 2',
-        artist: 'Frédéric Chopin',
-        album: 'Nocturnes',
-        duration: 270,
-        url: 'https://upload.wikimedia.org/wikipedia/commons/e/eb/Beethoven_Moonlight_1st_movement.ogg',
-        coverImage: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=400&auto=format&fit=crop',
-      },
-      {
-        _id: 'track-lnd-2',
-        title: 'Moonlight Sonata',
-        artist: 'Ludwig van Beethoven',
-        album: 'Piano Sonata No. 14',
-        duration: 360,
-        url: 'https://upload.wikimedia.org/wikipedia/commons/e/eb/Beethoven_Moonlight_1st_movement.ogg',
-        coverImage: 'https://images.unsplash.com/photo-1511192336575-5a79af67a629?q=80&w=400&auto=format&fit=crop',
-      },
-      {
-        _id: 'track-lnd-3',
-        title: 'Arabesque No. 1',
-        artist: 'Claude Debussy',
-        album: 'Deux Arabesques',
-        duration: 250,
-        url: 'https://upload.wikimedia.org/wikipedia/commons/2/29/Clair_de_lune_%28Claude_Debussy%29_Suite_bergamasque.ogg',
-        coverImage: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?q=80&w=400&auto=format&fit=crop',
-      },
+    songIds: [
+      'song-faded',
+      'song-lily',
+      'song-alone',
+      'song-not-you',
+      'song-night-we-met',
     ],
   },
   {
@@ -98,50 +243,18 @@ export const MOOD_PLAYLISTS = [
     _id: 'archive-67c000000000000000000003',
     name: 'Study loop',
     n: 'Study loop',
-    emoji: '📚',
-    e: '📚',
-    o1: '#8ff2d3',
-    o2: '#2fd3a2',
+    emoji: '🌿',
+    e: '🌿',
+    o1: '#79ecd1',
+    o2: '#20c997',
     tint: '#d3f8ec',
-    description: 'Calm patterns to keep you in flow.',
-    line: 'Calm patterns to keep you in flow.',
-    songs: [
-      {
-        _id: 'track-sl-1',
-        title: 'Prelude in C',
-        artist: 'J.S. Bach',
-        album: 'The Well-Tempered Clavier',
-        duration: 140,
-        url: 'https://upload.wikimedia.org/wikipedia/commons/3/3c/Vivaldi_Spring_mvt_1_Allegro.ogg',
-        coverImage: 'https://images.unsplash.com/photo-1539375665275-f9de415ef9ac?q=80&w=400&auto=format&fit=crop',
-      },
-      {
-        _id: 'track-sl-2',
-        title: 'Spring',
-        artist: 'Antonio Vivaldi',
-        album: 'The Four Seasons',
-        duration: 210,
-        url: 'https://upload.wikimedia.org/wikipedia/commons/3/3c/Vivaldi_Spring_mvt_1_Allegro.ogg',
-        coverImage: 'https://images.unsplash.com/photo-1539375665275-f9de415ef9ac?q=80&w=400&auto=format&fit=crop',
-      },
-      {
-        _id: 'track-sl-3',
-        title: 'Gnossienne No. 1',
-        artist: 'Erik Satie',
-        album: 'Trois Gnossiennes',
-        duration: 215,
-        url: 'https://upload.wikimedia.org/wikipedia/commons/3/34/Erik_Satie_-_Gymnop%C3%A9die_No.1.ogg',
-        coverImage: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=400&auto=format&fit=crop',
-      },
-      {
-        _id: 'track-sl-4',
-        title: 'The Swan',
-        artist: 'Camille Saint-Saëns',
-        album: 'The Carnival of the Animals',
-        duration: 165,
-        url: 'https://upload.wikimedia.org/wikipedia/commons/2/29/Clair_de_lune_%28Claude_Debussy%29_Suite_bergamasque.ogg',
-        coverImage: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?q=80&w=400&auto=format&fit=crop',
-      },
+    description: 'Calm synth sweeps on repeat.',
+    line: 'Calm synth sweeps on repeat.',
+    songIds: [
+      'song-lovely',
+      'song-night-we-met',
+      'song-dandelions',
+      'song-not-you',
     ],
   },
   {
@@ -156,34 +269,12 @@ export const MOOD_PLAYLISTS = [
     tint: '#ffd9ec',
     description: 'Big drums, bigger energy.',
     line: 'Big drums, bigger energy.',
-    songs: [
-      {
-        _id: 'track-gp-1',
-        title: 'Ride of the Valkyries',
-        artist: 'Richard Wagner',
-        album: 'Die Walküre',
-        duration: 300,
-        url: 'https://upload.wikimedia.org/wikipedia/commons/3/3c/Vivaldi_Spring_mvt_1_Allegro.ogg',
-        coverImage: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=400&auto=format&fit=crop',
-      },
-      {
-        _id: 'track-gp-2',
-        title: 'Flight of the Bumblebee',
-        artist: 'Rimsky-Korsakov',
-        album: 'The Tale of Tsar Saltan',
-        duration: 90,
-        url: 'https://upload.wikimedia.org/wikipedia/commons/3/3c/Vivaldi_Spring_mvt_1_Allegro.ogg',
-        coverImage: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=400&auto=format&fit=crop',
-      },
-      {
-        _id: 'track-gp-3',
-        title: 'Hall of the Mountain King',
-        artist: 'Edvard Grieg',
-        album: 'Peer Gynt',
-        duration: 150,
-        url: 'https://upload.wikimedia.org/wikipedia/commons/3/3c/Vivaldi_Spring_mvt_1_Allegro.ogg',
-        coverImage: 'https://images.unsplash.com/photo-1539375665275-f9de415ef9ac?q=80&w=400&auto=format&fit=crop',
-      },
+    songIds: [
+      'song-one-kiss',
+      'song-shape-of-you',
+      'song-senorita',
+      'song-im-alive',
+      'song-alone',
     ],
   },
   {
@@ -198,41 +289,36 @@ export const MOOD_PLAYLISTS = [
     tint: '#d4eeff',
     description: 'Bright tunes for open windows.',
     line: 'Bright tunes for open windows.',
-    songs: [
-      {
-        _id: 'track-rt-1',
-        title: 'Eine kleine Nachtmusik',
-        artist: 'W. A. Mozart',
-        album: 'Serenade No. 13',
-        duration: 360,
-        url: 'https://upload.wikimedia.org/wikipedia/commons/5/52/Pachelbel%27s_Canon_in_D.ogg',
-        coverImage: 'https://images.unsplash.com/photo-1445985543468-3944654d2b39?q=80&w=400&auto=format&fit=crop',
-      },
-      {
-        _id: 'track-rt-2',
-        title: 'Ode to Joy',
-        artist: 'Ludwig van Beethoven',
-        album: 'Symphony No. 9',
-        duration: 200,
-        url: 'https://upload.wikimedia.org/wikipedia/commons/e/eb/Beethoven_Moonlight_1st_movement.ogg',
-        coverImage: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=400&auto=format&fit=crop',
-      },
-      {
-        _id: 'track-rt-3',
-        title: 'Spring Waltz',
-        artist: 'Frédéric Chopin',
-        album: 'Waltzes',
-        duration: 195,
-        url: 'https://upload.wikimedia.org/wikipedia/commons/3/34/Erik_Satie_-_Gymnop%C3%A9die_No.1.ogg',
-        coverImage: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=400&auto=format&fit=crop',
-      },
+    songIds: [
+      'song-on-my-way',
+      'song-see-you-again',
+      'song-malibu',
+      'song-one-kiss',
+      'song-shape-of-you',
     ],
   },
 ];
 
-// Helper to format track duration
+// 3. Hydrated Mood Playlists (References resolved from LIBRARY_SONGS without record duplication)
+export const MOOD_PLAYLISTS = MOOD_PLAYLIST_DEFINITIONS.map((def) => {
+  const resolvedSongs = def.songIds
+    .map((id) => getSongById(id))
+    .filter(Boolean);
+
+  const totalDuration = resolvedSongs.reduce((sum, s) => sum + (s.duration || 0), 0);
+
+  return {
+    ...def,
+    songs: resolvedSongs,
+    t: resolvedSongs, // backward-compatible alias
+    totalDuration,
+    trackCount: resolvedSongs.length,
+  };
+});
+
+// Helper to format track duration (mm:ss)
 export const formatDuration = (seconds) => {
-  if (!seconds || isNaN(seconds)) return '0:00';
+  if (!seconds || isNaN(seconds) || seconds < 0) return '0:00';
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
   return `${mins}:${String(secs).padStart(2, '0')}`;

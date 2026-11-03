@@ -2,14 +2,15 @@ import { defineStore } from 'pinia';
 import { playlistApi } from '../api/playlists';
 import { MOOD_PLAYLISTS } from '../data/moodPlaylists';
 
-const LOCAL_STORAGE_KEY = 'soundwave_bubble_playlists';
+const LOCAL_STORAGE_KEY = 'soundwave_bubble_playlists_v3';
 
 const getInitialOfflinePlaylists = () => {
   try {
     const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
+      const isModern = Array.isArray(parsed) && parsed.length > 0 && parsed[0].songs?.some(s => s.id?.startsWith('song-') || s.artist === 'Ruth B.');
+      if (isModern) {
         return parsed;
       }
     }

@@ -72,7 +72,8 @@ export class DirectAudioProvider {
     this.currentTrack = track;
     const url = resolvePlayableAudioUrl(track);
     if (!url) {
-      throw new Error('No audio URL provided');
+      if (this.audio) this.audio.pause();
+      return;
     }
 
     if (this.audio.src !== url) {

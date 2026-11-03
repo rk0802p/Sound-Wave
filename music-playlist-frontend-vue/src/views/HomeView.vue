@@ -397,7 +397,7 @@ const getPresetColor = (idx) => {
 const getPlaylistMinutes = (p) => {
   const songs = p.songs || p.t || [];
   const totalSecs = songs.reduce((sum, t) => {
-    const sec = Array.isArray(t) ? t[2] : (t.duration || 200);
+    const sec = Array.isArray(t) ? t[2] : (t.duration || 0);
     return sum + (Number(sec) || 0);
   }, 0);
   return Math.round(totalSecs / 60);

@@ -17,7 +17,7 @@ export const usePlayerStore = defineStore('player', {
       isPlaying: false,
       isLoading: false,
       currentTime: 0,
-      duration: initialTrack.duration || 304,
+      duration: initialTrack?.duration || 233,
       volume: 0.85,
       muted: false,
       error: null,
@@ -169,8 +169,13 @@ export const usePlayerStore = defineStore('player', {
 
       const audioUrl = resolvePlayableAudioUrl(track);
       if (!audioUrl) {
-        console.warn('Track has no direct audio URL:', track.title);
+        soundController.pause();
         this.isPlaying = false;
+        this.isLoading = false;
+        this.currentTime = 0;
+        if (typeof document !== 'undefined') {
+          document.body.classList.remove('playing');
+        }
         return;
       }
 
@@ -208,7 +213,13 @@ export const usePlayerStore = defineStore('player', {
           document.body.classList.remove('playing');
         }
       } else {
-        if (!soundController.currentTrack && this.currentTrack) {
+        if (!this.currentTrack) return;
+        const audioUrl = resolvePlayableAudioUrl(this.currentTrack);
+        if (!audioUrl) {
+          this.isPlaying = false;
+          return;
+        }
+        if (!soundController.currentTrack) {
           await this.playTrack(this.currentTrack, this.queue, this.trackIndex);
         } else {
           try {
@@ -218,9 +229,7 @@ export const usePlayerStore = defineStore('player', {
               document.body.classList.add('playing');
             }
           } catch {
-            if (this.currentTrack) {
-              await this.playTrack(this.currentTrack, this.queue, this.trackIndex);
-            }
+            await this.playTrack(this.currentTrack, this.queue, this.trackIndex);
           }
         }
       }
