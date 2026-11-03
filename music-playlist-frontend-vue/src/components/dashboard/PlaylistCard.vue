@@ -127,8 +127,8 @@ const handlePlayClick = () => {
 }
 
 .sw-playlist-card.is-active-playing {
-  border-color: rgba(56, 189, 248, 0.4);
-  box-shadow: 0 0 25px rgba(56, 189, 248, 0.15);
+  border-color: rgba(204, 255, 0, 0.5);
+  box-shadow: 0 0 25px rgba(204, 255, 0, 0.2);
 }
 
 .card-art-box {

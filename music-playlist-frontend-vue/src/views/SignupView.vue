@@ -184,7 +184,7 @@ const handleSignup = async () => {
   width: 500px;
   height: 500px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(56, 189, 248, 0.12) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(204, 255, 0, 0.12) 0%, transparent 70%);
   pointer-events: none;
   filter: blur(50px);
 }

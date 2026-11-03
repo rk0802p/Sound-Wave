@@ -22,11 +22,11 @@ const props = defineProps({
   },
   accentColor: {
     type: String,
-    default: '#38bdf8',
+    default: '#ccff00',
   },
   secondaryColor: {
     type: String,
-    default: '#f59e0b',
+    default: '#ff5722',
   },
 });
 

@@ -208,7 +208,7 @@ const query = ref('');
 const activeCategory = ref('all'); // 'all' | 'playlists' | 'tracks'
 
 const genreVibes = [
-  { name: 'Late Night Lo-Fi', desc: 'Analog tape warmth & vinyl dust', code: 'FREQ // 01', query: 'Lo-Fi', color: 'rgba(56, 189, 248, 0.22)' },
+  { name: 'Late Night Lo-Fi', desc: 'Analog tape warmth & vinyl dust', code: 'FREQ // 01', query: 'Lo-Fi', color: 'rgba(204, 255, 0, 0.22)' },
   { name: 'Deep Space Ambient', desc: 'Infinite reverberations & drones', code: 'FREQ // 02', query: 'Ambient', color: 'rgba(168, 85, 247, 0.22)' },
   { name: 'Cyberpunk Synthwave', desc: '80s analog neon voltage', code: 'FREQ // 03', query: 'Synthwave', color: 'rgba(244, 63, 94, 0.22)' },
   { name: 'Velvet Midnight Jazz', desc: 'Acoustic brass, double bass & smoke', code: 'FREQ // 04', query: 'Jazz', color: 'rgba(245, 158, 11, 0.22)' },
@@ -387,8 +387,8 @@ watch(query, (newQ) => {
 }
 
 .scanner-search-capsule:focus-within {
-  border-color: rgba(56, 189, 248, 0.4);
-  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.75), 0 0 28px rgba(56, 189, 248, 0.2);
+  border-color: rgba(204, 255, 0, 0.5);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.75), 0 0 28px rgba(204, 255, 0, 0.2);
 }
 
 .scanner-icon {
@@ -451,8 +451,8 @@ watch(query, (newQ) => {
 }
 
 .filter-tab-pill.active {
-  background: rgba(56, 189, 248, 0.15);
-  border-color: rgba(56, 189, 248, 0.35);
+  background: rgba(204, 255, 0, 0.15);
+  border-color: rgba(204, 255, 0, 0.35);
   color: #fff;
 }
 
@@ -581,7 +581,7 @@ watch(query, (newQ) => {
 }
 
 .kw-pill:hover {
-  background: rgba(56, 189, 248, 0.12);
+  background: rgba(204, 255, 0, 0.12);
   border-color: var(--sw-accent);
   color: #fff;
 }
@@ -756,8 +756,8 @@ watch(query, (newQ) => {
 }
 
 .result-track-strip.is-active {
-  background: rgba(56, 189, 248, 0.08);
-  border-color: rgba(56, 189, 248, 0.35);
+  background: rgba(204, 255, 0, 0.08);
+  border-color: rgba(204, 255, 0, 0.35);
 }
 
 .track-strip-play-btn {
@@ -823,7 +823,7 @@ watch(query, (newQ) => {
 }
 
 .prov-direct {
-  background: rgba(56, 189, 248, 0.15);
+  background: rgba(204, 255, 0, 0.15);
   color: var(--sw-accent);
 }
 

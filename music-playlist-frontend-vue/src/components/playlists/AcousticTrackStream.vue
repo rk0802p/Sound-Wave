@@ -510,12 +510,12 @@ onUnmounted(() => {
   gap: 8px;
   padding: 10px 22px;
   border-radius: var(--sw-radius-full);
-  background: linear-gradient(135deg, var(--sw-accent), #0284c7);
+  background: linear-gradient(135deg, var(--sw-accent), var(--sw-warm));
   color: #060709;
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 0 24px rgba(56, 189, 248, 0.4);
+  box-shadow: 0 0 24px rgba(204, 255, 0, 0.4);
   transition: transform var(--sw-transition-fast);
 }
 
@@ -551,14 +551,14 @@ onUnmounted(() => {
 }
 
 .stream-track-strip.is-active {
-  background: rgba(56, 189, 248, 0.08);
-  border-color: rgba(56, 189, 248, 0.35);
-  box-shadow: inset 0 0 20px rgba(56, 189, 248, 0.05);
+  background: rgba(204, 255, 0, 0.08);
+  border-color: rgba(204, 255, 0, 0.35);
+  box-shadow: inset 0 0 20px rgba(204, 255, 0, 0.05);
 }
 
 .stream-track-strip.is-playing {
   border-color: var(--sw-accent);
-  box-shadow: 0 0 24px -4px rgba(56, 189, 248, 0.25);
+  box-shadow: 0 0 24px -4px rgba(204, 255, 0, 0.25);
 }
 
 .stream-track-strip.is-dragging {
@@ -683,8 +683,8 @@ onUnmounted(() => {
 
 .strip-provider-pill.prov-direct {
   color: var(--sw-accent);
-  background: rgba(56, 189, 248, 0.12);
-  border: 1px solid rgba(56, 189, 248, 0.25);
+  background: rgba(204, 255, 0, 0.12);
+  border: 1px solid rgba(204, 255, 0, 0.25);
 }
 
 .strip-provider-pill.prov-youtube {

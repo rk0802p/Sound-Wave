@@ -89,8 +89,8 @@
                 :isPlaying="playerStore.isPlaying"
                 mode="bars"
                 :barCount="36"
-                accentColor="#38bdf8"
-                secondaryColor="#f59e0b"
+                accentColor="#ccff00"
+                secondaryColor="#ff5722"
               />
             </div>
           </div>
@@ -507,9 +507,9 @@ watch(
 }
 
 .tag-direct {
-  background: rgba(56, 189, 248, 0.15);
+  background: rgba(204, 255, 0, 0.15);
   color: var(--sw-accent);
-  border: 1px solid rgba(56, 189, 248, 0.3);
+  border: 1px solid rgba(204, 255, 0, 0.3);
 }
 
 .tag-youtube {

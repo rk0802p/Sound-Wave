@@ -286,7 +286,7 @@ const seeding = ref(false);
 const featuredImgFailed = ref(false);
 
 const quickVibes = [
-  { name: 'Late Night Lo-Fi', desc: 'Analog tape warmth & dust', icon: '01 // TAPE', query: 'Lo-Fi', color: 'rgba(56, 189, 248, 0.22)' },
+  { name: 'Late Night Lo-Fi', desc: 'Analog tape warmth & dust', icon: '01 // TAPE', query: 'Lo-Fi', color: 'rgba(204, 255, 0, 0.22)' },
   { name: 'Deep Space Ambient', desc: 'Infinite harmonic resonance', icon: '02 // VOID', query: 'Ambient', color: 'rgba(168, 85, 247, 0.22)' },
   { name: 'Velvet Midnight Jazz', desc: 'Acoustic brass & smoke', icon: '03 // NOIR', query: 'Jazz', color: 'rgba(245, 158, 11, 0.22)' },
   { name: 'Cyberpunk Synthwave', desc: '80s analog neon voltage', icon: '04 // VOLT', query: 'Synthwave', color: 'rgba(244, 63, 94, 0.22)' },
@@ -698,7 +698,7 @@ const seedStarterPlaylist = async () => {
 }
 
 .audition-chip:hover {
-  background: rgba(56, 189, 248, 0.15);
+  background: rgba(204, 255, 0, 0.15);
   border-color: var(--sw-accent);
   transform: translateY(-2px);
 }
@@ -739,14 +739,14 @@ const seedStarterPlaylist = async () => {
 }
 
 .stage-btn.primary {
-  background: linear-gradient(135deg, var(--sw-accent), #0284c7);
+  background: linear-gradient(135deg, var(--sw-accent), var(--sw-warm));
   color: #060709;
-  box-shadow: 0 0 24px rgba(56, 189, 248, 0.4);
+  box-shadow: 0 0 24px rgba(204, 255, 0, 0.4);
 }
 
 .stage-btn.primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 0 32px rgba(56, 189, 248, 0.6);
+  box-shadow: 0 0 32px rgba(204, 255, 0, 0.6);
 }
 
 .stage-btn.secondary {
@@ -898,8 +898,8 @@ const seedStarterPlaylist = async () => {
   align-items: center;
   gap: 8px;
   padding: 8px 18px;
-  background: rgba(56, 189, 248, 0.12);
-  border: 1px solid rgba(56, 189, 248, 0.3);
+  background: rgba(204, 255, 0, 0.12);
+  border: 1px solid rgba(204, 255, 0, 0.35);
   border-radius: var(--sw-radius-full);
   color: var(--sw-accent);
   font-size: 12px;
@@ -909,7 +909,7 @@ const seedStarterPlaylist = async () => {
 }
 
 .forge-btn:hover {
-  background: rgba(56, 189, 248, 0.22);
+  background: rgba(204, 255, 0, 0.22);
   border-color: var(--sw-accent);
   transform: translateY(-2px);
 }

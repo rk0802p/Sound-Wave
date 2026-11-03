@@ -461,13 +461,13 @@ const seedStarter = async () => {
   align-items: center;
   gap: 8px;
   padding: 12px 22px;
-  background: linear-gradient(135deg, var(--sw-accent), #0284c7);
+  background: linear-gradient(135deg, var(--sw-accent), var(--sw-warm));
   border-radius: var(--sw-radius-full);
-  color: #060709;
+  color: #fffdf7;
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 0 24px rgba(56, 189, 248, 0.4);
+  box-shadow: 0 0 24px rgba(204, 255, 0, 0.4);
   transition: transform var(--sw-transition-fast);
 }
 
@@ -579,9 +579,9 @@ const seedStarter = async () => {
 }
 
 .mode-btn.active {
-  background: rgba(56, 189, 248, 0.15);
+  background: rgba(204, 255, 0, 0.15);
   color: #fff;
-  border: 1px solid rgba(56, 189, 248, 0.35);
+  border: 1px solid rgba(204, 255, 0, 0.35);
 }
 
 /* 3. Crate Mode Grid */
@@ -686,7 +686,7 @@ const seedStarter = async () => {
   height: 38px;
   border-radius: 50%;
   background: var(--sw-accent);
-  color: #060709;
+  color: #fffdf7;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -862,7 +862,7 @@ const seedStarter = async () => {
 
 .ledger-row:hover .ledger-play-btn {
   background: var(--sw-accent);
-  color: #060709;
+  color: #fffdf7;
 }
 
 /* Empty Vault */
@@ -920,8 +920,8 @@ const seedStarter = async () => {
 }
 
 .stage-btn.primary {
-  background: linear-gradient(135deg, var(--sw-accent), #0284c7);
-  color: #060709;
+  background: linear-gradient(135deg, var(--sw-accent), var(--sw-warm));
+  color: #fffdf7;
 }
 
 .stage-btn.secondary {
@@ -931,8 +931,8 @@ const seedStarter = async () => {
 }
 
 .stage-btn.warm {
-  background: linear-gradient(135deg, var(--sw-warm), #d97706);
-  color: #060709;
+  background: linear-gradient(135deg, var(--sw-warm), var(--sw-magenta));
+  color: #fffdf7;
 }
 
 @media (max-width: 900px) {

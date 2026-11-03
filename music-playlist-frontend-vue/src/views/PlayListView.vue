@@ -617,8 +617,8 @@ onMounted(() => {
 
 .kicker-pill {
   padding: 2px 8px;
-  background: rgba(56, 189, 248, 0.12);
-  border: 1px solid rgba(56, 189, 248, 0.3);
+  background: rgba(204, 255, 0, 0.12);
+  border: 1px solid rgba(204, 255, 0, 0.35);
   color: var(--sw-accent);
   border-radius: var(--sw-radius-full);
 }
@@ -697,14 +697,14 @@ onMounted(() => {
 }
 
 .action-btn.primary-resonance {
-  background: linear-gradient(135deg, var(--sw-accent), #0284c7);
+  background: linear-gradient(135deg, var(--sw-accent), var(--sw-warm));
   color: #060709;
-  box-shadow: 0 0 24px rgba(56, 189, 248, 0.4);
+  box-shadow: 0 0 24px rgba(204, 255, 0, 0.4);
 }
 
 .action-btn.primary-resonance:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 0 32px rgba(56, 189, 248, 0.6);
+  box-shadow: 0 0 32px rgba(204, 255, 0, 0.6);
 }
 
 .action-btn.secondary-glass {
@@ -720,12 +720,12 @@ onMounted(() => {
 
 .action-btn.outline-accent {
   background: transparent;
-  border: 1px solid rgba(56, 189, 248, 0.35);
+  border: 1px solid rgba(204, 255, 0, 0.35);
   color: var(--sw-accent);
 }
 
 .action-btn.outline-accent:hover {
-  background: rgba(56, 189, 248, 0.1);
+  background: rgba(204, 255, 0, 0.1);
   border-color: var(--sw-accent);
 }
 

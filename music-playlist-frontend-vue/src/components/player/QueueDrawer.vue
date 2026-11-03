@@ -264,8 +264,8 @@ watch(
 
 /* Now Playing Highlight Card */
 .now-playing-card {
-  background: rgba(56, 189, 248, 0.06);
-  border: 1px solid rgba(56, 189, 248, 0.2);
+  background: rgba(204, 255, 0, 0.08);
+  border: 1px solid rgba(204, 255, 0, 0.25);
   border-radius: var(--sw-radius-md);
   padding: 12px;
   display: flex;
@@ -366,8 +366,8 @@ watch(
 }
 
 .queue-item.is-active-row {
-  border-color: rgba(56, 189, 248, 0.3);
-  background: rgba(56, 189, 248, 0.05);
+  border-color: rgba(204, 255, 0, 0.4);
+  background: rgba(204, 255, 0, 0.08);
 }
 
 .track-num {

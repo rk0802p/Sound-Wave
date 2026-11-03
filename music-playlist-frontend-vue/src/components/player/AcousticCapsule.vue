@@ -145,7 +145,7 @@
               <span v-for="n in 36" :key="n" class="micro-wave-tick" :style="{ height: `${((n * 7) % 10) + 4}px` }"></span>
             </div>
 
-            <!-- Filled Progress Bar -->
+            <!-- Filled Progress Bar in Acid Lime & Coral -->
             <div
               class="scrubber-fill"
               :style="{ width: `${playerStore.progressPercentage}%` }"
@@ -370,7 +370,7 @@ onUnmounted(() => {
   width: 100%;
   max-width: 1020px;
   height: 74px;
-  background: rgba(13, 16, 23, 0.88);
+  background: rgba(24, 13, 41, 0.88);
   backdrop-filter: blur(32px) saturate(190%);
   -webkit-backdrop-filter: blur(32px) saturate(190%);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -381,17 +381,17 @@ onUnmounted(() => {
   padding: 0 16px;
   box-shadow:
     0 24px 50px -10px rgba(0, 0, 0, 0.85),
-    0 0 0 1px rgba(255, 255, 255, 0.04),
-    inset 0 1px 1px 0 rgba(255, 255, 255, 0.15);
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.16);
   transition: all var(--sw-transition-normal);
 }
 
 .sw-acoustic-capsule-wrapper.is-active .sw-acoustic-capsule {
-  border-color: rgba(56, 189, 248, 0.3);
+  border-color: rgba(204, 255, 0, 0.45);
   box-shadow:
     0 24px 50px -10px rgba(0, 0, 0, 0.9),
-    0 0 28px -4px rgba(56, 189, 248, 0.22),
-    inset 0 1px 1px 0 rgba(255, 255, 255, 0.2);
+    0 0 30px -4px rgba(204, 255, 0, 0.3),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.22);
 }
 
 /* 1. Left Cluster */
@@ -442,7 +442,7 @@ onUnmounted(() => {
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: #060709;
+  background: #09040e;
 }
 
 .vinyl-turntable-disc.is-spinning {
@@ -466,7 +466,7 @@ onUnmounted(() => {
 
 .track-title {
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   color: #fff;
   white-space: nowrap;
   overflow: hidden;
@@ -475,7 +475,7 @@ onUnmounted(() => {
 
 .provider-pill {
   font-size: 9px;
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: 0.08em;
   padding: 1px 6px;
   border-radius: var(--sw-radius-full);
@@ -484,20 +484,20 @@ onUnmounted(() => {
 
 .provider-pill.provider-direct {
   color: var(--sw-accent);
-  background: rgba(56, 189, 248, 0.12);
-  border: 1px solid rgba(56, 189, 248, 0.25);
+  background: rgba(204, 255, 0, 0.14);
+  border: 1px solid rgba(204, 255, 0, 0.35);
 }
 
 .provider-pill.provider-youtube {
-  color: #f43f5e;
-  background: rgba(244, 63, 94, 0.12);
-  border: 1px solid rgba(244, 63, 94, 0.25);
+  color: var(--sw-warm);
+  background: rgba(255, 87, 34, 0.14);
+  border: 1px solid rgba(255, 87, 34, 0.35);
 }
 
 .provider-pill.provider-spotify {
   color: #10b981;
-  background: rgba(16, 185, 129, 0.12);
-  border: 1px solid rgba(16, 185, 129, 0.25);
+  background: rgba(16, 185, 129, 0.14);
+  border: 1px solid rgba(16, 185, 129, 0.35);
 }
 
 .artist-row {
@@ -568,7 +568,7 @@ onUnmounted(() => {
   top: 4px;
   right: 2px;
   font-size: 8px;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--sw-accent);
 }
 
@@ -576,19 +576,19 @@ onUnmounted(() => {
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background: #fff;
-  color: #060709;
+  background: var(--sw-accent);
+  color: #0e0717;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 16px rgba(255, 255, 255, 0.3);
-  transition: transform var(--sw-transition-fast), background var(--sw-transition-fast);
+  box-shadow: 0 0 20px rgba(204, 255, 0, 0.4);
+  transition: transform var(--sw-transition-fast), background var(--sw-transition-fast), box-shadow var(--sw-transition-fast);
 }
 
 .main-play-btn:hover:not(:disabled) {
-  transform: scale(1.1);
-  background: var(--sw-accent);
-  box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
+  transform: scale(1.12);
+  background: #d9ff33;
+  box-shadow: 0 0 28px rgba(204, 255, 0, 0.6);
 }
 
 .play-spinner {
@@ -636,7 +636,7 @@ onUnmounted(() => {
 
 .micro-wave-tick {
   width: 2px;
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.35);
   border-radius: 1px;
 }
 
@@ -645,7 +645,7 @@ onUnmounted(() => {
   height: 4px;
   background: linear-gradient(90deg, var(--sw-accent), var(--sw-warm));
   border-radius: var(--sw-radius-full);
-  box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+  box-shadow: 0 0 12px rgba(204, 255, 0, 0.45);
   transition: height var(--sw-transition-fast);
 }
 
@@ -662,7 +662,7 @@ onUnmounted(() => {
   height: 10px;
   border-radius: 50%;
   background: #fff;
-  box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.85);
   transition: transform var(--sw-transition-fast);
 }
 
@@ -676,8 +676,8 @@ onUnmounted(() => {
   transform: translateX(-50%);
   padding: 2px 6px;
   font-size: 10px;
-  background: rgba(0, 0, 0, 0.9);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(14, 7, 23, 0.95);
+  border: 1px solid rgba(204, 255, 0, 0.3);
   border-radius: 4px;
   color: #fff;
   pointer-events: none;
@@ -724,10 +724,10 @@ onUnmounted(() => {
   top: 2px;
   right: 2px;
   font-size: 9px;
-  font-weight: 700;
+  font-weight: 800;
   padding: 1px 4px;
   background: var(--sw-accent);
-  color: #060709;
+  color: #0e0717;
   border-radius: var(--sw-radius-full);
 }
 
@@ -742,15 +742,15 @@ onUnmounted(() => {
   right: 50%;
   transform: translateX(50%);
   width: 140px;
-  background: rgba(13, 16, 23, 0.95);
+  background: rgba(24, 13, 41, 0.96);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: var(--sw-radius-md);
   padding: 10px 12px;
   display: flex;
   align-items: center;
   gap: 8px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.7);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8);
 }
 
 .volume-slider {
@@ -768,7 +768,7 @@ onUnmounted(() => {
 
 @media (max-width: 900px) {
   .sw-acoustic-capsule-wrapper {
-    bottom: 96px; /* Elegant air gap above the 60px bottom dock */
+    bottom: 96px;
     padding: 0 12px;
   }
   .sw-acoustic-capsule {

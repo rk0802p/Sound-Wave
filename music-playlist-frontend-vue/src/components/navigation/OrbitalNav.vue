@@ -56,7 +56,7 @@
           title="Create New Playlist Collection"
         >
           <span class="btn-plus">+</span>
-          <span class="btn-label desktop-only">Forge Collection</span>
+          <span class="btn-label desktop-only font-display">Forge Collection</span>
         </button>
 
         <!-- Live Playing Vinyl Pill (If track is active) -->
@@ -87,7 +87,7 @@
             <div class="curator-avatar">
               {{ userInitials }}
             </div>
-            <span class="curator-name desktop-only">{{ authStore.username || 'Curator' }}</span>
+            <span class="curator-name desktop-only font-display">{{ authStore.username || 'Curator' }}</span>
             <svg class="dropdown-chevron desktop-only" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="6 9 12 15 18 9"></polyline>
             </svg>
@@ -200,7 +200,6 @@ const handleGlobalClick = (e) => {
 };
 
 const handleKeyDown = (e) => {
-  // Pressing '/' jumps to search when not typing in an input
   if (e.key === '/' && !['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) {
     e.preventDefault();
     router.push('/search');
@@ -240,24 +239,24 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   padding: 0 16px 0 20px;
-  background: rgba(13, 16, 23, 0.78);
-  backdrop-filter: blur(28px) saturate(180%);
-  -webkit-backdrop-filter: blur(28px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(24, 13, 41, 0.82);
+  backdrop-filter: blur(28px) saturate(190%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--sw-radius-full);
   box-shadow:
-    0 16px 36px -8px rgba(0, 0, 0, 0.65),
-    0 0 0 1px rgba(255, 255, 255, 0.04),
-    inset 0 1px 1px 0 rgba(255, 255, 255, 0.12);
+    0 16px 36px -8px rgba(0, 0, 0, 0.75),
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.18);
   transition: all var(--sw-transition-normal);
 }
 
 .sw-orbital-capsule:hover {
-  border-color: rgba(56, 189, 248, 0.25);
+  border-color: rgba(204, 255, 0, 0.38);
   box-shadow:
-    0 20px 44px -8px rgba(0, 0, 0, 0.75),
-    0 0 24px -4px rgba(56, 189, 248, 0.15),
-    inset 0 1px 1px 0 rgba(255, 255, 255, 0.18);
+    0 20px 44px -8px rgba(0, 0, 0, 0.85),
+    0 0 24px -4px rgba(204, 255, 0, 0.25),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.22);
 }
 
 /* 1. Brand Soundmark */
@@ -315,18 +314,18 @@ onUnmounted(() => {
 
 .brand-title {
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: 0.08em;
   color: #fff;
 }
 
 .brand-edition {
   font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  padding: 2px 6px;
-  background: rgba(56, 189, 248, 0.12);
-  border: 1px solid rgba(56, 189, 248, 0.25);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  padding: 2px 7px;
+  background: rgba(204, 255, 0, 0.12);
+  border: 1px solid rgba(204, 255, 0, 0.35);
   border-radius: var(--sw-radius-full);
   color: var(--sw-accent);
 }
@@ -336,10 +335,10 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 6px;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.04);
   padding: 4px;
   border-radius: var(--sw-radius-full);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 .orbital-link {
@@ -357,18 +356,18 @@ onUnmounted(() => {
 
 .orbital-link:hover {
   color: var(--sw-text-primary);
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .orbital-link.is-active {
-  color: #fff;
-  background: rgba(56, 189, 248, 0.15);
-  border: 1px solid rgba(56, 189, 248, 0.35);
-  box-shadow: 0 0 16px rgba(56, 189, 248, 0.2);
+  color: #0e0717;
+  background: var(--sw-accent);
+  font-weight: 700;
+  box-shadow: 0 0 20px rgba(204, 255, 0, 0.4);
 }
 
 .link-icon {
-  opacity: 0.8;
+  opacity: 0.85;
   transition: transform var(--sw-transition-fast);
 }
 
@@ -380,9 +379,10 @@ onUnmounted(() => {
 .link-badge {
   font-size: 10px;
   padding: 1px 6px;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.2);
   border-radius: var(--sw-radius-full);
-  color: var(--sw-text-primary);
+  color: inherit;
+  font-weight: 700;
 }
 
 .kbd-hint {
@@ -405,22 +405,20 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 7px;
-  padding: 8px 15px;
+  padding: 8px 16px;
   border-radius: var(--sw-radius-full);
-  background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(56, 189, 248, 0.08));
-  border: 1px solid rgba(56, 189, 248, 0.35);
-  color: var(--sw-accent);
+  background: linear-gradient(135deg, var(--sw-warm), #e02678);
+  color: #fff;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
+  box-shadow: 0 0 20px rgba(255, 87, 34, 0.35);
   transition: all var(--sw-transition-fast);
 }
 
 .forge-collection-btn:hover {
-  background: linear-gradient(135deg, rgba(56, 189, 248, 0.32), rgba(56, 189, 248, 0.16));
-  border-color: var(--sw-accent);
-  box-shadow: 0 0 20px rgba(56, 189, 248, 0.3);
-  transform: translateY(-1px);
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 0 28px rgba(255, 87, 34, 0.5);
 }
 
 .btn-plus {
@@ -433,18 +431,17 @@ onUnmounted(() => {
   align-items: center;
   gap: 8px;
   padding: 6px 12px;
-  background: rgba(245, 158, 11, 0.12);
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  background: rgba(204, 255, 0, 0.12);
+  border: 1px solid rgba(204, 255, 0, 0.35);
   border-radius: var(--sw-radius-full);
-  color: var(--sw-warm);
+  color: var(--sw-accent);
   cursor: pointer;
   transition: all var(--sw-transition-fast);
 }
 
 .live-playback-pill:hover {
-  background: rgba(245, 158, 11, 0.22);
-  border-color: var(--sw-warm);
-  box-shadow: 0 0 16px rgba(245, 158, 11, 0.3);
+  background: rgba(204, 255, 0, 0.22);
+  box-shadow: 0 0 16px rgba(204, 255, 0, 0.3);
 }
 
 .mini-turntable {
@@ -467,7 +464,7 @@ onUnmounted(() => {
   position: absolute;
   inset: 6px;
   border-radius: 50%;
-  background: var(--sw-warm);
+  background: var(--sw-accent);
 }
 
 .live-playback-pill.is-spinning .mini-turntable {
@@ -482,7 +479,7 @@ onUnmounted(() => {
 .live-pill-text {
   font-size: 10px;
   letter-spacing: 0.08em;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 /* Curator Profile */
@@ -496,26 +493,26 @@ onUnmounted(() => {
   gap: 8px;
   padding: 4px 10px 4px 4px;
   border-radius: var(--sw-radius-full);
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   cursor: pointer;
   transition: all var(--sw-transition-fast);
 }
 
 .curator-badge-btn:hover,
 .curator-badge-btn.is-open {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .curator-avatar {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #38bdf8, #818cf8);
-  color: #060709;
+  background: linear-gradient(135deg, #ccff00, #ff5722);
+  color: #0e0717;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 800;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -523,7 +520,7 @@ onUnmounted(() => {
 
 .curator-name {
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--sw-text-primary);
   max-width: 110px;
   white-space: nowrap;
@@ -546,12 +543,12 @@ onUnmounted(() => {
   top: calc(100% + 12px);
   right: 0;
   width: 240px;
-  background: rgba(13, 16, 23, 0.95);
+  background: rgba(24, 13, 41, 0.96);
   backdrop-filter: blur(28px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: var(--sw-radius-lg);
   padding: 16px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.85);
   z-index: 100;
 }
 
@@ -569,7 +566,7 @@ onUnmounted(() => {
 
 .dropdown-username {
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 700;
   color: #fff;
 }
 
@@ -590,7 +587,7 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-around;
   padding: 8px 0;
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(255, 255, 255, 0.03);
   border-radius: var(--sw-radius-sm);
 }
 
@@ -602,7 +599,7 @@ onUnmounted(() => {
 
 .stat-num {
   font-size: 16px;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--sw-accent);
 }
 
@@ -619,19 +616,19 @@ onUnmounted(() => {
   padding: 10px 12px;
   border-radius: var(--sw-radius-sm);
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   transition: all var(--sw-transition-fast);
 }
 
 .dropdown-action-btn.logout {
   color: var(--sw-danger);
-  background: rgba(244, 63, 94, 0.08);
-  border: 1px solid rgba(244, 63, 94, 0.2);
+  background: rgba(255, 51, 102, 0.1);
+  border: 1px solid rgba(255, 51, 102, 0.25);
 }
 
 .dropdown-action-btn.logout:hover {
-  background: rgba(244, 63, 94, 0.16);
+  background: rgba(255, 51, 102, 0.2);
   border-color: var(--sw-danger);
 }
 
@@ -644,15 +641,15 @@ onUnmounted(() => {
   width: calc(100% - 32px);
   max-width: 380px;
   height: 60px;
-  background: rgba(13, 16, 23, 0.9);
+  background: rgba(24, 13, 41, 0.94);
   backdrop-filter: blur(28px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: var(--sw-radius-full);
   display: flex;
   align-items: center;
   justify-content: space-around;
   padding: 0 12px;
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.8);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.85);
   z-index: 89;
   pointer-events: auto;
 }
@@ -679,15 +676,14 @@ onUnmounted(() => {
   height: 22px;
   border-radius: 50%;
   background: var(--sw-accent);
-  color: #060709;
+  color: #0e0717;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 800;
 }
 
-/* Responsive visibility utilities */
 .mobile-only {
   display: none;
 }
@@ -709,7 +705,6 @@ onUnmounted(() => {
   }
 }
 
-/* Transitions */
 .sw-drop-enter-active,
 .sw-drop-leave-active {
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
