@@ -1,89 +1,89 @@
 <template>
-  <div class="sw-library-view">
-    <!-- Header with Collection Metrics -->
-    <header class="library-header">
+  <div class="sw-spatial-library">
+    <!-- Header with Archival Metrics -->
+    <header class="library-archival-header">
       <div class="header-titles">
-        <span class="header-eyebrow font-mono">SOUND ARCHIVE</span>
-        <h1 class="header-main-title font-display">Personal Library</h1>
-        <p class="header-sub">Manage, curate, and explore your personal sound collections and playlists.</p>
+        <div class="header-provenance font-mono">
+          <span class="pulse-beacon"></span>
+          <span>SONIC CRATE // ARCHITECTURAL VAULT</span>
+        </div>
+        <h1 class="header-headline font-display">Archival Repository</h1>
+        <p class="header-tagline">
+          Curated collection of acoustic records, physical vinyl sleeves, and multi-provider streaming frequencies.
+        </p>
       </div>
 
-      <div class="header-actions">
-        <!-- Quick Metrics -->
-        <div class="library-metrics font-mono">
-          <div class="metric-chip">
-            <span class="metric-num tabular-nums">{{ playlistStore.playlists.length }}</span>
-            <span class="metric-lbl">COLLECTIONS</span>
+      <div class="header-right-cluster">
+        <div class="vault-metrics font-mono">
+          <div class="vault-chip">
+            <span class="vault-val">{{ playlistStore.playlists.length }}</span>
+            <span class="vault-lbl">COLLECTIONS</span>
           </div>
-          <div class="metric-chip">
-            <span class="metric-num tabular-nums">{{ playlistStore.totalTracksCount }}</span>
-            <span class="metric-lbl">TRACKS</span>
+          <div class="vault-chip">
+            <span class="vault-val accent">{{ playlistStore.totalTracksCount }}</span>
+            <span class="vault-lbl">FREQUENCIES</span>
           </div>
         </div>
 
-        <AppButton
-          variant="primary"
-          size="md"
-          @click="showCreateModal = true"
-        >
-          <template #icon-left>+</template>
-          New Playlist
-        </AppButton>
+        <button class="forge-btn font-mono" @click="showCreateModal = true">
+          <span class="forge-plus">+</span>
+          <span>Forge Collection</span>
+        </button>
       </div>
     </header>
 
-    <!-- Toolbar Controls: Search, Sort, View Switcher -->
-    <div class="library-toolbar">
-      <!-- Search Filter -->
-      <div class="toolbar-search-box">
-        <svg class="search-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <!-- Archival Control Island: Search, Sort, View Switcher -->
+    <div class="archival-control-island">
+      <!-- Search Filter Capsule -->
+      <div class="search-filter-capsule">
+        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="11" cy="11" r="8"></circle>
           <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
         </svg>
         <input
           v-model="searchQuery"
           type="text"
-          placeholder="Filter collection by name or description..."
-          class="toolbar-search-input"
+          placeholder="Filter archival records by title or description..."
+          class="filter-input font-mono"
         />
         <button v-if="searchQuery" class="clear-btn" @click="searchQuery = ''" aria-label="Clear filter">✕</button>
       </div>
 
-      <!-- Right Controls: Sort & Grid/List Toggle -->
-      <div class="toolbar-right-controls">
-        <div class="sort-picker">
-          <label class="sort-tag font-mono">SORT</label>
-          <select v-model="sortBy" class="sw-sort-select">
+      <!-- Controls: Sort & Mode Switcher -->
+      <div class="island-right-controls">
+        <div class="sort-capsule font-mono">
+          <span class="sort-label">SORT</span>
+          <select v-model="sortBy" class="sort-select font-mono">
             <option value="updated">Recently Updated</option>
             <option value="created">Recently Created</option>
-            <option value="name">Name (A–Z)</option>
-            <option value="tracks">Track Count</option>
+            <option value="name">Title (A–Z)</option>
+            <option value="tracks">Frequencies</option>
           </select>
         </div>
 
-        <div class="view-switch-box">
+        <div class="mode-switcher">
           <button
-            class="switch-btn"
-            :class="{ active: viewMode === 'grid' }"
-            @click="viewMode = 'grid'"
-            title="Grid View"
-            aria-label="Grid View"
+            class="mode-btn"
+            :class="{ active: viewMode === 'crate' }"
+            @click="viewMode = 'crate'"
+            title="Vinyl Crate Mode"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="3" y="3" width="7" height="7"></rect>
               <rect x="14" y="3" width="7" height="7"></rect>
               <rect x="14" y="14" width="7" height="7"></rect>
               <rect x="3" y="14" width="7" height="7"></rect>
             </svg>
+            <span class="desktop-only font-mono">Crate</span>
           </button>
+
           <button
-            class="switch-btn"
-            :class="{ active: viewMode === 'list' }"
-            @click="viewMode = 'list'"
-            title="List / Ledger View"
-            aria-label="List View"
+            class="mode-btn"
+            :class="{ active: viewMode === 'ledger' }"
+            @click="viewMode = 'ledger'"
+            title="Architectural Ledger Mode"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="8" y1="6" x2="21" y2="6"></line>
               <line x1="8" y1="12" x2="21" y2="12"></line>
               <line x1="8" y1="18" x2="21" y2="18"></line>
@@ -91,119 +91,154 @@
               <line x1="3" y1="12" x2="3.01" y2="12"></line>
               <line x1="3" y1="18" x2="3.01" y2="18"></line>
             </svg>
+            <span class="desktop-only font-mono">Ledger</span>
           </button>
         </div>
       </div>
     </div>
 
-    <!-- Skeletons -->
-    <div v-if="playlistStore.isLoading && !playlistStore.playlists.length" class="library-grid">
-      <div v-for="i in 8" :key="i" class="skeleton-card">
-        <div class="skeleton-art"></div>
+    <!-- Skeletons While Loading -->
+    <div v-if="playlistStore.isLoading && !playlistStore.playlists.length" class="crate-grid">
+      <div v-for="n in 6" :key="n" class="skeleton-crate-item">
+        <div class="skeleton-sleeve"></div>
         <div class="skeleton-line w-75"></div>
         <div class="skeleton-line w-40"></div>
       </div>
     </div>
 
-    <!-- Empty Library State -->
-    <div v-else-if="playlistStore.playlists.length === 0" class="empty-state-box">
-      <div class="empty-icon-wrap">
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-        </svg>
+    <!-- Empty Vault State -->
+    <div v-else-if="playlistStore.playlists.length === 0" class="empty-vault-box">
+      <div class="empty-icon-art">
+        <div class="ghost-circle g1"></div>
+        <div class="ghost-circle g2"></div>
+        <span class="font-mono">∅</span>
       </div>
-      <h2 class="font-display">Your sound archive is empty.</h2>
-      <p>Create your first playlist and give your music a dedicated listening space.</p>
-      <AppButton variant="primary" size="md" @click="showCreateModal = true">
-        <template #icon-left>+</template>
-        Create Playlist
-      </AppButton>
+      <h3 class="font-display">The Archival Vault is Empty</h3>
+      <p>Forge your first playlist collection, or generate a master starter archive with verified high-fidelity playable audio.</p>
+      <div class="empty-action-group">
+        <button class="stage-btn primary font-display" @click="showCreateModal = true">
+          + Forge Collection
+        </button>
+        <button class="stage-btn warm font-mono" :disabled="seeding" @click="seedStarter">
+          {{ seeding ? 'Archiving...' : '✨ Generate Master Archive' }}
+        </button>
+      </div>
     </div>
 
-    <!-- Empty Filter Results -->
-    <div v-else-if="filteredPlaylists.length === 0" class="empty-state-box">
-      <h2 class="font-display">No collections match "{{ searchQuery }}"</h2>
-      <p>Try searching for a different keyword or playlist name.</p>
-      <AppButton variant="secondary" size="sm" @click="searchQuery = ''">
-        Clear Filter
-      </AppButton>
+    <!-- Empty Search Results -->
+    <div v-else-if="sortedPlaylists.length === 0" class="empty-vault-box">
+      <h3 class="font-display">No Collections Match "{{ searchQuery }}"</h3>
+      <p>Adjust your search query or clear the filter to view all archived collections.</p>
+      <button class="stage-btn secondary font-mono" @click="searchQuery = ''">Clear Filter</button>
     </div>
 
-    <!-- GRID VIEW -->
-    <div v-else-if="viewMode === 'grid'" class="library-grid">
-      <PlaylistCard
-        v-for="(pl, idx) in filteredPlaylists"
-        :key="pl._id"
-        :playlist="pl"
-        :index="idx"
-      />
+    <!-- MODE A: Vinyl Crate Exhibition View -->
+    <div v-else-if="viewMode === 'crate'" class="crate-grid">
+      <div
+        v-for="(p, index) in sortedPlaylists"
+        :key="p._id"
+        class="crate-item-card"
+        @click="openPlaylist(p._id)"
+      >
+        <!-- Vinyl Sleeve Stage -->
+        <div class="crate-sleeve-stage">
+          <!-- Sliding Disc -->
+          <div class="crate-vinyl-disc" :class="{ 'is-spinning': isPlaylistActive(p) && playerStore.isPlaying }">
+            <div class="disc-grooves"></div>
+            <div class="disc-label"></div>
+          </div>
+
+          <!-- Sleeve Jacket -->
+          <div class="crate-sleeve-jacket">
+            <img
+              v-if="p.coverImage"
+              :src="p.coverImage"
+              :alt="p.name"
+              class="jacket-img"
+              loading="lazy"
+              @error="p.coverImage = null"
+            />
+            <div v-else class="generative-jacket-cover" :style="getGenerativeCoverStyle(p.name)">
+              <span class="font-display">{{ getMonogram(p.name) }}</span>
+            </div>
+
+            <!-- 1-Click Play Overlay Button -->
+            <button
+              class="crate-quick-play-btn"
+              @click.stop="handleQuickPlay(p)"
+              :title="`Play ${p.name}`"
+            >
+              <svg v-if="isPlaylistActive(p) && playerStore.isPlaying" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <rect x="6" y="4" width="4" height="16"></rect>
+                <rect x="14" y="4" width="4" height="16"></rect>
+              </svg>
+              <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <polygon points="6 3 20 12 6 21 6 3"></polygon>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Metadata -->
+        <div class="crate-meta">
+          <div class="crate-meta-top font-mono">
+            <span class="crate-index">#0{{ index + 1 }}</span>
+            <span class="crate-freq-count">{{ p.songs?.length || 0 }} FREQ</span>
+          </div>
+          <h3 class="crate-title font-display">{{ p.name }}</h3>
+          <p v-if="p.description" class="crate-desc">{{ p.description }}</p>
+        </div>
+      </div>
     </div>
 
-    <!-- LIST / LEDGER VIEW -->
-    <div v-else class="library-list-table-container">
-      <table class="library-table">
-        <thead>
-          <tr>
-            <th class="th-pl">PLAYLIST</th>
-            <th class="th-desc">DESCRIPTION</th>
-            <th class="th-count">TRACKS</th>
-            <th class="th-dur">DURATION</th>
-            <th class="th-date">UPDATED</th>
-            <th class="th-act"></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="(pl) in filteredPlaylists"
-            :key="pl._id"
-            class="table-row"
-            @click="goToPlaylist(pl._id)"
+    <!-- MODE B: Architectural Ledger View -->
+    <div v-else class="ledger-table-container">
+      <div
+        v-for="(p, index) in sortedPlaylists"
+        :key="p._id"
+        class="ledger-row"
+        @click="openPlaylist(p._id)"
+      >
+        <span class="ledger-index font-mono">{{ formatIndex(index + 1) }}</span>
+
+        <div class="ledger-sleeve-thumb">
+          <img v-if="p.coverImage" :src="p.coverImage" :alt="p.name" class="thumb-img" />
+          <div v-else class="thumb-gen font-display" :style="getGenerativeCoverStyle(p.name)">
+            {{ getMonogram(p.name) }}
+          </div>
+        </div>
+
+        <div class="ledger-name-group">
+          <span class="ledger-name font-display">{{ p.name }}</span>
+          <span v-if="p.description" class="ledger-sub">{{ p.description }}</span>
+        </div>
+
+        <div class="ledger-stat-cell font-mono">
+          <span class="stat-highlight">{{ p.songs?.length || 0 }}</span>
+          <span class="stat-tag">FREQUENCIES</span>
+        </div>
+
+        <div class="ledger-stat-cell font-mono desktop-only">
+          <span class="stat-highlight">{{ calculateDuration(p.songs) }}</span>
+          <span class="stat-tag">RUNTIME</span>
+        </div>
+
+        <div class="ledger-actions" @click.stop>
+          <button
+            class="ledger-play-btn"
+            @click="handleQuickPlay(p)"
+            :title="`Play ${p.name}`"
           >
-            <td class="td-pl">
-              <div class="cell-pl-info">
-                <ArtworkCover
-                  :src="pl.coverImage"
-                  :alt="pl.name"
-                  size="xs"
-                  :fallbackSeed="pl.name"
-                />
-                <span class="pl-table-name font-display">{{ pl.name }}</span>
-              </div>
-            </td>
-
-            <td class="td-desc">
-              <span class="cell-desc-text">{{ pl.description || '—' }}</span>
-            </td>
-
-            <td class="td-count">
-              <span class="tabular-nums font-mono">{{ pl.songs?.length || 0 }}</span>
-            </td>
-
-            <td class="td-dur">
-              <span class="tabular-nums font-mono">{{ formatDuration(calculateDuration(pl.songs)) }}</span>
-            </td>
-
-            <td class="td-date">
-              <span class="date-label font-mono">{{ formatDate(pl.updatedAt || pl.createdAt) }}</span>
-            </td>
-
-            <td class="td-act" @click.stop>
-              <button
-                class="quick-play-row-btn"
-                :disabled="!pl.songs?.length"
-                @click="quickPlay(pl)"
-                title="Play Playlist"
-                aria-label="Play Playlist"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M8 5v14l11-7z"/>
-                </svg>
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+            <svg v-if="isPlaylistActive(p) && playerStore.isPlaying" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <rect x="6" y="4" width="4" height="16"></rect>
+              <rect x="14" y="4" width="4" height="16"></rect>
+            </svg>
+            <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="6 3 20 12 6 21 6 3"></polygon>
+            </svg>
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- Create Playlist Modal -->
@@ -219,24 +254,54 @@ import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { usePlaylistStore } from '../stores/playlist';
 import { usePlayerStore } from '../stores/player';
-import { formatDuration } from '../data/demoTracks';
-import PlaylistCard from '../components/dashboard/PlaylistCard.vue';
-import ArtworkCover from '../components/common/ArtworkCover.vue';
-import AppButton from '../components/common/AppButton.vue';
+import { useToastStore } from '../stores/toast';
 import CreatePlaylistModal from '../components/playlists/CreatePlaylistModal.vue';
+import { CURATED_DEMO_TRACKS, PLAYLIST_COVER_PRESETS } from '../data/demoTracks';
 
 const router = useRouter();
 const playlistStore = usePlaylistStore();
 const playerStore = usePlayerStore();
+const toastStore = useToastStore();
 
+const showCreateModal = ref(false);
+const seeding = ref(false);
 const searchQuery = ref('');
 const sortBy = ref('updated');
-const viewMode = ref('grid');
-const showCreateModal = ref(false);
+const viewMode = ref('crate'); // 'crate' | 'ledger'
 
-const filteredPlaylists = computed(() => {
+const isPlaylistActive = (playlist) => {
+  return playerStore.currentPlaylistId === playlist._id;
+};
+
+const getMonogram = (name) => {
+  if (!name) return 'SW';
+  return name.slice(0, 2).toUpperCase();
+};
+
+const formatIndex = (n) => (n < 10 ? `0${n}` : `${n}`);
+
+const calculateDuration = (songs) => {
+  if (!songs || !songs.length) return '0 min';
+  const total = songs.reduce((acc, s) => acc + (s.duration || 0), 0);
+  const m = Math.floor(total / 60);
+  return `${m}m`;
+};
+
+const getGenerativeCoverStyle = (name) => {
+  let hash = 0;
+  for (let i = 0; i < (name || 'SW').length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  const hue1 = Math.abs(hash % 360);
+  const hue2 = (hue1 + 45) % 360;
+  return {
+    background: `linear-gradient(135deg, hsl(${hue1}, 70%, 14%) 0%, hsl(${hue2}, 60%, 8%) 100%)`,
+    color: `hsl(${hue1}, 80%, 65%)`,
+  };
+};
+
+const sortedPlaylists = computed(() => {
   let list = [...playlistStore.playlists];
 
+  // Search filter
   if (searchQuery.value.trim()) {
     const q = searchQuery.value.toLowerCase().trim();
     list = list.filter(
@@ -246,379 +311,644 @@ const filteredPlaylists = computed(() => {
     );
   }
 
-  list.sort((a, b) => {
-    if (sortBy.value === 'name') {
-      return a.name.localeCompare(b.name);
-    }
-    if (sortBy.value === 'created') {
-      return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
-    }
-    if (sortBy.value === 'tracks') {
-      return (b.songs?.length || 0) - (a.songs?.length || 0);
-    }
-    return new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0);
-  });
+  // Sorting
+  if (sortBy.value === 'name') {
+    list.sort((a, b) => a.name.localeCompare(b.name));
+  } else if (sortBy.value === 'tracks') {
+    list.sort((a, b) => (b.songs?.length || 0) - (a.songs?.length || 0));
+  } else if (sortBy.value === 'created') {
+    list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+  } else {
+    // updated
+    list.sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0));
+  }
 
   return list;
 });
 
-const goToPlaylist = (id) => {
+const openPlaylist = (id) => {
   router.push(`/playlists/${id}`);
 };
 
-const quickPlay = (pl) => {
-  if (pl.songs && pl.songs.length) {
-    playerStore.playTrack(pl.songs[0], pl.songs, 0, pl._id);
+const handleQuickPlay = (playlist) => {
+  if (!playlist.songs || !playlist.songs.length) {
+    toastStore.info(`"${playlist.name}" is empty`);
+    router.push(`/playlists/${playlist._id}`);
+    return;
+  }
+  if (isPlaylistActive(playlist) && playerStore.isPlaying) {
+    playerStore.togglePlay();
+  } else {
+    playerStore.playTrack(playlist.songs[0], playlist, playlist.songs);
+    toastStore.info(`Resonating "${playlist.name}"`);
   }
 };
 
-const calculateDuration = (songs) => {
-  if (!songs || !songs.length) return 0;
-  return songs.reduce((acc, s) => acc + (s.duration || 0), 0);
-};
-
-const formatDate = (dateString) => {
-  if (!dateString) return '—';
+const seedStarter = async () => {
+  seeding.value = true;
   try {
-    return new Date(dateString).toLocaleDateString(undefined, {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
+    const starter = await playlistStore.createPlaylist({
+      name: 'Nocturnal Resonance Atelier',
+      description: 'Handcrafted selection of verified high-fidelity ambient, classical, and electronic audio streams.',
+      coverImage: PLAYLIST_COVER_PRESETS[1].url,
+      isPublic: true,
+      songs: CURATED_DEMO_TRACKS,
     });
-  } catch {
-    return '—';
+    toastStore.success('Generated starter archive with playable audio!');
+    router.push(`/playlists/${starter._id}`);
+  } catch (err) {
+    toastStore.error(err.response?.data?.message || 'Failed to generate starter');
+  } finally {
+    seeding.value = false;
   }
 };
 </script>
 
 <style scoped>
-.sw-library-view {
-  max-width: 1400px;
-  margin: 0 auto;
+.sw-spatial-library {
+  width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 36px;
 }
 
-.library-header {
+/* 1. Header */
+.library-archival-header {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
   gap: 24px;
-  flex-wrap: wrap;
 }
 
 .header-titles {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-}
-
-.header-eyebrow {
-  font-size: 0.68rem;
-  letter-spacing: 0.12em;
-  color: var(--sw-accent);
-  font-weight: 700;
-}
-
-.header-main-title {
-  font-size: 2.4rem;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  color: var(--sw-text-primary);
-}
-
-.header-sub {
-  font-size: 0.92rem;
-  color: var(--sw-text-secondary);
-}
-
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.library-metrics {
-  display: flex;
   gap: 10px;
 }
 
-.metric-chip {
+.header-provenance {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  padding: 6px 14px;
-  background: var(--sw-surface);
-  border: 1px solid var(--sw-border);
-  border-radius: var(--sw-radius-md);
-}
-
-.metric-num {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--sw-text-primary);
-}
-
-.metric-lbl {
-  font-size: 0.62rem;
+  gap: 8px;
+  font-size: 11px;
+  letter-spacing: 0.12em;
   color: var(--sw-text-muted);
 }
 
-/* Toolbar */
-.library-toolbar {
+.pulse-beacon {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--sw-accent);
+}
+
+.header-headline {
+  font-size: clamp(34px, 5vw, 54px);
+  font-weight: 800;
+  line-height: 1.05;
+  color: #fff;
+  letter-spacing: -0.03em;
+}
+
+.header-tagline {
+  font-size: 15px;
+  color: var(--sw-text-secondary);
+  max-width: 580px;
+  line-height: 1.5;
+}
+
+.header-right-cluster {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.vault-metrics {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 18px;
+  background: rgba(13, 16, 23, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--sw-radius-md);
+}
+
+.vault-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.vault-val {
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.vault-val.accent {
+  color: var(--sw-accent);
+}
+
+.vault-lbl {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--sw-text-muted);
+}
+
+.forge-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 22px;
+  background: linear-gradient(135deg, var(--sw-accent), #0284c7);
+  border-radius: var(--sw-radius-full);
+  color: #060709;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 0 24px rgba(56, 189, 248, 0.4);
+  transition: transform var(--sw-transition-fast);
+}
+
+.forge-btn:hover {
+  transform: translateY(-2px);
+}
+
+.forge-plus {
+  font-size: 16px;
+}
+
+/* 2. Control Island */
+.archival-control-island {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  flex-wrap: wrap;
-  padding: 14px 18px;
-  background: var(--sw-surface);
-  border: 1px solid var(--sw-border);
+  padding: 14px 20px;
+  background: rgba(13, 16, 23, 0.55);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--sw-radius-lg);
 }
 
-.toolbar-search-box {
+.search-filter-capsule {
   display: flex;
   align-items: center;
   gap: 10px;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--sw-radius-full);
   flex: 1;
   max-width: 440px;
 }
 
-.search-svg {
+.search-icon {
   color: var(--sw-text-muted);
 }
 
-.toolbar-search-input {
+.filter-input {
   background: transparent;
   border: none;
   outline: none;
-  color: var(--sw-text-primary);
-  font-size: 0.88rem;
+  color: #fff;
+  font-size: 12px;
   width: 100%;
 }
 
-.toolbar-search-input::placeholder {
+.filter-input::placeholder {
   color: var(--sw-text-muted);
 }
 
 .clear-btn {
   color: var(--sw-text-muted);
-  font-size: 0.8rem;
   cursor: pointer;
 }
 
-.toolbar-right-controls {
+.island-right-controls {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
 }
 
-.sort-picker {
+.sort-capsule {
   display: flex;
   align-items: center;
   gap: 8px;
+  font-size: 11px;
 }
 
-.sort-tag {
-  font-size: 0.68rem;
+.sort-label {
   color: var(--sw-text-muted);
-  letter-spacing: 0.08em;
 }
 
-.sw-sort-select {
-  background: var(--sw-surface-hover);
-  border: 1px solid var(--sw-border);
-  color: var(--sw-text-primary);
+.sort-select {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
   padding: 6px 12px;
   border-radius: var(--sw-radius-sm);
-  font-size: 0.82rem;
   outline: none;
   cursor: pointer;
 }
 
-.view-switch-box {
-  display: flex;
-  background: var(--sw-surface-hover);
-  border: 1px solid var(--sw-border);
-  border-radius: var(--sw-radius-sm);
-  padding: 2px;
+.sort-select option {
+  background: #0d1017;
+  color: #fff;
 }
 
-.switch-btn {
-  padding: 6px 8px;
-  border-radius: 4px;
-  color: var(--sw-text-muted);
+.mode-switcher {
+  display: flex;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--sw-radius-full);
+  padding: 3px;
+}
+
+.mode-btn {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--sw-radius-full);
+  color: var(--sw-text-secondary);
+  font-size: 11px;
+  cursor: pointer;
   transition: all var(--sw-transition-fast);
 }
 
-.switch-btn:hover {
-  color: var(--sw-text-primary);
+.mode-btn.active {
+  background: rgba(56, 189, 248, 0.15);
+  color: #fff;
+  border: 1px solid rgba(56, 189, 248, 0.35);
 }
 
-.switch-btn.active {
-  background: var(--sw-surface-active);
-  color: var(--sw-accent);
-}
-
-/* Grids & Cards */
-.library-grid {
+/* 3. Crate Mode Grid */
+.crate-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 28px;
 }
 
-/* Skeletons */
-.skeleton-card {
-  background: var(--sw-surface);
-  border: 1px solid var(--sw-border);
-  border-radius: var(--sw-radius-xl);
-  padding: 16px;
+.crate-item-card {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
+  padding: 18px;
+  background: rgba(13, 16, 23, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--sw-radius-lg);
+  cursor: pointer;
+  transition: all var(--sw-transition-fast);
 }
 
-.skeleton-art {
+.crate-item-card:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.16);
+  transform: translateY(-4px);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.7);
+}
+
+.crate-sleeve-stage {
+  position: relative;
   width: 100%;
   aspect-ratio: 1;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02));
-  background-size: 200% 100%;
-  border-radius: var(--sw-radius-md);
-  animation: swShimmer 1.8s infinite;
 }
 
-.skeleton-line {
-  height: 14px;
-  background: rgba(255, 255, 255, 0.04);
-  border-radius: 4px;
-}
-
-@keyframes swShimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-
-/* Empty State */
-.empty-state-box {
-  text-align: center;
-  padding: 64px 24px;
-  background: var(--sw-surface);
-  border: 1px dashed var(--sw-border);
-  border-radius: var(--sw-radius-xl);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.empty-icon-wrap {
-  width: 64px;
-  height: 64px;
+.crate-vinyl-disc {
+  position: absolute;
+  top: 6px;
+  right: 0;
+  width: 90%;
+  height: 90%;
   border-radius: 50%;
-  background: rgba(56, 189, 248, 0.08);
-  border: 1px solid rgba(56, 189, 248, 0.2);
+  background: radial-gradient(circle at center, #222 15%, #080808 60%, #151515 100%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 1;
+}
+
+.crate-item-card:hover .crate-vinyl-disc {
+  transform: translateX(25px) rotate(25deg);
+}
+
+.crate-vinyl-disc.is-spinning {
+  animation: spin-vinyl 3s linear infinite;
+}
+
+.disc-grooves {
+  position: absolute;
+  inset: 12px;
+  border-radius: 50%;
+  border: 1px dashed rgba(255, 255, 255, 0.14);
+}
+
+.disc-label {
+  position: absolute;
+  inset: 38%;
+  border-radius: 50%;
+  background: var(--sw-accent);
+}
+
+.crate-sleeve-jacket {
+  position: relative;
+  width: 90%;
+  height: 90%;
+  border-radius: var(--sw-radius-md);
+  overflow: hidden;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.6);
+  z-index: 2;
+  background: #0d1017;
+}
+
+.jacket-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.generative-jacket-cover {
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--sw-accent);
-  margin-bottom: 16px;
+  font-size: 32px;
+  font-weight: 800;
 }
 
-.empty-state-box h2 {
-  font-size: 1.5rem;
-  margin-bottom: 8px;
-}
-
-.empty-state-box p {
-  color: var(--sw-text-secondary);
-  font-size: 0.9rem;
-  margin-bottom: 24px;
-}
-
-/* List / Ledger Table */
-.library-list-table-container {
-  background: var(--sw-surface);
-  border: 1px solid var(--sw-border);
-  border-radius: var(--sw-radius-xl);
-  overflow-x: auto;
-}
-
-.library-table {
-  width: 100%;
-  border-collapse: collapse;
-  text-align: left;
-}
-
-.library-table th {
-  padding: 14px 18px;
-  font-family: var(--sw-font-mono);
-  font-size: 0.68rem;
-  color: var(--sw-text-muted);
-  border-bottom: 1px solid var(--sw-border);
-  letter-spacing: 0.08em;
-}
-
-.table-row {
-  cursor: pointer;
-  border-bottom: 1px solid var(--sw-border-subtle);
-  transition: background var(--sw-transition-fast);
-}
-
-.table-row:hover {
-  background: var(--sw-surface-hover);
-}
-
-.library-table td {
-  padding: 12px 18px;
-  font-size: 0.85rem;
-  color: var(--sw-text-secondary);
-}
-
-.cell-pl-info {
+.crate-quick-play-btn {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--sw-accent);
+  color: #060709;
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: all var(--sw-transition-fast);
 }
 
-.pl-table-name {
-  font-size: 0.92rem;
-  font-weight: 700;
-  color: var(--sw-text-primary);
+.crate-item-card:hover .crate-quick-play-btn {
+  opacity: 1;
+  transform: translateY(0);
 }
 
-.table-row:hover .pl-table-name {
+.crate-quick-play-btn:hover {
+  transform: scale(1.1);
+  background: #fff;
+}
+
+.crate-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.crate-meta-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--sw-text-muted);
+}
+
+.crate-freq-count {
   color: var(--sw-accent);
 }
 
-.cell-desc-text {
-  max-width: 320px;
+.crate-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  display: block;
 }
 
-.quick-play-row-btn {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  background: var(--sw-surface-active);
-  color: var(--sw-text-primary);
+.crate-desc {
+  font-size: 12px;
+  color: var(--sw-text-secondary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.5;
+}
+
+/* 4. Ledger Mode */
+.ledger-table-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ledger-row {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 16px;
+  padding: 12px 20px;
+  background: rgba(13, 16, 23, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--sw-radius-md);
   cursor: pointer;
   transition: all var(--sw-transition-fast);
 }
 
-.quick-play-row-btn:hover:not(:disabled) {
+.ledger-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.12);
+  transform: translateX(4px);
+}
+
+.ledger-index {
+  font-size: 11px;
+  color: var(--sw-text-muted);
+  width: 24px;
+}
+
+.ledger-sleeve-thumb {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--sw-radius-xs);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.thumb-gen {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.ledger-name-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.ledger-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ledger-sub {
+  font-size: 12px;
+  color: var(--sw-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ledger-stat-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  width: 100px;
+}
+
+.stat-highlight {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.stat-tag {
+  font-size: 8px;
+  color: var(--sw-text-muted);
+  letter-spacing: 0.1em;
+}
+
+.ledger-actions {
+  display: flex;
+  align-items: center;
+}
+
+.ledger-play-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--sw-transition-fast);
+}
+
+.ledger-row:hover .ledger-play-btn {
   background: var(--sw-accent);
   color: #060709;
-  transform: scale(1.08);
+}
+
+/* Empty Vault */
+.empty-vault-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 24px;
+  text-align: center;
+  gap: 16px;
+  background: rgba(13, 16, 23, 0.35);
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  border-radius: var(--sw-radius-xl);
+}
+
+.empty-icon-art {
+  position: relative;
+  width: 70px;
+  height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: var(--sw-accent);
+}
+
+.ghost-circle {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid var(--sw-accent);
+  opacity: 0.25;
+}
+
+.g1 { inset: 0; }
+.g2 { inset: 12px; }
+
+.empty-action-group {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.stage-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: var(--sw-radius-full);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--sw-transition-fast);
+}
+
+.stage-btn.primary {
+  background: linear-gradient(135deg, var(--sw-accent), #0284c7);
+  color: #060709;
+}
+
+.stage-btn.secondary {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.stage-btn.warm {
+  background: linear-gradient(135deg, var(--sw-warm), #d97706);
+  color: #060709;
+}
+
+@media (max-width: 900px) {
+  .library-archival-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .archival-control-island {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .search-filter-capsule {
+    max-width: 100%;
+  }
+  .island-right-controls {
+    justify-content: space-between;
+  }
 }
 </style>

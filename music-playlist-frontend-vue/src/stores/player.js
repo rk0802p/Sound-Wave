@@ -1,30 +1,31 @@
 import { defineStore } from 'pinia';
 import { soundController } from '../services/providers';
-import { isPlayableAudioUrl, isExternalMediaUrl } from '../data/demoTracks';
+import { isPlayableAudioUrl, isExternalMediaUrl, CURATED_DEMO_TRACKS } from '../data/demoTracks';
 import { detectProviderType, extractSpotifyEmbedUrl } from '../services/providers/detector';
 
 export const usePlayerStore = defineStore('player', {
   state: () => {
     const savedVol = typeof window !== 'undefined' ? localStorage.getItem('soundwave_volume') : null;
     const initialVol = savedVol !== null ? parseFloat(savedVol) : 0.8;
+    const initialTrack = CURATED_DEMO_TRACKS[0];
 
     return {
-      currentTrackId: null,
-      currentPlaylistId: null,
-      currentTrack: null,
-      queue: [],
-      queueIndex: -1,
+      currentTrackId: initialTrack._id || 'track-1',
+      currentPlaylistId: 'archive-67c000000000000000000001',
+      currentTrack: initialTrack,
+      queue: CURATED_DEMO_TRACKS,
+      queueIndex: 0,
       isPlaying: false,
       isLoading: false,
-      currentTime: 0,
-      duration: 0,
+      currentTime: 45,
+      duration: initialTrack.duration || 215,
       volume: isNaN(initialVol) ? 0.8 : Math.max(0, Math.min(1, initialVol)),
       muted: false,
       shuffle: false,
       repeatMode: 'off', // 'off' | 'all' | 'one'
       error: null,
-      isExpanded: false,
-      isQueueOpen: false,
+      isExpanded: typeof window !== 'undefined' && window.location.search.includes('expanded=1'),
+      isQueueOpen: typeof window !== 'undefined' && window.location.search.includes('queue=1'),
       isEngineReady: false,
       providerCapabilities: {
         canSeek: true,
