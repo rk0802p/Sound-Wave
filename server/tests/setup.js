@@ -1,0 +1,39 @@
+const mongoose = require("mongoose");
+const { MongoMemoryServer } = require("mongodb-memory-server");
+
+let mongoServer;
+
+process.env.NODE_ENV = "test";
+process.env.JWT_SECRET = "super_secret_test_jwt_key_2026";
+process.env.JWT_EXPIRES_IN = "7d";
+
+const connectTestDB = async () => {
+  mongoServer = await MongoMemoryServer.create();
+  const uri = mongoServer.getUri();
+  await mongoose.connect(uri);
+};
+
+const closeTestDB = async () => {
+  if (mongoose.connection.readyState !== 0) {
+    await mongoose.connection.dropDatabase();
+    await mongoose.connection.close();
+  }
+  if (mongoServer) {
+    await mongoServer.stop();
+  }
+};
+
+const clearTestDB = async () => {
+  if (mongoose.connection.readyState === 1) {
+    const collections = mongoose.connection.collections;
+    for (const key in collections) {
+      await collections[key].deleteMany({});
+    }
+  }
+};
+
+module.exports = {
+  connectTestDB,
+  closeTestDB,
+  clearTestDB,
+};
