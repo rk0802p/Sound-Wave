@@ -2,32 +2,32 @@
   <div class="playlist-view-wrapper">
     <!-- Back to Library Button -->
     <div class="back-nav-bar">
-      <router-link to="/" class="back-link">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <router-link to="/library" class="back-link font-mono">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="19" y1="12" x2="5" y2="12"></line>
           <polyline points="12 19 5 12 12 5"></polyline>
         </svg>
-        <span>Back to Library</span>
+        <span>BACK TO ARCHIVES</span>
       </router-link>
     </div>
 
     <!-- Loading State -->
     <div v-if="playlistStore.isLoading && !playlist" class="loading-state">
       <div class="spinner"></div>
-      <p>Loading playlist...</p>
+      <p class="font-mono">Loading sound archive...</p>
     </div>
 
     <!-- Error State -->
     <div v-else-if="playlistStore.error" class="error-state">
       <div class="error-icon">⚠️</div>
-      <h2>Unable to Load Playlist</h2>
+      <h2 class="font-display">Unable to Access Archive</h2>
       <p>{{ playlistStore.error }}</p>
-      <router-link to="/" class="btn-home">Return to Library</router-link>
+      <router-link to="/library" class="btn-home font-mono">Return to Library</router-link>
     </div>
 
     <!-- Main Content -->
     <template v-else-if="playlist">
-      <!-- Hero Banner -->
+      <!-- Playlist Hero Banner -->
       <PlaylistHero
         :playlist="playlist"
         @play-all="handlePlayAll"
@@ -37,7 +37,7 @@
         @delete-playlist="handleDeletePlaylist"
       />
 
-      <!-- Song Table -->
+      <!-- Drag & Drop Song Ledger Table -->
       <SongTable
         :songs="playlist.songs || []"
         :playlist-id="playlist._id"
@@ -115,15 +115,15 @@ const refreshPlaylist = async () => {
 
 const handlePlayAll = () => {
   if (!playlist.value?.songs?.length) return;
-  playerStore.playTrack(playlist.value.songs[0], playlist.value.songs, 0);
-  toastStore.info(`Playing "${playlist.value.name}"`);
+  playerStore.playTrack(playlist.value.songs[0], playlist.value.songs, 0, playlist.value._id);
+  toastStore.info(`Resonating "${playlist.value.name}"`);
 };
 
 const handleShufflePlay = () => {
   if (!playlist.value?.songs?.length) return;
   playerStore.shuffle = true;
   const randomIndex = Math.floor(Math.random() * playlist.value.songs.length);
-  playerStore.playTrack(playlist.value.songs[randomIndex], playlist.value.songs, randomIndex);
+  playerStore.playTrack(playlist.value.songs[randomIndex], playlist.value.songs, randomIndex, playlist.value._id);
   toastStore.info(`Shuffling "${playlist.value.name}"`);
 };
 
@@ -147,7 +147,7 @@ const handleDeleteSong = async (song) => {
 const handleReorderSongs = async (newSongIds) => {
   try {
     await playlistStore.reorderSongs(playlist.value._id, newSongIds);
-  } catch (err) {
+  } catch {
     toastStore.error('Failed to update song order');
   }
 };
@@ -160,7 +160,7 @@ const handleDeletePlaylist = async () => {
   try {
     await playlistStore.deletePlaylist(playlist.value._id);
     toastStore.success('Playlist deleted');
-    router.push('/');
+    router.push('/library');
   } catch (err) {
     toastStore.error(err.response?.data?.message || 'Failed to delete playlist');
   }
@@ -187,7 +187,7 @@ onMounted(() => {
 }
 
 .back-nav-bar {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .back-link {
@@ -195,20 +195,20 @@ onMounted(() => {
   align-items: center;
   gap: 8px;
   color: var(--sw-text-secondary);
-  text-decoration: none;
-  font-size: 0.88rem;
-  font-weight: 500;
-  transition: all var(--sw-transition-fast);
-  padding: 6px 12px;
-  border-radius: var(--sw-radius-sm);
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: var(--sw-radius-md);
   background: var(--sw-surface);
-  border: 1px solid var(--sw-border-subtle);
+  border: 1px solid var(--sw-border);
+  transition: all var(--sw-transition-fast);
 }
 
 .back-link:hover {
-  color: var(--sw-text-primary);
+  color: var(--sw-accent);
   background: var(--sw-surface-hover);
-  border-color: var(--sw-border);
+  border-color: var(--sw-border-hover);
 }
 
 .loading-state,
@@ -217,12 +217,12 @@ onMounted(() => {
   padding: 80px 20px;
   background: var(--sw-surface);
   border: 1px dashed var(--sw-border);
-  border-radius: var(--sw-radius-lg);
+  border-radius: var(--sw-radius-xl);
 }
 
 .spinner {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border: 3px solid rgba(255, 255, 255, 0.1);
   border-top-color: var(--sw-accent);
   border-radius: 50%;
@@ -240,7 +240,7 @@ onMounted(() => {
 }
 
 .error-state h2 {
-  font-size: 1.5rem;
+  font-size: 1.6rem;
   color: var(--sw-text-primary);
   margin-bottom: 8px;
 }
@@ -251,11 +251,13 @@ onMounted(() => {
 }
 
 .btn-home {
+  display: inline-flex;
   padding: 10px 22px;
   background: var(--sw-accent);
-  color: #fff;
-  text-decoration: none;
-  border-radius: var(--sw-radius-sm);
-  font-weight: 600;
+  color: #060709;
+  border-radius: var(--sw-radius-md);
+  font-weight: 700;
+  font-size: 0.82rem;
+  letter-spacing: 0.05em;
 }
 </style>

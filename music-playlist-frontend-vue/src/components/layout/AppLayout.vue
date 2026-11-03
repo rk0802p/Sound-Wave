@@ -1,6 +1,6 @@
 <template>
   <div class="sw-shell-root">
-    <!-- Sidebar -->
+    <!-- Sidebar Navigation -->
     <Sidebar
       :is-open="sidebarOpen"
       @close="sidebarOpen = false"
@@ -12,16 +12,16 @@
       <!-- Top Bar -->
       <TopBar @toggle-sidebar="sidebarOpen = !sidebarOpen" />
 
-      <!-- Scrollable Main Content -->
-      <main class="sw-content-scroller">
+      <!-- Scrollable Main Routed Content -->
+      <main class="sw-content-scroller" id="main-scroller">
         <slot></slot>
       </main>
     </div>
 
-    <!-- Persistent Bottom Player -->
+    <!-- Persistent Bottom Player Bar -->
     <AudioPlayer />
 
-    <!-- Expanded Now Playing Modal -->
+    <!-- Expanded Immersive Listening Room -->
     <ExpandedPlayer />
 
     <!-- Queue Slide-out Drawer -->
@@ -75,6 +75,7 @@ onMounted(async () => {
   color: var(--sw-text-primary);
   font-family: inherit;
   overflow: hidden;
+  position: relative;
 }
 
 .sw-main-viewport {
@@ -85,22 +86,24 @@ onMounted(async () => {
   min-height: 100vh;
   position: relative;
   background: var(--sw-bg);
-  /* Solid neutral dark background without oversized purple gradients */
+  transition: margin-left var(--sw-transition-normal);
 }
 
 .sw-content-scroller {
   flex: 1;
   overflow-y: auto;
-  padding: 32px 36px calc(var(--sw-player-height) + 36px) 36px;
+  padding: 32px 36px calc(var(--sw-player-height) + 40px) 36px;
   height: calc(100vh - var(--sw-topbar-height));
+  scroll-behavior: smooth;
 }
 
 @media (max-width: 900px) {
   .sw-main-viewport {
     margin-left: 0;
   }
+
   .sw-content-scroller {
-    padding: 20px 18px calc(var(--sw-player-height) + 24px) 18px;
+    padding: 20px 16px calc(var(--sw-player-height) + 48px) 16px;
   }
 }
 </style>

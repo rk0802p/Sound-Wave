@@ -5,15 +5,18 @@
     <div class="auth-card">
       <!-- Brand Header -->
       <div class="auth-brand">
-        <div class="brand-frequency">
-          <span></span><span></span><span></span><span></span>
+        <div class="brand-sound-mark">
+          <span></span><span></span><span></span><span></span><span></span>
         </div>
-        <span class="brand-title">SOUNDWAVE</span>
+        <div class="brand-text-lockup">
+          <span class="brand-title font-display">SOUNDWAVE</span>
+          <span class="brand-badge font-mono">ATELIER</span>
+        </div>
       </div>
 
       <div class="auth-intro">
-        <h1 class="auth-heading">Create your space.</h1>
-        <p class="auth-subheading">Build a library that sounds like you.</p>
+        <h1 class="auth-heading font-display">Create your space.</h1>
+        <p class="auth-subheading">Build a personal sound library that resonates with you.</p>
       </div>
 
       <!-- Inline API Error -->
@@ -48,11 +51,11 @@
             <label class="field-label">Password <span class="required-star">*</span></label>
             <button
               type="button"
-              class="pw-toggle-btn"
+              class="pw-toggle-btn font-mono"
               @click="showPassword = !showPassword"
               tabindex="-1"
             >
-              {{ showPassword ? 'Hide' : 'Show' }}
+              {{ showPassword ? 'HIDE' : 'SHOW' }}
             </button>
           </div>
           <div class="pw-input-wrapper">
@@ -105,13 +108,19 @@ const password = ref('');
 const showPassword = ref(false);
 const loading = ref(false);
 const errorMessage = ref('');
-const fieldErrors = reactive({ username: '', email: '', password: '' });
 
-const validateForm = () => {
+const fieldErrors = reactive({
+  username: '',
+  email: '',
+  password: '',
+});
+
+const validate = () => {
+  let valid = true;
   fieldErrors.username = '';
   fieldErrors.email = '';
   fieldErrors.password = '';
-  let valid = true;
+  errorMessage.value = '';
 
   if (!username.value.trim()) {
     fieldErrors.username = 'Username is required';
@@ -124,8 +133,8 @@ const validateForm = () => {
   if (!email.value.trim()) {
     fieldErrors.email = 'Email address is required';
     valid = false;
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) {
-    fieldErrors.email = 'Please enter a valid email address';
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim())) {
+    fieldErrors.email = 'Please provide a valid email';
     valid = false;
   }
 
@@ -141,16 +150,16 @@ const validateForm = () => {
 };
 
 const handleSignup = async () => {
-  if (!validateForm()) return;
+  if (!validate()) return;
 
   loading.value = true;
   errorMessage.value = '';
 
   try {
-    await authStore.signup(username.value, email.value, password.value);
+    await authStore.signup(username.value.trim(), email.value.trim(), password.value);
     router.push('/');
   } catch (err) {
-    errorMessage.value = err.response?.data?.message || err.message || 'Failed to create account';
+    errorMessage.value = err.response?.data?.message || err.message || 'Registration failed. Please try again.';
   } finally {
     loading.value = false;
   }
@@ -160,45 +169,47 @@ const handleSignup = async () => {
 <style scoped>
 .auth-page-wrapper {
   min-height: 100vh;
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--sw-bg);
+  background: var(--sw-void);
+  padding: 24px;
   position: relative;
   overflow: hidden;
-  padding: 24px;
 }
 
 .auth-ambient-glow {
   position: absolute;
   width: 500px;
   height: 500px;
-  background: radial-gradient(circle, rgba(121, 104, 255, 0.08) 0%, transparent 70%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.12) 0%, transparent 70%);
   pointer-events: none;
-  z-index: 0;
+  filter: blur(50px);
 }
 
 .auth-card {
   width: 100%;
-  max-width: 420px;
+  max-width: 440px;
   background: var(--sw-surface);
   border: 1px solid var(--sw-border);
-  border-radius: 22px;
+  border-radius: var(--sw-radius-xl);
   padding: 40px 36px;
   position: relative;
-  z-index: 1;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
-  animation: cardFadeUp 0.35s ease;
+  z-index: 10;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+  animation: cardEnter 260ms var(--sw-ease-out);
 }
 
-@keyframes cardFadeUp {
+@keyframes cardEnter {
   from {
     opacity: 0;
-    transform: translateY(12px);
+    transform: translateY(12px) scale(0.98);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 }
 
@@ -206,39 +217,52 @@ const handleSignup = async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 12px;
   margin-bottom: 24px;
 }
 
-.brand-frequency {
+.brand-sound-mark {
   display: flex;
   align-items: center;
-  gap: 3px;
+  gap: 2.5px;
   height: 20px;
 }
 
-.brand-frequency span {
+.brand-sound-mark span {
   width: 3px;
   background: var(--sw-accent);
   border-radius: 2px;
-  animation: barPulse 1.2s infinite ease-in-out alternate;
+  animation: markWave 1.4s infinite ease-in-out alternate;
 }
 
-.brand-frequency span:nth-child(1) { height: 10px; animation-delay: 0.1s; }
-.brand-frequency span:nth-child(2) { height: 20px; animation-delay: 0.3s; }
-.brand-frequency span:nth-child(3) { height: 14px; animation-delay: 0.2s; }
-.brand-frequency span:nth-child(4) { height: 18px; animation-delay: 0.4s; }
+.brand-sound-mark span:nth-child(1) { height: 6px; animation-delay: 0.1s; }
+.brand-sound-mark span:nth-child(2) { height: 16px; animation-delay: 0.3s; }
+.brand-sound-mark span:nth-child(3) { height: 10px; animation-delay: 0.15s; }
+.brand-sound-mark span:nth-child(4) { height: 20px; animation-delay: 0.4s; }
+.brand-sound-mark span:nth-child(5) { height: 8px; animation-delay: 0.25s; }
 
-@keyframes barPulse {
+@keyframes markWave {
   0% { transform: scaleY(0.4); }
-  100% { transform: scaleY(1); }
+  100% { transform: scaleY(1.1); }
+}
+
+.brand-text-lockup {
+  display: flex;
+  flex-direction: column;
 }
 
 .brand-title {
-  font-size: 1.15rem;
+  font-size: 1.1rem;
   font-weight: 800;
-  letter-spacing: 1.5px;
+  letter-spacing: 0.08em;
   color: var(--sw-text-primary);
+}
+
+.brand-badge {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--sw-accent);
+  letter-spacing: 0.14em;
 }
 
 .auth-intro {
@@ -247,11 +271,11 @@ const handleSignup = async () => {
 }
 
 .auth-heading {
-  font-size: 1.6rem;
-  font-weight: 700;
+  font-size: 1.8rem;
+  font-weight: 800;
   color: var(--sw-text-primary);
   margin-bottom: 6px;
-  letter-spacing: -0.5px;
+  letter-spacing: -0.02em;
 }
 
 .auth-subheading {
@@ -262,20 +286,20 @@ const handleSignup = async () => {
 .auth-alert {
   padding: 10px 14px;
   border-radius: var(--sw-radius-sm);
-  font-size: 0.84rem;
+  font-size: 0.82rem;
   margin-bottom: 20px;
 }
 
 .auth-alert.error {
-  background: rgba(237, 116, 125, 0.12);
-  border: 1px solid rgba(237, 116, 125, 0.3);
+  background: rgba(244, 63, 94, 0.12);
+  border: 1px solid rgba(244, 63, 94, 0.3);
   color: var(--sw-danger);
 }
 
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 20px;
 }
 
 .password-field-group {
@@ -292,7 +316,7 @@ const handleSignup = async () => {
 
 .field-label {
   font-size: 0.82rem;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--sw-text-secondary);
 }
 
@@ -301,12 +325,10 @@ const handleSignup = async () => {
 }
 
 .pw-toggle-btn {
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   color: var(--sw-text-muted);
   cursor: pointer;
   padding: 2px 6px;
-  border-radius: 4px;
-  transition: color var(--sw-transition-fast);
 }
 
 .pw-toggle-btn:hover {
@@ -319,7 +341,7 @@ const handleSignup = async () => {
   padding: 0 14px;
   background: var(--sw-surface-hover);
   border: 1px solid var(--sw-border);
-  border-radius: var(--sw-radius-sm);
+  border-radius: var(--sw-radius-md);
   color: var(--sw-text-primary);
   font-size: 0.9rem;
   outline: none;
@@ -328,7 +350,8 @@ const handleSignup = async () => {
 
 .sw-password-input:focus {
   border-color: var(--sw-accent);
-  box-shadow: 0 0 0 1px var(--sw-accent);
+  background: var(--sw-surface-active);
+  box-shadow: 0 0 14px var(--sw-accent-soft);
 }
 
 .sw-password-input.has-error {
@@ -336,7 +359,7 @@ const handleSignup = async () => {
 }
 
 .field-error-text {
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   color: var(--sw-danger);
 }
 
@@ -345,19 +368,17 @@ const handleSignup = async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  font-size: 0.85rem;
+  gap: 8px;
+  font-size: 0.86rem;
   color: var(--sw-text-secondary);
 }
 
 .switch-link {
   color: var(--sw-accent);
-  font-weight: 600;
-  transition: color var(--sw-transition-fast);
+  font-weight: 700;
 }
 
 .switch-link:hover {
-  color: var(--sw-accent-hover);
   text-decoration: underline;
 }
 </style>

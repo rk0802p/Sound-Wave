@@ -1,98 +1,121 @@
 <template>
   <div class="sw-playlist-hero">
-    <!-- Compact Square Artwork -->
-    <div class="hero-art-container">
-      <img
-        :src="artworkUrl"
-        :alt="playlist?.name"
-        class="hero-art-img"
-        @error="onImgError"
-      />
-    </div>
+    <!-- Ambient Backdrop Light from Artwork -->
+    <div
+      class="hero-ambient-glow"
+      :style="{ backgroundImage: playlist?.coverImage ? `url(${playlist.coverImage})` : 'none' }"
+    ></div>
 
-    <!-- Editorial Metadata & Actions -->
-    <div class="hero-info-container">
-      <div class="hero-eyebrow-row">
-        <span class="eyebrow-badge">PLAYLIST</span>
-        <span class="privacy-badge">{{ playlist?.isPublic ? 'PUBLIC' : 'PRIVATE' }}</span>
+    <div class="hero-inner-layout">
+      <!-- Vinyl Showcase Artwork -->
+      <div class="hero-art-showcase">
+        <ArtworkCover
+          :src="playlist?.coverImage"
+          :alt="playlist?.name"
+          size="xl"
+          :showVinyl="true"
+          :glow="true"
+          :isPlaying="isPlayingThisPlaylist"
+          :fallbackSeed="playlist?.name"
+        />
       </div>
 
-      <h1 class="hero-title" :title="playlist?.name">{{ playlist?.name || 'Untitled Playlist' }}</h1>
+      <!-- Editorial Metadata & Actions -->
+      <div class="hero-info-container">
+        <div class="hero-eyebrow-row">
+          <span class="eyebrow-badge font-mono">PLAYLIST ARCHIVE</span>
+          <span class="privacy-badge font-mono">{{ playlist?.isPublic ? 'PUBLIC ACCESS' : 'PRIVATE WORKSTATION' }}</span>
+        </div>
 
-      <p v-if="playlist?.description" class="hero-description">
-        {{ playlist.description }}
-      </p>
+        <h1 class="hero-title font-display" :title="playlist?.name">
+          {{ playlist?.name || 'Untitled Playlist' }}
+        </h1>
 
-      <div class="hero-metadata-row">
-        <span class="owner-name">{{ authStore.username }}</span>
-        <span class="sep-dot">•</span>
-        <span class="meta-item">{{ songCount }} {{ songCount === 1 ? 'track' : 'tracks' }}</span>
-        <span class="sep-dot">•</span>
-        <span class="meta-item tabular-nums">{{ formattedTotalDuration }}</span>
-      </div>
+        <p v-if="playlist?.description" class="hero-description">
+          {{ playlist.description }}
+        </p>
 
-      <!-- Action Row -->
-      <div class="hero-actions-row">
-        <AppButton
-          variant="primary"
-          size="md"
-          :disabled="!songCount"
-          @click="$emit('play-all')"
-        >
-          <template #icon-left>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M8 5v14l11-7z"/>
-            </svg>
-          </template>
-          Play All
-        </AppButton>
+        <div class="hero-metadata-row font-mono">
+          <span class="owner-pill font-mono">
+            <span class="owner-dot"></span>
+            {{ authStore.username }}
+          </span>
+          <span class="sep-dot">•</span>
+          <span class="meta-item">
+            <strong class="tabular-nums">{{ songCount }}</strong> {{ songCount === 1 ? 'track' : 'tracks' }}
+          </span>
+          <span class="sep-dot">•</span>
+          <span class="meta-item tabular-nums">{{ formattedTotalDuration }}</span>
+        </div>
 
-        <AppButton
-          variant="secondary"
-          size="md"
-          :disabled="!songCount"
-          @click="$emit('shuffle-play')"
-        >
-          <template #icon-left>
+        <!-- Action Row -->
+        <div class="hero-actions-row">
+          <AppButton
+            variant="primary"
+            size="md"
+            :disabled="!songCount"
+            @click="$emit('play-all')"
+          >
+            <template #icon-left>
+              <svg v-if="isPlayingThisPlaylist" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+              </svg>
+              <svg v-else width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M8 5v14l11-7z"/>
+              </svg>
+            </template>
+            {{ isPlayingThisPlaylist ? 'Pause Playlist' : 'Play All' }}
+          </AppButton>
+
+          <AppButton
+            variant="secondary"
+            size="md"
+            :disabled="!songCount"
+            @click="$emit('shuffle-play')"
+          >
+            <template #icon-left>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/>
+              </svg>
+            </template>
+            Shuffle
+          </AppButton>
+
+          <AppButton
+            variant="secondary"
+            size="md"
+            @click="$emit('open-add-song')"
+          >
+            <template #icon-left>+</template>
+            Add Track
+          </AppButton>
+
+          <AppButton
+            variant="ghost"
+            size="md"
+            @click="$emit('open-edit')"
+            title="Edit Playlist Details"
+            aria-label="Edit Playlist"
+          >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/>
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
             </svg>
-          </template>
-          Shuffle
-        </AppButton>
+          </AppButton>
 
-        <AppButton
-          variant="secondary"
-          size="md"
-          @click="$emit('open-add-song')"
-        >
-          <template #icon-left>+</template>
-          Add Song
-        </AppButton>
-
-        <AppButton
-          variant="ghost"
-          size="md"
-          @click="$emit('open-edit')"
-          title="Edit Playlist"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-          </svg>
-        </AppButton>
-
-        <AppButton
-          variant="danger"
-          size="md"
-          @click="$emit('delete-playlist')"
-          title="Delete Playlist"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="3 6 5 6 21 6"></polyline>
-            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-          </svg>
-        </AppButton>
+          <AppButton
+            variant="danger"
+            size="md"
+            @click="$emit('delete-playlist')"
+            title="Delete Playlist"
+            aria-label="Delete Playlist"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+          </AppButton>
+        </div>
       </div>
     </div>
   </div>
@@ -101,7 +124,9 @@
 <script setup>
 import { computed } from 'vue';
 import { useAuthStore } from '../../stores/auth';
-import { getDistinctArtwork, formatDuration } from '../../data/demoTracks';
+import { usePlayerStore } from '../../stores/player';
+import { formatDuration } from '../../data/demoTracks';
+import ArtworkCover from '../common/ArtworkCover.vue';
 import AppButton from '../common/AppButton.vue';
 
 const props = defineProps({
@@ -114,9 +139,10 @@ const props = defineProps({
 defineEmits(['play-all', 'shuffle-play', 'open-add-song', 'open-edit', 'delete-playlist']);
 
 const authStore = useAuthStore();
+const playerStore = usePlayerStore();
 
-const artworkUrl = computed(() => {
-  return getDistinctArtwork(props.playlist, 0);
+const isPlayingThisPlaylist = computed(() => {
+  return playerStore.isPlaying && playerStore.currentPlaylistId === props.playlist?._id;
 });
 
 const songCount = computed(() => props.playlist?.songs?.length || 0);
@@ -127,102 +153,115 @@ const formattedTotalDuration = computed(() => {
   if (totalSeconds === 0) return '0 min';
   return formatDuration(totalSeconds);
 });
-
-const onImgError = (e) => {
-  e.target.src = getDistinctArtwork(null, 1);
-};
 </script>
 
 <style scoped>
 .sw-playlist-hero {
-  display: flex;
-  align-items: flex-end;
-  gap: 28px;
-  padding: 28px;
+  position: relative;
   background: var(--sw-surface);
   border: 1px solid var(--sw-border);
-  border-radius: var(--sw-radius-lg);
-  margin-bottom: 24px;
-  position: relative;
-  /* Neutral surface without oversized purple gradients */
-}
-
-.hero-art-container {
-  width: 210px;
-  height: 210px;
-  border-radius: var(--sw-radius-md);
+  border-radius: var(--sw-radius-xl);
+  padding: 32px;
+  margin-bottom: 28px;
   overflow: hidden;
-  flex-shrink: 0;
-  background: #000;
-  border: 1px solid var(--sw-border);
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.6);
+  box-shadow: var(--sw-shadow-lg);
 }
 
-.hero-art-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.hero-ambient-glow {
+  position: absolute;
+  inset: -60px;
+  background-size: cover;
+  background-position: center;
+  filter: blur(80px);
+  opacity: 0.16;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.hero-inner-layout {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: flex-end;
+  gap: 36px;
+}
+
+.hero-art-showcase {
+  flex-shrink: 0;
 }
 
 .hero-info-container {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
   min-width: 0;
 }
 
 .hero-eyebrow-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .eyebrow-badge {
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 1.5px;
+  font-size: 0.65rem;
+  font-weight: 700;
   color: var(--sw-accent);
+  background: rgba(56, 189, 248, 0.12);
+  padding: 2px 10px;
+  border-radius: 4px;
+  letter-spacing: 0.1em;
 }
 
 .privacy-badge {
-  font-size: 0.68rem;
-  font-weight: 600;
-  background: var(--sw-surface-hover);
-  border: 1px solid var(--sw-border-subtle);
-  padding: 2px 7px;
-  border-radius: 4px;
+  font-size: 0.65rem;
   color: var(--sw-text-muted);
+  letter-spacing: 0.08em;
 }
 
 .hero-title {
-  font-size: 2.4rem;
+  font-size: 2.6rem;
   font-weight: 800;
-  letter-spacing: -0.6px;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
   color: var(--sw-text-primary);
   margin: 0;
-  line-height: 1.15;
 }
 
 .hero-description {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   color: var(--sw-text-secondary);
   line-height: 1.5;
-  margin: 2px 0 4px 0;
   max-width: 680px;
 }
 
 .hero-metadata-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 0.85rem;
+  gap: 10px;
+  font-size: 0.8rem;
   color: var(--sw-text-muted);
+  padding: 4px 0;
 }
 
-.owner-name {
-  color: var(--sw-text-primary);
+.owner-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--sw-text-secondary);
   font-weight: 600;
+}
+
+.owner-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--sw-accent);
+}
+
+.meta-item strong {
+  color: var(--sw-text-primary);
 }
 
 .sep-dot {
@@ -233,20 +272,18 @@ const onImgError = (e) => {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-top: 14px;
   flex-wrap: wrap;
+  margin-top: 6px;
 }
 
-@media (max-width: 768px) {
-  .sw-playlist-hero {
+@media (max-width: 900px) {
+  .hero-inner-layout {
     flex-direction: column;
     align-items: flex-start;
-    padding: 20px;
     gap: 20px;
   }
-  .hero-art-container {
-    width: 160px;
-    height: 160px;
+  .sw-playlist-hero {
+    padding: 24px 20px;
   }
   .hero-title {
     font-size: 1.8rem;

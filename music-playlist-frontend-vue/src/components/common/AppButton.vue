@@ -27,8 +27,8 @@ defineProps({
   },
   variant: {
     type: String,
-    default: 'primary', // 'primary' | 'secondary' | 'ghost' | 'danger' | 'icon'
-    validator: (v) => ['primary', 'secondary', 'ghost', 'danger', 'icon'].includes(v),
+    default: 'primary', // 'primary' | 'secondary' | 'ghost' | 'danger' | 'icon' | 'warm'
+    validator: (v) => ['primary', 'secondary', 'ghost', 'danger', 'icon', 'warm'].includes(v),
   },
   size: {
     type: String,
@@ -56,12 +56,18 @@ defineProps({
   align-items: center;
   justify-content: center;
   font-weight: 600;
-  border-radius: var(--sw-radius-sm);
+  border-radius: var(--sw-radius-md);
   transition: all var(--sw-transition-fast);
   white-space: nowrap;
   user-select: none;
   border: 1px solid transparent;
   gap: 8px;
+  cursor: pointer;
+  letter-spacing: -0.01em;
+}
+
+.sw-btn:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .sw-btn.is-full-width {
@@ -86,7 +92,7 @@ defineProps({
   height: 40px;
   padding: 0 18px;
   font-size: 0.88rem;
-  border-radius: 10px;
+  border-radius: var(--sw-radius-md);
 }
 
 .size-lg {
@@ -99,13 +105,30 @@ defineProps({
 /* VARIANTS */
 .variant-primary {
   background: var(--sw-accent);
-  color: #fff;
+  color: #060709;
+  font-weight: 700;
   border-color: var(--sw-accent);
+  box-shadow: 0 2px 14px var(--sw-accent-soft);
 }
 
 .variant-primary:hover:not(:disabled) {
   background: var(--sw-accent-hover);
   border-color: var(--sw-accent-hover);
+  box-shadow: 0 4px 22px var(--sw-accent-glow);
+  transform: translateY(-1px);
+}
+
+.variant-warm {
+  background: var(--sw-warm);
+  color: #060709;
+  font-weight: 700;
+  border-color: var(--sw-warm);
+  box-shadow: 0 2px 14px var(--sw-warm-soft);
+}
+
+.variant-warm:hover:not(:disabled) {
+  background: #fbbf24;
+  box-shadow: 0 4px 22px var(--sw-warm-glow);
   transform: translateY(-1px);
 }
 
@@ -117,7 +140,8 @@ defineProps({
 
 .variant-secondary:hover:not(:disabled) {
   background: var(--sw-surface-hover);
-  border-color: rgba(255, 255, 255, 0.15);
+  border-color: var(--sw-border-hover);
+  color: #fff;
 }
 
 .variant-ghost {
@@ -131,9 +155,9 @@ defineProps({
 }
 
 .variant-danger {
-  background: rgba(237, 116, 125, 0.15);
+  background: rgba(244, 63, 94, 0.12);
   color: var(--sw-danger);
-  border-color: rgba(237, 116, 125, 0.3);
+  border-color: rgba(244, 63, 94, 0.25);
 }
 
 .variant-danger:hover:not(:disabled) {
@@ -168,7 +192,7 @@ defineProps({
 .spinner {
   width: 16px;
   height: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid rgba(0, 0, 0, 0.3);
   border-top-color: currentColor;
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
