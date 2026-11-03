@@ -1,4 +1,26 @@
 const mongoose = require("mongoose");
+const { parseMusicSource } = require("../utils/musicLinkParser");
+
+const sourceSchema = new mongoose.Schema(
+  {
+    provider: {
+      type: String,
+      enum: ["direct", "youtube", "spotify", "external"],
+      default: "direct",
+    },
+    externalId: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+    url: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+  },
+  { _id: false }
+);
 
 const songSchema = new mongoose.Schema(
   {
@@ -31,6 +53,10 @@ const songSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
+    source: {
+      type: sourceSchema,
+      default: () => ({ provider: "direct", externalId: null, url: "" }),
+    },
     coverImage: {
       type: String,
       trim: true,
@@ -43,6 +69,18 @@ const songSchema = new mongoose.Schema(
   },
   { _id: true }
 );
+
+// Hydrate source for legacy documents that only have url
+songSchema.pre("init", function (doc) {
+  if (doc && doc.url && (!doc.source || !doc.source.url)) {
+    const parsed = parseMusicSource(doc.url);
+    doc.source = {
+      provider: parsed.provider,
+      externalId: parsed.externalId,
+      url: doc.url,
+    };
+  }
+});
 
 const playlistSchema = new mongoose.Schema(
   {
@@ -96,12 +134,28 @@ playlistSchema.virtual("totalDuration").get(function () {
   return this.songs.reduce((acc, song) => acc + (song.duration || 0), 0);
 });
 
-// Pre-save hook: ensure deterministic ordering
+// Pre-save hook: ensure deterministic ordering and provider synchronization
 playlistSchema.pre("save", function (next) {
   if (this.songs && this.songs.length > 0) {
     this.songs.forEach((song, idx) => {
       if (typeof song.position !== "number" || isNaN(song.position)) {
         song.position = idx;
+      }
+
+      // Synchronize url and source
+      const effectiveUrl = song.url || song.source?.url || "";
+      if (effectiveUrl) {
+        if (!song.source || !song.source.url || (!song.source.externalId && (effectiveUrl.includes("youtu") || effectiveUrl.includes("spotify")))) {
+          const parsed = parseMusicSource(effectiveUrl);
+          song.source = {
+            provider: parsed.provider,
+            externalId: parsed.externalId,
+            url: effectiveUrl,
+          };
+        }
+        if (!song.url) {
+          song.url = effectiveUrl;
+        }
       }
     });
   }

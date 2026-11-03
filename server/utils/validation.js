@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { parseMusicSource } = require("./musicLinkParser");
 
 /**
  * Validates if string is a valid MongoDB ObjectId
@@ -54,6 +55,23 @@ const sanitizePlaylistInput = (body) => {
 const sanitizeSongInput = (song, fallbackPosition = 0) => {
   if (!song || typeof song !== "object") return null;
 
+  const rawUrl = typeof song.url === "string" ? song.url.trim() : "";
+  const rawSourceUrl = song.source && typeof song.source.url === "string" ? song.source.url.trim() : "";
+  const effectiveUrl = rawUrl || rawSourceUrl;
+
+  let parsedSource;
+  if (song.source && typeof song.source === "object" && song.source.provider) {
+    parsedSource = {
+      provider: ["direct", "youtube", "spotify", "external"].includes(song.source.provider)
+        ? song.source.provider
+        : "direct",
+      externalId: typeof song.source.externalId === "string" ? song.source.externalId.trim() : null,
+      url: effectiveUrl,
+    };
+  } else {
+    parsedSource = parseMusicSource(effectiveUrl);
+  }
+
   return {
     ...(song._id && isValidObjectId(song._id) ? { _id: song._id } : {}),
     title: typeof song.title === "string" ? song.title.trim() : "Untitled Track",
@@ -61,7 +79,8 @@ const sanitizeSongInput = (song, fallbackPosition = 0) => {
     album: typeof song.album === "string" ? song.album.trim() : "",
     duration: typeof song.duration === "number" && song.duration >= 0 ? song.duration : 0,
     position: typeof song.position === "number" && song.position >= 0 ? song.position : fallbackPosition,
-    url: typeof song.url === "string" ? song.url.trim() : "",
+    url: effectiveUrl,
+    source: parsedSource,
     coverImage: typeof song.coverImage === "string" ? song.coverImage.trim() : "",
     addedAt: song.addedAt ? new Date(song.addedAt) : new Date(),
   };

@@ -4,6 +4,7 @@ const {
   sanitizePlaylistInput,
   sanitizeSongInput,
 } = require("../utils/validation");
+const { parseMusicSource } = require("../utils/musicLinkParser");
 
 // GET /api/playlists
 const getPlaylists = async (req, res, next) => {
@@ -136,7 +137,7 @@ const deletePlaylist = async (req, res, next) => {
 // POST /api/playlists/:id/songs
 const addSong = async (req, res, next) => {
   try {
-    const { title, artist, album, duration, url, coverImage, allowDuplicate } = req.body;
+    const { title, artist, album, duration, url, source, coverImage, allowDuplicate } = req.body;
 
     if (!title || typeof title !== "string" || !title.trim()) {
       return res.status(400).json({ message: "Song title is required" });
@@ -148,13 +149,26 @@ const addSong = async (req, res, next) => {
 
     const trimmedTitle = title.trim();
     const trimmedArtist = artist.trim();
+    const effectiveUrl =
+      (typeof url === "string" ? url.trim() : "") ||
+      (source && typeof source.url === "string" ? source.url.trim() : "");
+    const parsedSource = source && source.provider ? source : parseMusicSource(effectiveUrl);
 
-    // Duplicate detection (case-insensitive title and artist)
-    const existingIndex = req.playlist.songs.findIndex(
-      (s) =>
+    // Duplicate detection (by title+artist, or provider externalId, or identical URL)
+    const existingIndex = req.playlist.songs.findIndex((s) => {
+      const matchTitleArtist =
         s.title.toLowerCase() === trimmedTitle.toLowerCase() &&
-        s.artist.toLowerCase() === trimmedArtist.toLowerCase()
-    );
+        s.artist.toLowerCase() === trimmedArtist.toLowerCase();
+
+      const sExtId = s.source?.externalId;
+      const targetExtId = parsedSource?.externalId;
+      const matchExternalId = Boolean(sExtId && targetExtId && sExtId === targetExtId);
+
+      const sUrl = s.url || s.source?.url;
+      const matchUrl = Boolean(sUrl && effectiveUrl && sUrl.toLowerCase() === effectiveUrl.toLowerCase());
+
+      return matchTitleArtist || matchExternalId || matchUrl;
+    });
 
     if (existingIndex !== -1 && !allowDuplicate) {
       return res.status(409).json({
@@ -172,7 +186,8 @@ const addSong = async (req, res, next) => {
         album,
         duration: typeof duration === "number" ? duration : 0,
         position: nextPosition,
-        url,
+        url: effectiveUrl,
+        source: parsedSource,
         coverImage,
       },
       nextPosition
@@ -206,15 +221,35 @@ const updateSong = async (req, res, next) => {
       return res.status(404).json({ message: "Song not found in playlist" });
     }
 
-    const { title, artist, album, duration, url, coverImage, position } = req.body;
+    const { title, artist, album, duration, url, source, coverImage, position } = req.body;
 
     if (typeof title === "string" && title.trim()) song.title = title.trim();
     if (typeof artist === "string" && artist.trim()) song.artist = artist.trim();
     if (typeof album === "string") song.album = album.trim();
     if (typeof duration === "number" && duration >= 0) song.duration = duration;
-    if (typeof url === "string") song.url = url.trim();
     if (typeof coverImage === "string") song.coverImage = coverImage.trim();
     if (typeof position === "number" && position >= 0) song.position = position;
+
+    if (typeof url === "string" || (source && typeof source === "object")) {
+      const newUrl = typeof url === "string" ? url.trim() : source?.url?.trim() || song.url;
+      song.url = newUrl;
+      if (source && source.provider) {
+        song.source = {
+          provider: ["direct", "youtube", "spotify", "external"].includes(source.provider)
+            ? source.provider
+            : "direct",
+          externalId: typeof source.externalId === "string" ? source.externalId.trim() : null,
+          url: newUrl,
+        };
+      } else {
+        const parsed = parseMusicSource(newUrl);
+        song.source = {
+          provider: parsed.provider,
+          externalId: parsed.externalId,
+          url: newUrl,
+        };
+      }
+    }
 
     const updated = await req.playlist.save();
     res.status(200).json(updated);
