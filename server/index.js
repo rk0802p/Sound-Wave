@@ -19,9 +19,17 @@ const defaultAllowedOrigins = [
   "http://127.0.0.1:5173",
 ];
 
-const configuredOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim()).filter(Boolean)
-  : defaultAllowedOrigins;
+const extraOrigins = [
+  process.env.ALLOWED_ORIGINS,
+  process.env.FRONTEND_URL,
+  process.env.CLIENT_URL,
+]
+  .filter(Boolean)
+  .flatMap((o) => o.split(","))
+  .map((o) => o.trim())
+  .filter(Boolean);
+
+const configuredOrigins = Array.from(new Set([...defaultAllowedOrigins, ...extraOrigins]));
 
 app.use(
   cors({
@@ -29,7 +37,6 @@ app.use(
       // Allow non-browser requests (Postman, curl, server-to-server)
       if (!origin) return callback(null, true);
 
-      // Check configured origins, Vercel deployments, or non-production localhost
       const isAllowed =
         configuredOrigins.includes(origin) ||
         origin.endsWith(".vercel.app") ||
@@ -38,7 +45,7 @@ app.use(
       if (isAllowed) {
         return callback(null, true);
       }
-      return callback(new Error("CORS policy does not allow access from this origin."));
+      return callback(new Error(`CORS blocked origin: ${origin}`));
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -49,47 +56,95 @@ app.use(
 app.use(express.json({ limit: "5mb" }));
 app.use(express.urlencoded({ extended: true, limit: "5mb" }));
 
-// Database connection helper
-let isConnected = false;
-const connectDB = async () => {
-  if (isConnected && mongoose.connection.readyState === 1) return;
+// Serverless-optimized MongoDB connection caching
+let cachedConnection = global.mongoose;
+if (!cachedConnection) {
+  cachedConnection = global.mongoose = { conn: null, promise: null };
+}
 
+const connectDB = async () => {
   if (!process.env.MONGO_URI) {
-    if (process.env.NODE_ENV !== "test") {
-      console.warn("⚠️  MONGO_URI not configured in environment variables.");
-    }
-    return;
+    throw new Error("MONGO_URI environment variable is not defined.");
+  }
+
+  if (cachedConnection.conn && mongoose.connection.readyState === 1) {
+    return cachedConnection.conn;
+  }
+
+  if (!cachedConnection.promise) {
+    const opts = {
+      bufferCommands: false,
+      serverSelectionTimeoutMS: 8000,
+    };
+
+    cachedConnection.promise = mongoose.connect(process.env.MONGO_URI, opts).then((m) => {
+      console.log("✅ MongoDB Connected successfully");
+      return m;
+    });
   }
 
   try {
-    await mongoose.connect(process.env.MONGO_URI);
-    isConnected = true;
-    console.log("✅ MongoDB Connected successfully");
+    cachedConnection.conn = await cachedConnection.promise;
   } catch (error) {
+    cachedConnection.promise = null;
     console.error("❌ MongoDB connection error:", error.message);
     throw error;
   }
+
+  return cachedConnection.conn;
 };
 
-// Connect DB middleware for serverless invocations
+// Health check endpoint (always responds even if DB is still connecting)
+app.get("/api/test", async (req, res) => {
+  let dbStatus = "disconnected";
+  let dbError = null;
+
+  if (process.env.MONGO_URI) {
+    try {
+      await connectDB();
+      dbStatus = "connected";
+    } catch (err) {
+      dbStatus = "error";
+      dbError = err.message;
+    }
+  } else {
+    dbStatus = "missing_mongo_uri";
+  }
+
+  res.json({
+    status: dbStatus === "connected" ? "ok" : "degraded",
+    message: "Music Playlist API is operational",
+    database: {
+      status: dbStatus,
+      error: dbError,
+      suggestion: dbError
+        ? "Ensure MongoDB Atlas Network Access has 0.0.0.0/0 allowed, and verify MONGO_URI in Vercel settings."
+        : null,
+    },
+    configured: {
+      hasMongoUri: Boolean(process.env.MONGO_URI),
+      hasJwtSecret: Boolean(process.env.JWT_SECRET),
+      frontendUrl: process.env.FRONTEND_URL || null,
+    },
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// Database connection middleware for protected data endpoints
 app.use(async (req, res, next) => {
-  if (process.env.NODE_ENV !== "test" && process.env.MONGO_URI) {
+  if (process.env.NODE_ENV !== "test") {
     try {
       await connectDB();
     } catch (err) {
-      return res.status(500).json({ error: "Database connection failed" });
+      return res.status(500).json({
+        error: "Database connection failed",
+        message: err.message,
+        suggestion:
+          "If using MongoDB Atlas, make sure you have added 0.0.0.0/0 to Network Access in Atlas, and redeployed on Vercel after updating environment variables.",
+      });
     }
   }
   next();
-});
-
-// Health check endpoint
-app.get("/api/test", (req, res) => {
-  res.json({
-    status: "ok",
-    message: "Music Playlist API is operational",
-    timestamp: new Date().toISOString(),
-  });
 });
 
 // Mounted routes
