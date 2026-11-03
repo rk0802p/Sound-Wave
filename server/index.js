@@ -94,6 +94,22 @@ const connectDB = async () => {
   return cachedConnection.conn;
 };
 
+// Root landing endpoint
+app.get("/", (req, res) => {
+  res.json({
+    name: "SOUNDWAVE Music Playlist API",
+    status: "online",
+    database: mongoose.connection.readyState === 1 ? "connected" : "ready",
+    endpoints: {
+      health: "/api/test",
+      auth: "/api/auth",
+      playlists: "/api/playlists",
+    },
+    frontendUrl: process.env.FRONTEND_URL || "https://music-playlist-pp8l.vercel.app",
+    timestamp: new Date().toISOString(),
+  });
+});
+
 // Health check endpoint (always responds even if DB is still connecting)
 app.get("/api/test", async (req, res) => {
   let dbStatus = "disconnected";
