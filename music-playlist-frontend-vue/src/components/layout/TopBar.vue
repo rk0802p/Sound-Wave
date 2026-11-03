@@ -1,27 +1,30 @@
 <template>
-  <header class="topbar-wrapper">
+  <header class="sw-topbar">
     <div class="topbar-left">
-      <button class="menu-toggle-btn" @click="$emit('toggle-sidebar')" title="Toggle Menu">
+      <!-- Mobile hamburger toggle button -->
+      <button class="mobile-menu-btn" @click="$emit('toggle-sidebar')" title="Toggle Menu">
         <span></span><span></span><span></span>
       </button>
 
-      <!-- Global Search Bar -->
-      <div class="search-box">
-        <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <!-- Global Search Input -->
+      <div class="global-search-container">
+        <svg class="search-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="11" cy="11" r="8"></circle>
           <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
         </svg>
         <input
           v-model="playlistStore.searchQuery"
           type="text"
-          placeholder="Search playlists or songs... (Press Enter for Global Search)"
-          class="search-input"
-          @keydown.enter="handleSearchEnter"
+          placeholder="Search playlists, tracks, artists... (Enter)"
+          class="topbar-search-input"
+          @keydown.enter="handleSearchSubmit"
+          @keydown.esc="handleSearchClear"
         />
         <button
           v-if="playlistStore.searchQuery"
-          class="clear-search-btn"
-          @click="playlistStore.searchQuery = ''"
+          class="clear-query-btn"
+          @click="handleSearchClear"
+          title="Clear search"
         >
           ✕
         </button>
@@ -29,8 +32,8 @@
     </div>
 
     <div class="topbar-right">
-      <div class="user-pill">
-        <span class="user-greeting">Hi, {{ authStore.username }}</span>
+      <div class="user-greeting-pill">
+        <span class="user-greeting-label">Hi, {{ authStore.username || 'Friend' }}</span>
       </div>
     </div>
   </header>
@@ -47,23 +50,26 @@ const router = useRouter();
 const authStore = useAuthStore();
 const playlistStore = usePlaylistStore();
 
-const handleSearchEnter = () => {
+const handleSearchSubmit = () => {
   if (playlistStore.searchQuery.trim()) {
-    router.push('/search');
+    router.push({ path: '/search', query: { q: playlistStore.searchQuery.trim() } });
   }
+};
+
+const handleSearchClear = () => {
+  playlistStore.searchQuery = '';
 };
 </script>
 
 <style scoped>
-.topbar-wrapper {
-  height: 72px;
+.sw-topbar {
+  height: var(--sw-topbar-height);
   padding: 0 32px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: rgba(10, 11, 16, 0.7);
-  backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--sw-bg);
+  border-bottom: 1px solid var(--sw-border-subtle);
   position: sticky;
   top: 0;
   z-index: 50;
@@ -74,102 +80,106 @@ const handleSearchEnter = () => {
   align-items: center;
   gap: 16px;
   flex: 1;
-  max-width: 480px;
+  max-width: 440px;
 }
 
-.menu-toggle-btn {
+.mobile-menu-btn {
   display: none;
   background: transparent;
   border: none;
   flex-direction: column;
   gap: 4px;
   cursor: pointer;
-  padding: 8px;
+  padding: 6px;
 }
 
-.menu-toggle-btn span {
-  width: 20px;
+.mobile-menu-btn span {
+  width: 18px;
   height: 2px;
-  background: #fff;
-  border-radius: 2px;
+  background: var(--sw-text-primary);
+  border-radius: 1px;
 }
 
-.search-box {
+.global-search-container {
   position: relative;
   width: 100%;
   display: flex;
   align-items: center;
 }
 
-.search-icon {
+.search-svg {
   position: absolute;
-  left: 14px;
-  color: #6b7280;
+  left: 12px;
+  color: var(--sw-text-muted);
   pointer-events: none;
 }
 
-.search-input {
+.topbar-search-input {
   width: 100%;
-  height: 40px;
-  padding: 0 36px 0 42px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 20px;
-  color: #fff;
-  font-size: 0.9rem;
-  transition: all 0.2s ease;
-}
-
-.search-input:focus {
+  height: 38px;
+  padding: 0 32px 0 36px;
+  background: var(--sw-surface);
+  border: 1px solid var(--sw-border);
+  border-radius: 10px;
+  color: var(--sw-text-primary);
+  font-size: 0.85rem;
   outline: none;
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(99, 102, 241, 0.5);
-  box-shadow: 0 0 15px rgba(99, 102, 241, 0.2);
+  transition: all var(--sw-transition-fast);
 }
 
-.search-input::placeholder {
-  color: #6b7280;
+.topbar-search-input:focus {
+  border-color: var(--sw-accent);
+  background: var(--sw-surface-hover);
+  box-shadow: 0 0 0 1px var(--sw-accent);
 }
 
-.clear-search-btn {
+.topbar-search-input::placeholder {
+  color: var(--sw-text-muted);
+}
+
+.clear-query-btn {
   position: absolute;
-  right: 12px;
+  right: 10px;
   background: transparent;
   border: none;
-  color: #6b7280;
+  color: var(--sw-text-muted);
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
+  padding: 2px;
 }
 
-.clear-search-btn:hover {
-  color: #fff;
+.clear-query-btn:hover {
+  color: var(--sw-text-primary);
 }
 
 .topbar-right {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
 }
 
-.user-pill {
+.user-greeting-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   padding: 6px 14px;
+  background: var(--sw-surface);
+  border: 1px solid var(--sw-border-subtle);
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  font-size: 0.85rem;
-  color: #d1d5db;
+}
+
+.user-greeting-label {
+  font-size: 0.82rem;
   font-weight: 500;
+  color: var(--sw-text-secondary);
 }
 
 @media (max-width: 900px) {
-  .topbar-wrapper {
+  .sw-topbar {
     padding: 0 16px;
   }
-  .menu-toggle-btn {
+  .mobile-menu-btn {
     display: flex;
-  }
-  .user-greeting {
-    display: none;
   }
 }
 </style>

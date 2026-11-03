@@ -1,5 +1,5 @@
 <template>
-  <div class="app-layout-shell">
+  <div class="sw-shell-root">
     <!-- Sidebar -->
     <Sidebar
       :is-open="sidebarOpen"
@@ -7,16 +7,18 @@
       @open-create-modal="showCreateModal = true"
     />
 
-    <!-- Main Content Area -->
-    <div class="main-viewport">
+    <!-- Main Viewport Area -->
+    <div class="sw-main-viewport">
+      <!-- Top Bar -->
       <TopBar @toggle-sidebar="sidebarOpen = !sidebarOpen" />
-      
-      <main class="content-scroll-container">
+
+      <!-- Scrollable Main Content -->
+      <main class="sw-content-scroller">
         <slot></slot>
       </main>
     </div>
 
-    <!-- Persistent Bottom Audio Player -->
+    <!-- Persistent Bottom Player -->
     <AudioPlayer />
 
     <!-- Expanded Now Playing Modal -->
@@ -66,40 +68,39 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.app-layout-shell {
+.sw-shell-root {
   min-height: 100vh;
   display: flex;
-  background: #0a0b10;
-  color: #fff;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--sw-bg);
+  color: var(--sw-text-primary);
+  font-family: inherit;
   overflow: hidden;
 }
 
-.main-viewport {
+.sw-main-viewport {
   flex: 1;
-  margin-left: 260px;
+  margin-left: var(--sw-sidebar-width);
   display: flex;
   flex-direction: column;
   min-height: 100vh;
   position: relative;
-  background: radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 40%),
-              radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.05) 0%, transparent 40%),
-              #0a0b10;
+  background: var(--sw-bg);
+  /* Solid neutral dark background without oversized purple gradients */
 }
 
-.content-scroll-container {
+.sw-content-scroller {
   flex: 1;
   overflow-y: auto;
-  padding: 28px 36px 120px 36px; /* 120px padding bottom prevents overlap with persistent player */
-  height: calc(100vh - 72px);
+  padding: 32px 36px calc(var(--sw-player-height) + 36px) 36px;
+  height: calc(100vh - var(--sw-topbar-height));
 }
 
 @media (max-width: 900px) {
-  .main-viewport {
+  .sw-main-viewport {
     margin-left: 0;
   }
-  .content-scroll-container {
-    padding: 20px 16px 120px 16px;
+  .sw-content-scroller {
+    padding: 20px 18px calc(var(--sw-player-height) + 24px) 18px;
   }
 }
 </style>
