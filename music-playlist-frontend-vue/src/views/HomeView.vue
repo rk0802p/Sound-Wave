@@ -1,97 +1,95 @@
 <template>
-  <div class="sw-spatial-home">
-    <!-- 1. Editorial Architectural Statement Header -->
-    <header class="home-hero-header">
-      <div class="header-provenance font-mono">
-        <span class="pulse-beacon" :class="{ 'is-active': playerStore.isPlaying }"></span>
-        <span>SOUNDWAVE ATELIER // PHYSICAL SOUNDSPACE</span>
+  <div class="pg-home-root">
+    <!-- 1. Editorial Hero Headline & Masthead Statement -->
+    <header class="pg-hero-section">
+      <div class="hero-kicker-strip">
+        <span class="sticker-tag font-mono">EST. 2026 // STEREO ARCHIVE</span>
+        <span class="kicker-pulse-dot" :class="{ 'is-active': playerStore.isPlaying }"></span>
+        <span class="kicker-text font-mono">LIVE SOUNDSTREAM PLAYGROUND</span>
       </div>
 
-      <div class="header-main-lockup">
-        <h1 class="header-headline font-display">
-          Sound As Physical Space.
+      <div class="hero-headline-block">
+        <h1 class="hero-title font-display">
+          Music As <span class="highlight-coral">Pure Play.</span>
         </h1>
-        <p class="header-tagline">
-          An avant-garde acoustic environment designed for high-resolution streaming, physical vinyl archives, and multi-provider resonance.
+        <p class="hero-manifesto">
+          An expressive personal audio playground built for curated mixtapes, physical vinyl exploration, and uncompressed high-resolution streaming.
         </p>
       </div>
 
-      <!-- Studio Metrics Ledger -->
-      <div class="studio-metrics-ledger font-mono">
-        <div class="metric-cell">
-          <span class="cell-label">CURATOR</span>
-          <span class="cell-val">{{ authStore.username || 'Curator' }}</span>
+      <!-- Studio Telemetry Metric Pills -->
+      <div class="hero-telemetry-row font-mono">
+        <div class="telemetry-pill">
+          <span class="pill-label">CURATOR</span>
+          <span class="pill-value font-display">{{ authStore.username || 'Curator' }}</span>
         </div>
-        <div class="metric-cell">
-          <span class="cell-label">ARCHIVED COLLECTIONS</span>
-          <span class="cell-val accent">{{ playlistStore.playlists.length }}</span>
+        <div class="telemetry-pill accent-cobalt">
+          <span class="pill-label">MIXTAPES</span>
+          <span class="pill-value">{{ playlistStore.playlists.length }}</span>
         </div>
-        <div class="metric-cell">
-          <span class="cell-label">ACOUSTIC FREQUENCIES</span>
-          <span class="cell-val">{{ playlistStore.totalTracksCount }}</span>
+        <div class="telemetry-pill accent-coral">
+          <span class="pill-label">TRACKS</span>
+          <span class="pill-value">{{ playlistStore.totalTracksCount }}</span>
         </div>
-        <div class="metric-cell desktop-only">
-          <span class="cell-label">FIDELITY ENGINE</span>
-          <span class="cell-val warm">FLAC • YT • SPOTIFY</span>
+        <div class="telemetry-pill accent-citron desktop-only">
+          <span class="pill-label">ENGINE</span>
+          <span class="pill-value">FLAC • YOUTUBE • SPOTIFY</span>
         </div>
       </div>
     </header>
 
-    <!-- 2. The Interactive Vinyl Turntable Showcase (Featured Stage) -->
-    <section v-if="featuredPlaylist" class="home-featured-stage">
-      <div class="featured-ambient-halo" :style="featuredHaloStyle"></div>
-
-      <div class="stage-grid">
-        <!-- Physical Vinyl Disc & Sleeve -->
-        <div class="turntable-visual-column">
-          <div class="turntable-deck">
-            <!-- Vinyl Record -->
+    <!-- 2. Featured Mixtape Editorial Showcase -->
+    <section v-if="featuredPlaylist" class="pg-featured-mixtape-card">
+      <div class="featured-card-inner">
+        <!-- Vinyl Sleeve & Spinning Record -->
+        <div class="featured-vinyl-column">
+          <div class="vinyl-sleeve-stage">
+            <!-- Vinyl Record disc -->
             <div
-              class="featured-vinyl-record"
+              class="featured-vinyl-disc"
               :class="{ 'is-spinning': isFeaturedPlaying }"
               @click="handlePlayFeatured"
-              title="Click to drop needle"
+              title="Click to drop the needle"
             >
               <div class="record-grooves"></div>
-              <div class="record-label">
-                <span class="record-hole"></span>
+              <div class="record-center">
+                <span class="record-spindle"></span>
               </div>
             </div>
 
-            <!-- Vinyl Sleeve Jacket -->
-            <div class="featured-sleeve-jacket" @click="handleOpenFeatured">
+            <!-- Sleeve Cover -->
+            <div class="featured-sleeve-cover" @click="handleOpenFeatured">
               <img
                 v-if="featuredPlaylist.coverImage && !featuredImgFailed"
                 :src="featuredPlaylist.coverImage"
                 :alt="featuredPlaylist.name"
-                class="featured-jacket-img"
+                class="sleeve-img"
                 @error="featuredImgFailed = true"
               />
-              <div v-else class="featured-generative-cover">
-                <span class="generative-monogram font-display">{{ featuredMonogram }}</span>
+              <div v-else class="sleeve-fallback font-display">
+                {{ featuredMonogram }}
               </div>
-              <div class="sleeve-overlay-sheen"></div>
             </div>
           </div>
         </div>
 
-        <!-- Narrative Column -->
-        <div class="turntable-narrative-column">
-          <div class="featured-kicker font-mono">
-            <span class="featured-pill">NOW IN ORBIT</span>
-            <span class="featured-tracks-count">{{ featuredPlaylist.songs?.length || 0 }} FREQUENCIES</span>
+        <!-- Narrative & Actions Column -->
+        <div class="featured-narrative-column">
+          <div class="featured-badge-row font-mono">
+            <span class="badge-tag">FEATURED MIXTAPE</span>
+            <span class="badge-count">{{ featuredPlaylist.songs?.length || 0 }} TRACKS</span>
           </div>
 
-          <h2 class="featured-title font-display" @click="handleOpenFeatured">
+          <h2 class="featured-mixtape-title font-display" @click="handleOpenFeatured">
             {{ featuredPlaylist.name }}
           </h2>
 
-          <p v-if="featuredPlaylist.description" class="featured-desc">
+          <p v-if="featuredPlaylist.description" class="featured-mixtape-desc">
             {{ featuredPlaylist.description }}
           </p>
 
-          <!-- First 3 Audition Tracks Preview -->
-          <div v-if="featuredPlaylist.songs && featuredPlaylist.songs.length" class="audition-ribbons">
+          <!-- Audition Tracks Quick-Chips -->
+          <div v-if="featuredPlaylist.songs && featuredPlaylist.songs.length" class="audition-chips-reel">
             <div
               v-for="(song, i) in featuredPlaylist.songs.slice(0, 3)"
               :key="song._id || i"
@@ -99,174 +97,139 @@
               @click="handlePlayTrackDirect(song, i)"
             >
               <span class="chip-play-icon">▶</span>
-              <span class="chip-title font-display">{{ song.title }}</span>
-              <span class="chip-artist font-mono">{{ song.artist }}</span>
+              <span class="chip-title">{{ song.title }}</span>
+              <span class="chip-artist">/ {{ song.artist }}</span>
             </div>
           </div>
 
-          <!-- Actions -->
-          <div class="featured-action-cluster">
-            <button class="stage-btn primary font-display" @click="handlePlayFeatured">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                <polygon points="6 3 20 12 6 21 6 3"></polygon>
-              </svg>
-              <span>{{ isFeaturedPlaying ? 'Pause Atelier' : 'Drop The Needle' }}</span>
+          <!-- CTAs -->
+          <div class="featured-actions-row">
+            <button
+              class="action-btn primary font-display"
+              @click="handlePlayFeatured"
+            >
+              <span>{{ isFeaturedPlaying ? 'Pause Mixtape' : 'Play Mixtape' }}</span>
+              <span class="btn-glyph">{{ isFeaturedPlaying ? '❚❚' : '▶' }}</span>
             </button>
 
-            <button class="stage-btn secondary font-mono" @click="handleOpenFeatured">
-              <span>Inspect Collection</span>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-                <polyline points="12 5 19 12 12 19"></polyline>
-              </svg>
+            <button
+              class="action-btn secondary font-display"
+              @click="handleOpenFeatured"
+            >
+              <span>Inspect Collection →</span>
             </button>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- 3. Atmospheric Acoustic Mood Portals -->
-    <section class="home-portals-section">
-      <div class="section-title-lockup">
-        <span class="section-kicker font-mono">SONIC FREQUENCIES</span>
-        <h3 class="section-title font-display">Acoustic Atmospheres</h3>
+    <!-- 3. Atmospheric Sonic Portals (Genre Blocks) -->
+    <section class="pg-portals-section">
+      <div class="section-masthead">
+        <h3 class="section-title font-display">Sonic Frequencies</h3>
+        <span class="section-subtitle font-mono">EXPLORE VIBRANT GENRE PORTALS</span>
       </div>
 
-      <div class="portals-spectrum-grid">
+      <div class="portals-grid">
         <div
           v-for="vibe in quickVibes"
           :key="vibe.name"
           class="portal-card"
-          @click="handleVibeClick(vibe.query)"
+          :style="{ '--card-tint': vibe.tint }"
+          @click="handleQuickVibe(vibe.query)"
         >
-          <div class="portal-gradient-glow" :style="{ background: vibe.color }"></div>
-          <div class="portal-content">
-            <span class="portal-symbol font-mono">{{ vibe.icon }}</span>
-            <div class="portal-meta">
-              <span class="portal-name font-display">{{ vibe.name }}</span>
-              <span class="portal-sub font-mono">{{ vibe.desc }}</span>
-            </div>
-          </div>
-          <!-- Micro Equalizer Sparkline -->
-          <div class="portal-micro-bars">
-            <span v-for="b in 6" :key="b" class="micro-bar"></span>
-          </div>
+          <div class="portal-badge font-mono">{{ vibe.icon }}</div>
+          <h4 class="portal-name font-display">{{ vibe.name }}</h4>
+          <p class="portal-desc">{{ vibe.desc }}</p>
+          <span class="portal-arrow font-mono">EXPLORE FREQUENCY →</span>
         </div>
       </div>
     </section>
 
-    <!-- 4. Curated Archive Exhibition (Asymmetric Gallery) -->
-    <section class="home-exhibition-section">
-      <div class="exhibition-header">
-        <div class="section-title-lockup">
-          <span class="section-kicker font-mono">ARCHIVAL REPOSITORY</span>
-          <h2 class="section-title font-display">Collection Vault</h2>
+    <!-- 4. Mixtapes Collection (Personal Archive) -->
+    <section class="pg-collection-section">
+      <div class="section-masthead">
+        <div class="masthead-left">
+          <h3 class="section-title font-display">Archived Mixtapes</h3>
+          <span class="section-subtitle font-mono">{{ playlistStore.playlists.length }} TOTAL MIXTAPES</span>
         </div>
-
-        <button class="forge-btn font-mono" @click="showCreateModal = true">
-          <span class="forge-plus">+</span>
-          <span>Forge Collection</span>
+        <button
+          class="add-mixtape-btn font-display"
+          @click="showCreateModal = true"
+        >
+          <span>+ Create Mixtape</span>
         </button>
       </div>
 
-      <!-- Skeletons While Loading -->
-      <div v-if="playlistStore.isLoading && !playlistStore.playlists.length" class="exhibition-grid">
-        <div v-for="n in 4" :key="n" class="skeleton-exhibition-card">
-          <div class="skeleton-sleeve"></div>
-          <div class="skeleton-line w-75"></div>
-          <div class="skeleton-line w-40"></div>
-        </div>
-      </div>
-
-      <!-- Empty State: Zero Playlists -->
-      <div v-else-if="playlistStore.playlists.length === 0" class="exhibition-empty-vault">
-        <div class="empty-turntable-ghost">
-          <div class="ghost-circle g-1"></div>
-          <div class="ghost-circle g-2"></div>
-          <span class="ghost-icon font-mono">00</span>
-        </div>
-        <h3 class="font-display">The Atelier Lies Silent</h3>
-        <p>No audio collections have been archived yet. Forge your first playlist or generate our master starter archive with high-fidelity streams.</p>
-        <div class="empty-btn-cluster">
-          <button class="stage-btn primary font-display" @click="showCreateModal = true">
-            + Forge First Collection
+      <!-- Empty State -->
+      <div v-if="!playlistStore.playlists.length" class="empty-collection-card">
+        <div class="empty-art font-display">00</div>
+        <h4 class="empty-title font-display">Your archive is completely fresh.</h4>
+        <p class="empty-desc">
+          Begin by forging your first curated mixtape, or load our handcrafted analog sound collections.
+        </p>
+        <div class="empty-actions">
+          <button class="action-btn primary font-display" @click="showCreateModal = true">
+            + Forge First Mixtape
           </button>
-          <button class="stage-btn warm font-mono" :disabled="seeding" @click="seedStarterPlaylist">
-            {{ seeding ? 'Archiving...' : '✨ Generate Master Archive' }}
+          <button
+            class="action-btn secondary font-mono"
+            :disabled="seeding"
+            @click="seedDemoPlaylists"
+          >
+            {{ seeding ? 'Loading Archives...' : 'Load Curated Analog Demos' }}
           </button>
         </div>
       </div>
 
-      <!-- Populated Exhibition Cards -->
-      <div v-else class="exhibition-grid">
+      <!-- Mixtapes Grid -->
+      <div v-else class="mixtapes-grid">
         <div
-          v-for="(p, index) in playlistStore.playlists"
-          :key="p._id"
-          class="exhibition-card"
-          @click="openPlaylist(p._id)"
+          v-for="playlist in playlistStore.playlists"
+          :key="playlist._id"
+          class="mixtape-card"
+          @click="router.push(`/playlists/${playlist._id}`)"
         >
-          <!-- Vinyl Sleeve Peek -->
-          <div class="card-sleeve-stage">
-            <!-- Sliding Record -->
-            <div class="card-vinyl-disc" :class="{ 'is-spinning': isPlaylistActive(p) && playerStore.isPlaying }">
-              <div class="card-vinyl-grooves"></div>
-              <div class="card-vinyl-spindle"></div>
+          <div class="card-cover-box">
+            <img
+              v-if="playlist.coverImage"
+              :src="playlist.coverImage"
+              :alt="playlist.name"
+              class="card-img"
+              loading="lazy"
+            />
+            <div v-else class="card-fallback font-display">
+              {{ playlist.name?.slice(0, 2).toUpperCase() || 'SW' }}
             </div>
-
-            <!-- Sleeve Front Artwork -->
-            <div class="card-sleeve-front">
-              <img
-                v-if="p.coverImage"
-                :src="p.coverImage"
-                :alt="p.name"
-                class="sleeve-img"
-                loading="lazy"
-                @error="p.coverImage = null"
-              />
-              <div v-else class="generative-card-cover" :style="getGenerativeCoverStyle(p.name)">
-                <span class="font-display">{{ getMonogram(p.name) }}</span>
-              </div>
-
-              <!-- Quick Play Hover Overlay Button -->
-              <button
-                class="quick-play-overlay-btn"
-                @click.stop="handleQuickPlayPlaylist(p)"
-                :title="`Play ${p.name}`"
-              >
-                <svg v-if="isPlaylistActive(p) && playerStore.isPlaying" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                  <rect x="6" y="4" width="4" height="16"></rect>
-                  <rect x="14" y="4" width="4" height="16"></rect>
-                </svg>
-                <svg v-else width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                  <polygon points="6 3 20 12 6 21 6 3"></polygon>
-                </svg>
-              </button>
-            </div>
+            <button
+              class="card-quick-play-btn"
+              @click.stop="handlePlayPlaylist(playlist)"
+              title="Quick Play"
+            >
+              ▶
+            </button>
           </div>
 
-          <!-- Card Metadata -->
-          <div class="card-meta-block">
-            <div class="card-meta-header">
-              <span class="card-index font-mono">0{{ index + 1 }}</span>
-              <span class="card-tracks-badge font-mono">{{ p.songs?.length || 0 }} FREQ</span>
-            </div>
-            <h4 class="card-title font-display">{{ p.name }}</h4>
-            <p v-if="p.description" class="card-desc">{{ p.description }}</p>
+          <div class="card-info-box">
+            <span class="card-count font-mono">{{ playlist.songs?.length || 0 }} TRACKS</span>
+            <h4 class="card-name font-display">{{ playlist.name }}</h4>
+            <p v-if="playlist.description" class="card-desc">{{ playlist.description }}</p>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Global Create Playlist Modal -->
+    <!-- Create Playlist Modal -->
     <CreatePlaylistModal
       v-if="showCreateModal"
       @close="showCreateModal = false"
+      @created="onPlaylistCreated"
     />
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import { usePlaylistStore } from '../stores/playlist';
@@ -286,10 +249,10 @@ const seeding = ref(false);
 const featuredImgFailed = ref(false);
 
 const quickVibes = [
-  { name: 'Late Night Lo-Fi', desc: 'Analog tape warmth & dust', icon: '01 // TAPE', query: 'Lo-Fi', color: 'rgba(204, 255, 0, 0.22)' },
-  { name: 'Deep Space Ambient', desc: 'Infinite harmonic resonance', icon: '02 // VOID', query: 'Ambient', color: 'rgba(168, 85, 247, 0.22)' },
-  { name: 'Velvet Midnight Jazz', desc: 'Acoustic brass & smoke', icon: '03 // NOIR', query: 'Jazz', color: 'rgba(245, 158, 11, 0.22)' },
-  { name: 'Cyberpunk Synthwave', desc: '80s analog neon voltage', icon: '04 // VOLT', query: 'Synthwave', color: 'rgba(244, 63, 94, 0.22)' },
+  { name: 'Late Night Lo-Fi', desc: 'Analog tape warmth, dust & cracked vinyl', icon: '01 // TAPE', query: 'Lo-Fi', tint: '#FFEFE7' },
+  { name: 'Deep Space Ambient', desc: 'Infinite harmonic resonance & spatial drones', icon: '02 // VOID', query: 'Ambient', tint: '#F1ECFF' },
+  { name: 'Velvet Midnight Jazz', desc: 'Acoustic brass, double bass & smoky rooms', icon: '03 // NOIR', query: 'Jazz', tint: '#FFF7D1' },
+  { name: 'Cyberpunk Synthwave', desc: '80s analog neon voltage & highway arpeggios', icon: '04 // VOLT', query: 'Synthwave', tint: '#E7FAF2' },
 ];
 
 const featuredPlaylist = computed(() => {
@@ -310,42 +273,18 @@ const featuredMonogram = computed(() => {
   return featuredPlaylist.value.name.slice(0, 2).toUpperCase();
 });
 
-const featuredHaloStyle = computed(() => {
-  const name = featuredPlaylist.value?.name || 'Soundwave';
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  const hue = Math.abs(hash % 360);
-  return {
-    background: `radial-gradient(circle at 30% 50%, hsla(${hue}, 80%, 55%, 0.16) 0%, transparent 70%)`,
-  };
-});
-
-const getMonogram = (name) => {
-  if (!name) return 'SW';
-  return name.slice(0, 2).toUpperCase();
-};
-
-const getGenerativeCoverStyle = (name) => {
-  let hash = 0;
-  for (let i = 0; i < (name || 'SW').length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  const hue1 = Math.abs(hash % 360);
-  const hue2 = (hue1 + 40) % 360;
-  return {
-    background: `linear-gradient(135deg, hsl(${hue1}, 70%, 14%) 0%, hsl(${hue2}, 60%, 8%) 100%)`,
-    color: `hsl(${hue1}, 80%, 65%)`,
-  };
-};
-
-const isPlaylistActive = (playlist) => {
-  return playerStore.currentPlaylistId === playlist._id;
-};
-
-const handleVibeClick = (query) => {
-  router.push({ path: '/search', query: { q: query } });
-};
-
-const openPlaylist = (id) => {
-  router.push(`/playlists/${id}`);
+const handlePlayFeatured = () => {
+  if (!featuredPlaylist.value) return;
+  if (isFeaturedPlaying.value) {
+    playerStore.togglePlay();
+    return;
+  }
+  if (featuredPlaylist.value.songs && featuredPlaylist.value.songs.length > 0) {
+    playerStore.playPlaylist(featuredPlaylist.value, 0);
+    toastStore.info(`Now playing ${featuredPlaylist.value.name}`);
+  } else {
+    toastStore.warning('This mixtape does not have any audio tracks yet.');
+  }
 };
 
 const handleOpenFeatured = () => {
@@ -354,645 +293,315 @@ const handleOpenFeatured = () => {
   }
 };
 
-const handlePlayFeatured = () => {
-  if (!featuredPlaylist.value?.songs?.length) return;
-  if (isFeaturedPlaying.value) {
-    playerStore.togglePlay();
-  } else {
-    playerStore.playTrack(
-      featuredPlaylist.value.songs[0],
-      featuredPlaylist.value,
-      featuredPlaylist.value.songs
-    );
-    toastStore.info(`Resonating "${featuredPlaylist.value.name}"`);
-  }
-};
-
 const handlePlayTrackDirect = (song, index) => {
-  if (!featuredPlaylist.value) return;
-  playerStore.playTrack(song, featuredPlaylist.value, featuredPlaylist.value.songs);
-};
-
-const handleQuickPlayPlaylist = (playlist) => {
-  if (!playlist.songs || playlist.songs.length === 0) {
-    toastStore.info(`"${playlist.name}" is empty`);
-    router.push(`/playlists/${playlist._id}`);
-    return;
-  }
-  if (isPlaylistActive(playlist) && playerStore.isPlaying) {
-    playerStore.togglePlay();
+  if (featuredPlaylist.value) {
+    playerStore.playPlaylist(featuredPlaylist.value, index);
   } else {
-    playerStore.playTrack(playlist.songs[0], playlist, playlist.songs);
-    toastStore.info(`Resonating "${playlist.name}"`);
+    playerStore.playTrack(song);
+  }
+  toastStore.info(`Playing ${song.title}`);
+};
+
+const handlePlayPlaylist = (playlist) => {
+  if (playlist.songs && playlist.songs.length > 0) {
+    playerStore.playPlaylist(playlist, 0);
+    toastStore.info(`Now playing ${playlist.name}`);
+  } else {
+    router.push(`/playlists/${playlist._id}`);
   }
 };
 
-const seedStarterPlaylist = async () => {
+const handleQuickVibe = (genre) => {
+  router.push({ path: '/search', query: { q: genre } });
+};
+
+const onPlaylistCreated = (newPlaylist) => {
+  showCreateModal.value = false;
+  toastStore.success(`Created mixtape "${newPlaylist.name}"`);
+  router.push(`/playlists/${newPlaylist._id}`);
+};
+
+const seedDemoPlaylists = async () => {
+  if (seeding.value) return;
   seeding.value = true;
   try {
-    const starter = await playlistStore.createPlaylist({
-      name: 'Nocturnal Resonance Atelier',
-      description: 'Handcrafted selection of verified high-fidelity ambient, classical, and electronic audio streams.',
-      coverImage: PLAYLIST_COVER_PRESETS[1].url,
-      isPublic: true,
-      songs: CURATED_DEMO_TRACKS,
-    });
-    toastStore.success('Generated starter playlist with playable lossless audio!');
-    router.push(`/playlists/${starter._id}`);
+    const demoCollections = [
+      {
+        name: 'Nocturnal Resonance Atelier',
+        description: 'Handcrafted selection of verified high-fidelity ambient, classical, and electronic audio streams.',
+        coverImage: PLAYLIST_COVER_PRESETS[1].url,
+        isPublic: true,
+        songs: CURATED_DEMO_TRACKS.slice(0, 5),
+      },
+      {
+        name: 'Analog Neon Voltage',
+        description: 'Pure analog synthesis, 80s tape compression, and late-night highway arpeggios.',
+        coverImage: PLAYLIST_COVER_PRESETS[3].url,
+        isPublic: true,
+        songs: CURATED_DEMO_TRACKS.slice(2, 5),
+      },
+      {
+        name: 'Deep Spatial Reverberations',
+        description: 'Hypnotic sub-bass, organic drones, and spatial architectural acoustics.',
+        coverImage: PLAYLIST_COVER_PRESETS[0].url,
+        isPublic: true,
+        songs: CURATED_DEMO_TRACKS.slice(0, 3),
+      },
+    ];
+
+    for (const demo of demoCollections) {
+      const created = await playlistStore.createPlaylist({
+        name: demo.name,
+        description: demo.description,
+        coverImage: demo.coverImage,
+        isPublic: demo.isPublic,
+      });
+
+      if (created && created._id && demo.songs) {
+        for (const song of demo.songs) {
+          try {
+            await playlistStore.addSong(created._id, {
+              title: song.title,
+              artist: song.artist,
+              album: song.album,
+              duration: song.duration,
+              url: song.url,
+            });
+          } catch (e) {
+            console.warn('Song seed skipped:', e);
+          }
+        }
+      }
+    }
+
+    await playlistStore.fetchPlaylists();
+    toastStore.success('Handcrafted audio archives loaded successfully!');
   } catch (err) {
-    toastStore.error(err.response?.data?.message || 'Failed to generate starter playlist');
+    console.error('Demo seeding failed:', err);
+    toastStore.error('Could not load demo archives.');
   } finally {
     seeding.value = false;
   }
 };
+
+onMounted(async () => {
+  if (authStore.isAuthenticated) {
+    await playlistStore.fetchPlaylists();
+  }
+});
 </script>
 
 <style scoped>
-.sw-spatial-home {
-  width: 100%;
+.pg-home-root {
   display: flex;
   flex-direction: column;
-  gap: 52px;
+  gap: 48px;
+  padding-bottom: 40px;
 }
 
-/* 1. Header */
-.home-hero-header {
+/* 1. Hero Masthead */
+.pg-hero-section {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  padding-top: 10px;
 }
 
-.header-provenance {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 11px;
-  letter-spacing: 0.12em;
-  color: var(--sw-text-muted);
-}
-
-.pulse-beacon {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--sw-accent);
-  box-shadow: 0 0 10px var(--sw-accent);
-}
-
-.pulse-beacon.is-active {
-  animation: pulse-beacon-anim 1.5s infinite;
-}
-
-@keyframes pulse-beacon-anim {
-  0% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.6); opacity: 0.4; }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-.header-main-lockup {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.header-headline {
-  font-size: clamp(38px, 6vw, 68px);
-  font-weight: 800;
-  line-height: 1.02;
-  letter-spacing: -0.04em;
-  color: #fff;
-  background: linear-gradient(180deg, #ffffff 0%, #cbd5e1 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.header-tagline {
-  font-size: 16px;
-  color: var(--sw-text-secondary);
-  max-width: 620px;
-  line-height: 1.6;
-}
-
-/* Studio Metrics Ledger */
-.studio-metrics-ledger {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  padding: 14px 20px;
-  background: rgba(13, 16, 23, 0.6);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: var(--sw-radius-md);
-  width: fit-content;
-  flex-wrap: wrap;
-}
-
-.metric-cell {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding-right: 18px;
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.metric-cell:last-child {
-  padding-right: 0;
-  border-right: none;
-}
-
-.cell-label {
-  font-size: 9px;
-  letter-spacing: 0.1em;
-  color: var(--sw-text-muted);
-}
-
-.cell-val {
-  font-size: 13px;
-  font-weight: 600;
-  color: #fff;
-}
-
-.cell-val.accent { color: var(--sw-accent); }
-.cell-val.warm { color: var(--sw-warm); }
-
-/* 2. Featured Stage */
-.home-featured-stage {
-  position: relative;
-  background: rgba(13, 16, 23, 0.5);
-  backdrop-filter: blur(28px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: var(--sw-radius-xl);
-  padding: 40px;
-  overflow: hidden;
-}
-
-.featured-ambient-halo {
-  position: absolute;
-  inset: -60px;
-  pointer-events: none;
-}
-
-.stage-grid {
-  display: grid;
-  grid-template-columns: 280px 1fr;
-  gap: 44px;
-  align-items: center;
-  position: relative;
-  z-index: 1;
-}
-
-.turntable-deck {
-  position: relative;
-  width: 240px;
-  height: 240px;
-  margin: 0 auto;
-}
-
-.featured-vinyl-record {
-  position: absolute;
-  top: 10px;
-  left: 20px;
-  width: 220px;
-  height: 220px;
-  border-radius: 50%;
-  background: radial-gradient(circle at center, #252525 15%, #0a0a0a 60%, #151515 100%);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  cursor: pointer;
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.8);
-  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-  z-index: 1;
-}
-
-.turntable-deck:hover .featured-vinyl-record {
-  transform: translateX(45px) rotate(20deg);
-}
-
-.featured-vinyl-record.is-spinning {
-  animation: spin-vinyl 4s linear infinite;
-}
-
-.record-grooves {
-  position: absolute;
-  inset: 22px;
-  border-radius: 50%;
-  border: 1px dashed rgba(255, 255, 255, 0.15);
-}
-
-.record-label {
-  position: absolute;
-  inset: 70px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--sw-accent), var(--sw-warm));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.record-hole {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #060709;
-}
-
-.featured-sleeve-jacket {
-  position: absolute;
-  inset: 0;
-  border-radius: var(--sw-radius-md);
-  overflow: hidden;
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.7);
-  z-index: 2;
-  cursor: pointer;
-}
-
-.featured-jacket-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.featured-generative-cover {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #1e293b, #0f172a);
-}
-
-.generative-monogram {
-  font-size: 52px;
-  font-weight: 800;
-  color: var(--sw-accent);
-}
-
-.sleeve-overlay-sheen {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 60%);
-  pointer-events: none;
-}
-
-/* Narrative Column */
-.turntable-narrative-column {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.featured-kicker {
+.hero-kicker-strip {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 11px;
 }
 
-.featured-pill {
-  padding: 2px 8px;
-  background: rgba(245, 158, 11, 0.15);
-  border: 1px solid rgba(245, 158, 11, 0.35);
-  color: var(--sw-warm);
-  border-radius: var(--sw-radius-full);
-}
-
-.featured-tracks-count {
-  color: var(--sw-text-muted);
-}
-
-.featured-title {
-  font-size: clamp(28px, 4vw, 44px);
+.sticker-tag {
+  font-size: 0.68rem;
   font-weight: 800;
+  padding: 3px 10px;
+  background: var(--pg-coral);
   color: #fff;
-  line-height: 1.1;
-  cursor: pointer;
-  transition: color var(--sw-transition-fast);
+  border: 1.5px solid var(--pg-border);
+  border-radius: var(--pg-radius-full);
+  box-shadow: 2px 2px 0px var(--pg-border);
 }
 
-.featured-title:hover {
-  color: var(--sw-accent);
+.kicker-pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--pg-ink);
+  transition: transform 300ms ease;
 }
 
-.featured-desc {
-  font-size: 14px;
-  color: var(--sw-text-secondary);
-  line-height: 1.6;
-  max-width: 580px;
+.kicker-pulse-dot.is-active {
+  background: var(--pg-cobalt);
+  transform: scale(1.4);
 }
 
-.audition-ribbons {
+.kicker-text {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--pg-ink-secondary);
+  letter-spacing: 0.06em;
+}
+
+.hero-headline-block {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 900px;
+}
+
+.hero-title {
+  font-size: clamp(2.5rem, 6vw, 4.8rem);
+  font-weight: 800;
+  line-height: 1.02;
+  letter-spacing: -0.04em;
+  color: var(--pg-ink);
+}
+
+.highlight-coral {
+  color: var(--pg-coral);
+  text-decoration: underline wavy var(--pg-citron) 4px;
+}
+
+.hero-manifesto {
+  font-size: clamp(1rem, 1.8vw, 1.25rem);
+  line-height: 1.5;
+  color: var(--pg-ink-secondary);
+  max-width: 680px;
+  font-weight: 500;
+}
+
+.hero-telemetry-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-}
-
-.audition-chip {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: var(--sw-radius-full);
-  cursor: pointer;
-  transition: all var(--sw-transition-fast);
-}
-
-.audition-chip:hover {
-  background: rgba(204, 255, 0, 0.15);
-  border-color: var(--sw-accent);
-  transform: translateY(-2px);
-}
-
-.chip-play-icon {
-  font-size: 10px;
-  color: var(--sw-accent);
-}
-
-.chip-title {
-  font-size: 12px;
-  font-weight: 600;
-  color: #fff;
-}
-
-.chip-artist {
-  font-size: 11px;
-  color: var(--sw-text-muted);
-}
-
-.featured-action-cluster {
-  display: flex;
   align-items: center;
   gap: 12px;
   margin-top: 6px;
 }
 
-.stage-btn {
+.telemetry-pill {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 24px;
-  border-radius: var(--sw-radius-full);
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all var(--sw-transition-fast);
+  padding: 6px 14px;
+  background: var(--pg-canvas);
+  border: 1.5px solid var(--pg-border);
+  border-radius: var(--pg-radius-full);
+  box-shadow: 2px 2px 0px var(--pg-border);
+  font-size: 0.75rem;
 }
 
-.stage-btn.primary {
-  background: linear-gradient(135deg, var(--sw-accent), var(--sw-warm));
-  color: #060709;
-  box-shadow: 0 0 24px rgba(204, 255, 0, 0.4);
+.pill-label {
+  font-weight: 800;
+  color: var(--pg-ink-muted);
 }
 
-.stage-btn.primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 0 32px rgba(204, 255, 0, 0.6);
+.pill-value {
+  font-weight: 800;
+  color: var(--pg-ink);
 }
 
-.stage-btn.secondary {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #fff;
-}
+.telemetry-pill.accent-cobalt .pill-value { color: var(--pg-cobalt); }
+.telemetry-pill.accent-coral .pill-value { color: var(--pg-coral); }
+.telemetry-pill.accent-citron .pill-value { color: var(--pg-ink); }
 
-.stage-btn.secondary:hover {
-  background: rgba(255, 255, 255, 0.12);
-}
-
-.stage-btn.warm {
-  background: linear-gradient(135deg, var(--sw-warm), #d97706);
-  color: #060709;
-}
-
-/* 3. Mood Portals */
-.home-portals-section {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-.section-title-lockup {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.section-kicker {
-  font-size: 10px;
-  letter-spacing: 0.14em;
-  color: var(--sw-text-muted);
-}
-
-.section-title {
-  font-size: 26px;
-  font-weight: 700;
-  color: #fff;
-}
-
-.portals-spectrum-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 16px;
-}
-
-.portal-card {
+/* 2. Featured Mixtape Card */
+.pg-featured-mixtape-card {
+  background: var(--pg-surface-lavender);
+  border: 2px solid var(--pg-border);
+  border-radius: var(--pg-radius-xl);
+  box-shadow: var(--pg-shadow-solid-lg);
+  padding: 36px 40px;
   position: relative;
-  padding: 20px;
-  background: rgba(13, 16, 23, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: var(--sw-radius-lg);
   overflow: hidden;
-  cursor: pointer;
-  transition: all var(--sw-transition-fast);
+}
+
+.featured-card-inner {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  align-items: center;
+  gap: 48px;
+}
+
+.featured-vinyl-column {
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  min-height: 130px;
+  justify-content: center;
 }
 
-.portal-card:hover {
-  transform: translateY(-4px);
-  border-color: rgba(255, 255, 255, 0.2);
-  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.6);
+.vinyl-sleeve-stage {
+  position: relative;
+  width: 220px;
+  height: 220px;
 }
 
-.portal-gradient-glow {
+.featured-vinyl-disc {
   position: absolute;
-  inset: 0;
-  opacity: 0.15;
-  transition: opacity var(--sw-transition-fast);
-}
-
-.portal-card:hover .portal-gradient-glow {
-  opacity: 0.35;
-}
-
-.portal-content {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.portal-symbol {
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  color: var(--sw-accent);
-}
-
-.portal-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.portal-name {
-  font-size: 16px;
-  font-weight: 700;
-  color: #fff;
-}
-
-.portal-sub {
-  font-size: 11px;
-  color: var(--sw-text-secondary);
-}
-
-.portal-micro-bars {
-  display: flex;
-  align-items: flex-end;
-  gap: 3px;
-  height: 12px;
-  position: relative;
-  z-index: 1;
-}
-
-.micro-bar {
-  width: 3px;
-  height: 4px;
-  background: rgba(255, 255, 255, 0.25);
-  border-radius: 1px;
-  transition: height 0.3s ease;
-}
-
-.portal-card:hover .micro-bar {
-  background: var(--sw-accent);
-  animation: eq-bounce 0.6s ease-in-out infinite alternate;
-}
-
-/* 4. Exhibition Section */
-.home-exhibition-section {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.exhibition-header {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-}
-
-.forge-btn {
+  top: 0;
+  left: 36px;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: #14101E;
+  border: 2px solid var(--pg-border);
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 18px;
-  background: rgba(204, 255, 0, 0.12);
-  border: 1px solid rgba(204, 255, 0, 0.35);
-  border-radius: var(--sw-radius-full);
-  color: var(--sw-accent);
-  font-size: 12px;
-  font-weight: 600;
+  justify-content: center;
+  box-shadow: var(--pg-shadow-solid);
   cursor: pointer;
-  transition: all var(--sw-transition-fast);
-}
-
-.forge-btn:hover {
-  background: rgba(204, 255, 0, 0.22);
-  border-color: var(--sw-accent);
-  transform: translateY(-2px);
-}
-
-.forge-plus {
-  font-size: 15px;
-}
-
-.exhibition-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 24px;
-}
-
-.exhibition-card {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  padding: 16px;
-  background: rgba(13, 16, 23, 0.45);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: var(--sw-radius-lg);
-  cursor: pointer;
-  transition: all var(--sw-transition-fast);
-}
-
-.exhibition-card:hover {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.15);
-  transform: translateY(-4px);
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.7);
-}
-
-.card-sleeve-stage {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 1;
-}
-
-.card-vinyl-disc {
-  position: absolute;
-  top: 5px;
-  right: 0;
-  width: 90%;
-  height: 90%;
-  border-radius: 50%;
-  background: radial-gradient(circle at center, #222 15%, #0d0d0d 60%, #151515 100%);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 400ms var(--pg-ease-spring);
   z-index: 1;
 }
 
-.exhibition-card:hover .card-vinyl-disc {
-  transform: translateX(25px) rotate(25deg);
+.vinyl-sleeve-stage:hover .featured-vinyl-disc {
+  transform: translateX(45px) rotate(20deg);
 }
 
-.card-vinyl-disc.is-spinning {
-  animation: spin-vinyl 3s linear infinite;
+.featured-vinyl-disc.is-spinning {
+  animation: vinylSpin 3s linear infinite;
 }
 
-.card-vinyl-grooves {
+.record-grooves {
   position: absolute;
   inset: 12px;
   border-radius: 50%;
-  border: 1px dashed rgba(255, 255, 255, 0.15);
+  border: 1px dashed rgba(255, 255, 255, 0.25);
 }
 
-.card-vinyl-spindle {
-  position: absolute;
-  inset: 38%;
+.record-center {
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
-  background: var(--sw-accent);
+  background: var(--pg-coral);
+  border: 2px solid #14101E;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.card-sleeve-front {
+.record-spindle {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #14101E;
+}
+
+.featured-sleeve-cover {
   position: relative;
-  width: 90%;
-  height: 90%;
-  border-radius: var(--sw-radius-md);
+  width: 220px;
+  height: 220px;
+  border-radius: var(--pg-radius-md);
+  border: 2px solid var(--pg-border);
+  box-shadow: var(--pg-shadow-solid);
   overflow: hidden;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.6);
+  background: var(--pg-canvas);
+  cursor: pointer;
   z-index: 2;
-  background: #0d1017;
+  transition: transform var(--pg-transition-spring);
+}
+
+.featured-sleeve-cover:hover {
+  transform: translateY(-2px);
 }
 
 .sleeve-img {
@@ -1001,139 +610,438 @@ const seedStarterPlaylist = async () => {
   object-fit: cover;
 }
 
-.generative-card-cover {
+.sleeve-fallback {
   width: 100%;
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 32px;
+  font-size: 3.5rem;
   font-weight: 800;
+  background: var(--pg-surface-peach);
+  color: var(--pg-coral);
 }
 
-.quick-play-overlay-btn {
-  position: absolute;
-  bottom: 12px;
-  right: 12px;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: var(--sw-accent);
-  color: #060709;
+/* Narrative */
+.featured-narrative-column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.featured-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.badge-tag {
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  background: var(--pg-ink);
+  color: var(--pg-citron);
+  border-radius: var(--pg-radius-full);
+}
+
+.badge-count {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--pg-ink-secondary);
+}
+
+.featured-mixtape-title {
+  font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+  font-weight: 800;
+  color: var(--pg-ink);
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  cursor: pointer;
+}
+
+.featured-mixtape-title:hover {
+  color: var(--pg-cobalt);
+}
+
+.featured-mixtape-desc {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--pg-ink-secondary);
+  max-width: 620px;
+}
+
+.audition-chips-reel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.audition-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--pg-canvas);
+  border: 1.5px solid var(--pg-border);
+  border-radius: var(--pg-radius-full);
+  box-shadow: 2px 2px 0px var(--pg-border);
+  font-size: 0.76rem;
+  cursor: pointer;
+  transition: all var(--pg-transition-spring);
+}
+
+.audition-chip:hover {
+  background: var(--pg-citron);
+  transform: translateY(-2px);
+  box-shadow: 3px 3px 0px var(--pg-border);
+}
+
+.chip-play-icon {
+  font-size: 0.65rem;
+  color: var(--pg-cobalt);
+}
+
+.chip-title {
+  font-weight: 700;
+  color: var(--pg-ink);
+}
+
+.chip-artist {
+  color: var(--pg-ink-muted);
+}
+
+.featured-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: var(--pg-radius-full);
+  font-size: 0.92rem;
+  font-weight: 800;
+  border: 2px solid var(--pg-border);
+  cursor: pointer;
+  transition: all var(--pg-transition-spring);
+}
+
+.action-btn.primary {
+  background: var(--pg-cobalt);
+  color: #fff;
+  box-shadow: var(--pg-shadow-solid);
+}
+
+.action-btn.primary:hover {
+  background: var(--pg-coral);
+  transform: translate(-2px, -2px);
+  box-shadow: var(--pg-shadow-solid-lg);
+}
+
+.action-btn.secondary {
+  background: var(--pg-canvas);
+  color: var(--pg-ink);
+  box-shadow: 2px 2px 0px var(--pg-border);
+}
+
+.action-btn.secondary:hover {
+  background: var(--pg-surface-butter);
+  transform: translateY(-2px);
+  box-shadow: 3px 3px 0px var(--pg-border);
+}
+
+/* 3. Sonic Portals */
+.pg-portals-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.section-masthead {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.section-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--pg-ink);
+  letter-spacing: -0.03em;
+}
+
+.section-subtitle {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--pg-ink-muted);
+}
+
+.portals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+.portal-card {
+  background: var(--card-tint);
+  border: 2px solid var(--pg-border);
+  border-radius: var(--pg-radius-lg);
+  box-shadow: var(--pg-shadow-solid);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  cursor: pointer;
+  transition: all var(--pg-transition-spring);
+}
+
+.portal-card:hover {
+  transform: translate(-3px, -3px);
+  box-shadow: var(--pg-shadow-solid-lg);
+}
+
+.portal-badge {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--pg-ink-secondary);
+}
+
+.portal-name {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--pg-ink);
+}
+
+.portal-desc {
+  font-size: 0.82rem;
+  color: var(--pg-ink-secondary);
+  line-height: 1.4;
+  flex: 1;
+}
+
+.portal-arrow {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--pg-cobalt);
+  margin-top: 10px;
+}
+
+/* 4. Mixtapes Collection Grid */
+.pg-collection-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.masthead-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.add-mixtape-btn {
+  padding: 8px 18px;
+  background: var(--pg-citron);
+  color: var(--pg-ink);
+  border: 2px solid var(--pg-border);
+  border-radius: var(--pg-radius-full);
+  font-size: 0.85rem;
+  font-weight: 800;
+  box-shadow: 2px 2px 0px var(--pg-border);
+  cursor: pointer;
+  transition: all var(--pg-transition-spring);
+}
+
+.add-mixtape-btn:hover {
+  background: var(--pg-coral);
+  color: #fff;
+  transform: translate(-2px, -2px);
+  box-shadow: 4px 4px 0px var(--pg-border);
+}
+
+.mixtapes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 24px;
+}
+
+.mixtape-card {
+  background: var(--pg-canvas);
+  border: 2px solid var(--pg-border);
+  border-radius: var(--pg-radius-lg);
+  box-shadow: var(--pg-shadow-solid);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  cursor: pointer;
+  transition: all var(--pg-transition-spring);
+}
+
+.mixtape-card:hover {
+  transform: translate(-3px, -3px);
+  box-shadow: var(--pg-shadow-solid-lg);
+}
+
+.card-cover-box {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: var(--pg-radius-md);
+  border: 1.5px solid var(--pg-border);
+  overflow: hidden;
+  background: var(--pg-surface-peach);
+}
+
+.card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.card-fallback {
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: var(--pg-coral);
+}
+
+.card-quick-play-btn {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--pg-citron);
+  color: var(--pg-ink);
+  border: 1.5px solid var(--pg-border);
+  box-shadow: 2px 2px 0px var(--pg-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  cursor: pointer;
   opacity: 0;
-  transform: translateY(8px);
-  transition: all var(--sw-transition-fast);
+  transform: scale(0.8);
+  transition: all var(--pg-transition-spring);
 }
 
-.exhibition-card:hover .quick-play-overlay-btn {
+.mixtape-card:hover .card-quick-play-btn {
   opacity: 1;
-  transform: translateY(0);
+  transform: scale(1);
 }
 
-.quick-play-overlay-btn:hover {
+.card-quick-play-btn:hover {
+  background: var(--pg-coral);
+  color: #fff;
   transform: scale(1.1);
-  background: #fff;
 }
 
-/* Card Meta Block */
-.card-meta-block {
+.card-info-box {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.card-meta-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 10px;
-  color: var(--sw-text-muted);
+.card-count {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--pg-cobalt);
 }
 
-.card-tracks-badge {
-  color: var(--sw-accent);
-}
-
-.card-title {
-  font-size: 16px;
-  font-weight: 700;
-  color: #fff;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.card-name {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--pg-ink);
+  line-height: 1.2;
 }
 
 .card-desc {
-  font-size: 12px;
-  color: var(--sw-text-secondary);
+  font-size: 0.78rem;
+  color: var(--pg-ink-secondary);
+  line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  line-height: 1.5;
 }
 
-/* Empty Vault */
-.exhibition-empty-vault {
+/* Empty Collection */
+.empty-collection-card {
+  background: var(--pg-surface-soft);
+  border: 2px dashed var(--pg-border);
+  border-radius: var(--pg-radius-xl);
+  padding: 48px 32px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 80px 24px;
-  background: rgba(13, 16, 23, 0.35);
-  border: 1px dashed rgba(255, 255, 255, 0.1);
-  border-radius: var(--sw-radius-xl);
   text-align: center;
   gap: 16px;
 }
 
-.empty-turntable-ghost {
-  position: relative;
-  width: 70px;
-  height: 70px;
+.empty-art {
+  font-size: 4rem;
+  font-weight: 800;
+  color: var(--pg-ink-dim);
+}
+
+.empty-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--pg-ink);
+}
+
+.empty-desc {
+  font-size: 0.9rem;
+  color: var(--pg-ink-secondary);
+  max-width: 460px;
+}
+
+.empty-actions {
   display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.ghost-circle {
-  position: absolute;
-  border-radius: 50%;
-  border: 1px solid var(--sw-accent);
-  opacity: 0.25;
-}
-
-.g-1 { inset: 0; }
-.g-2 { inset: 12px; }
-
-.ghost-icon {
-  font-size: 18px;
-  color: var(--sw-accent);
-}
-
-.empty-btn-cluster {
-  display: flex;
-  gap: 12px;
   flex-wrap: wrap;
-  justify-content: center;
+  align-items: center;
+  gap: 12px;
   margin-top: 8px;
 }
 
 @media (max-width: 900px) {
-  .stage-grid {
+  .featured-card-inner {
     grid-template-columns: 1fr;
-    text-align: center;
+    gap: 24px;
   }
-  .featured-kicker,
-  .featured-action-cluster {
-    justify-content: center;
+
+  .featured-vinyl-column {
+    justify-content: flex-start;
   }
-  .audition-ribbons {
-    justify-content: center;
+
+  .vinyl-sleeve-stage {
+    width: 180px;
+    height: 180px;
+  }
+
+  .featured-vinyl-disc {
+    width: 180px;
+    height: 180px;
+    left: 20px;
+  }
+
+  .featured-sleeve-cover {
+    width: 180px;
+    height: 180px;
+  }
+
+  .pg-featured-mixtape-card {
+    padding: 24px 20px;
   }
 }
 </style>

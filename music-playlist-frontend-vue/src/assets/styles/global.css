@@ -9,16 +9,25 @@
 html, body {
   width: 100%;
   min-height: 100%;
-  background-color: var(--sw-bg);
-  color: var(--sw-text-primary);
-  font-family: var(--sw-font-sans);
+  background-color: var(--pg-bg);
+  color: var(--pg-ink);
+  font-family: var(--pg-font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-image: radial-gradient(rgba(20, 16, 30, 0.06) 1px, transparent 1px);
+  background-size: 28px 28px;
 }
 
 #app {
   width: 100%;
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+::selection {
+  background-color: var(--pg-citron);
+  color: var(--pg-ink);
 }
 
 a {
@@ -40,51 +49,63 @@ input, textarea, select {
 }
 
 button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible {
-  outline: 2px solid var(--sw-accent);
+  outline: 2px solid var(--pg-cobalt);
   outline-offset: 2px;
 }
 
 /* Monospaced Tabular Figures for All Numerics & Timestamps */
 .tabular-nums {
-  font-family: var(--sw-font-mono);
+  font-family: var(--pg-font-mono);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
 }
 
 /* Editorial Display Headings */
-h1, h2, h3, .font-display {
-  font-family: var(--sw-font-display);
+h1, h2, h3 {
+  font-family: var(--pg-font-display);
+  letter-spacing: -0.03em;
+  color: var(--pg-ink);
+}
+
+.font-display {
+  font-family: var(--pg-font-display);
   letter-spacing: -0.03em;
 }
 
-/* Custom Sleek Scrollbars */
+.font-title {
+  font-family: var(--pg-font-title);
+  letter-spacing: -0.02em;
+}
+
+/* Custom Editorial Scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--pg-bg-alt);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
-  border-radius: var(--sw-radius-full);
+  background: var(--pg-ink);
+  border: 2px solid var(--pg-bg-alt);
+  border-radius: var(--pg-radius-full);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: var(--pg-cobalt);
 }
 
 /* Global Vue Page Transitions */
 .sw-page-enter-active,
 .sw-page-leave-active {
-  transition: opacity 220ms var(--sw-ease-out), transform 220ms var(--sw-ease-out);
+  transition: opacity 200ms var(--pg-ease-out), transform 200ms var(--pg-ease-spring);
 }
 
 .sw-page-enter-from {
   opacity: 0;
-  transform: translateY(8px);
+  transform: translateY(12px) scale(0.99);
 }
 
 .sw-page-leave-to {
@@ -98,6 +119,5 @@ h1, h2, h3, .font-display {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
   }
 }

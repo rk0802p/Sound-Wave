@@ -1,7 +1,7 @@
 <template>
   <AppModal
-    title="Create New Sound Archive"
-    description="Assemble your frequencies and organize your personal audio collection."
+    title="Create New Mixtape"
+    description="Organize your sound sequence, cover art, and personal audio archives."
     width="680px"
     @close="$emit('close')"
   >
@@ -87,7 +87,7 @@
           size="md"
           :loading="loading"
         >
-          Create Archive
+          Create Mixtape
         </AppButton>
       </div>
     </form>

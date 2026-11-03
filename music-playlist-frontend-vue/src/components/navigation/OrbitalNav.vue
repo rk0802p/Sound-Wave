@@ -1,129 +1,118 @@
 <template>
-  <header class="sw-orbital-nav-wrapper">
-    <nav class="sw-orbital-capsule">
-      <!-- 1. Brand Soundmark Lockup -->
-      <router-link to="/" class="orbital-brand" aria-label="Soundwave Home">
-        <div class="brand-soundmark" :class="{ 'is-active': playerStore.isPlaying }">
-          <span class="eq-bar bar-1"></span>
-          <span class="eq-bar bar-2"></span>
-          <span class="eq-bar bar-3"></span>
-          <span class="eq-bar bar-4"></span>
-          <span class="eq-bar bar-5"></span>
+  <header class="pg-masthead-wrapper">
+    <nav class="pg-masthead">
+      <!-- 1. Brand Logo Lockup -->
+      <router-link to="/" class="pg-brand" aria-label="Soundwave Playground Home">
+        <div class="brand-equalizer" :class="{ 'is-playing': playerStore.isPlaying }">
+          <span class="eq-col col-1"></span>
+          <span class="eq-col col-2"></span>
+          <span class="eq-col col-3"></span>
+          <span class="eq-col col-4"></span>
         </div>
-        <div class="brand-text">
-          <span class="brand-title font-display">SOUNDWAVE</span>
-          <span class="brand-edition font-mono">ATELIER</span>
+        <div class="brand-typography">
+          <span class="brand-name font-display">SOUNDWAVE</span>
+          <span class="brand-edition font-mono">PLAYGROUND</span>
         </div>
       </router-link>
 
-      <!-- 2. Primary Navigation Links (Desktop) -->
-      <div class="orbital-links desktop-only">
-        <router-link to="/" class="orbital-link" active-class="is-active" exact>
-          <svg class="link-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-            <polyline points="9 22 9 12 15 12 15 22"></polyline>
-          </svg>
-          <span>Orbit</span>
+      <!-- 2. Primary Editorial Navigation Links (Desktop) -->
+      <div class="pg-nav-links desktop-only">
+        <router-link to="/" class="pg-nav-pill" active-class="is-active" exact>
+          <span class="pill-num font-mono">01</span>
+          <span class="pill-text font-display">Playground</span>
         </router-link>
 
-        <router-link to="/library" class="orbital-link" active-class="is-active">
-          <svg class="link-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-          </svg>
-          <span>Archive</span>
-          <span v-if="playlistStore.playlists.length" class="link-badge font-mono">
+        <router-link to="/library" class="pg-nav-pill" active-class="is-active">
+          <span class="pill-num font-mono">02</span>
+          <span class="pill-text font-display">Archive</span>
+          <span v-if="playlistStore.playlists.length" class="pill-badge font-mono">
             {{ playlistStore.playlists.length }}
           </span>
         </router-link>
 
-        <router-link to="/search" class="orbital-link" active-class="is-active">
-          <svg class="link-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="11" cy="11" r="8"></circle>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-          </svg>
-          <span>Discovery</span>
-          <span class="kbd-hint font-mono">/</span>
+        <router-link to="/search" class="pg-nav-pill" active-class="is-active">
+          <span class="pill-num font-mono">03</span>
+          <span class="pill-text font-display">Explore</span>
+          <span class="kbd-badge font-mono">/</span>
         </router-link>
       </div>
 
       <!-- 3. Actions & Curator Profile Cluster -->
-      <div class="orbital-actions">
-        <!-- New Collection Button -->
+      <div class="pg-masthead-actions">
+        <!-- New Mixtape Button -->
         <button
-          class="forge-collection-btn"
+          class="create-mixtape-btn font-display"
           @click="$emit('open-create-modal')"
-          title="Create New Playlist Collection"
+          title="Create New Mixtape"
         >
-          <span class="btn-plus">+</span>
-          <span class="btn-label desktop-only font-display">Forge Collection</span>
+          <span class="btn-icon">+</span>
+          <span class="btn-label desktop-only">New Mixtape</span>
         </button>
 
-        <!-- Live Playing Vinyl Pill (If track is active) -->
+        <!-- Live Turntable Status Pill -->
         <button
           v-if="playerStore.hasTrack"
-          class="live-playback-pill"
-          :class="{ 'is-spinning': playerStore.isPlaying }"
+          class="live-status-pill"
+          :class="{ 'is-playing': playerStore.isPlaying }"
           @click="playerStore.toggleExpanded()"
-          title="Open Immersion Canvas"
+          title="Open Listening Salon"
         >
-          <div class="mini-turntable">
-            <div class="turntable-groove"></div>
-            <div class="turntable-label"></div>
+          <div class="mini-disc" :class="{ 'is-spinning': playerStore.isPlaying }">
+            <div class="disc-label"></div>
           </div>
-          <span class="live-pill-text desktop-only font-mono">
-            {{ playerStore.isPlaying ? 'RESONATING' : 'IDLE' }}
+          <span class="live-label desktop-only font-mono">
+            {{ playerStore.isPlaying ? 'STEREO ON' : 'PAUSED' }}
           </span>
         </button>
 
         <!-- Curator Profile Dropdown Trigger -->
         <div class="curator-profile-container" ref="dropdownRef">
           <button
-            class="curator-badge-btn"
+            class="curator-avatar-btn"
             :class="{ 'is-open': dropdownOpen }"
             @click="dropdownOpen = !dropdownOpen"
             aria-label="User Account Menu"
           >
-            <div class="curator-avatar">
+            <div class="curator-avatar font-mono">
               {{ userInitials }}
             </div>
-            <span class="curator-name desktop-only font-display">{{ authStore.username || 'Curator' }}</span>
-            <svg class="dropdown-chevron desktop-only" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <span class="curator-handle desktop-only font-display">{{ authStore.username || 'Curator' }}</span>
+            <svg class="dropdown-chevron desktop-only" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <polyline points="6 9 12 15 18 9"></polyline>
             </svg>
           </button>
 
           <!-- Dropdown Overlay -->
-          <transition name="sw-drop">
-            <div v-if="dropdownOpen" class="curator-dropdown-menu">
-              <div class="dropdown-header">
-                <span class="dropdown-kicker font-mono">CURATOR SESSION</span>
-                <span class="dropdown-username font-display">{{ authStore.username }}</span>
-                <span class="dropdown-email font-mono">{{ authStore.user?.email || 'Active Session' }}</span>
+          <transition name="pg-pop">
+            <div v-if="dropdownOpen" class="curator-popover">
+              <div class="popover-mast">
+                <span class="popover-kicker font-mono">CURATOR IDENT</span>
+                <span class="popover-username font-display">{{ authStore.username }}</span>
+                <span class="popover-email font-mono">{{ authStore.user?.email || 'curator@soundwave.internal' }}</span>
               </div>
 
-              <div class="dropdown-divider"></div>
+              <div class="popover-strip"></div>
 
-              <div class="dropdown-stats font-mono">
-                <div class="stat-item">
-                  <span class="stat-num">{{ playlistStore.playlists.length }}</span>
-                  <span class="stat-label">Collections</span>
+              <div class="popover-stats font-mono">
+                <div class="popover-stat-cell">
+                  <span class="stat-number">{{ playlistStore.playlists.length }}</span>
+                  <span class="stat-text">Mixtapes</span>
                 </div>
-                <div class="stat-item">
-                  <span class="stat-num">{{ playlistStore.totalTracksCount }}</span>
-                  <span class="stat-label">Tracks</span>
+                <div class="popover-stat-cell">
+                  <span class="stat-number">{{ playlistStore.totalTracksCount }}</span>
+                  <span class="stat-text">Tracks</span>
                 </div>
               </div>
 
-              <div class="dropdown-divider"></div>
+              <div class="popover-strip"></div>
 
-              <button class="dropdown-action-btn logout font-mono" @click="handleLogout">
+              <button class="popover-action-btn logout font-mono" @click="handleLogout">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                   <polyline points="16 17 21 12 16 7"></polyline>
                   <line x1="21" y1="12" x2="9" y2="12"></line>
                 </svg>
-                <span>Terminate Session</span>
+                <span>End Session</span>
               </button>
             </div>
           </transition>
@@ -131,35 +120,29 @@
       </div>
     </nav>
 
-    <!-- Mobile Floating Island Dock -->
-    <nav class="mobile-orbital-dock mobile-only" aria-label="Mobile Navigation">
-      <router-link to="/" class="mobile-dock-item" active-class="is-active" exact>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-          <polyline points="9 22 9 12 15 12 15 22"></polyline>
-        </svg>
-        <span class="font-mono">Orbit</span>
+    <!-- Mobile Bottom Editorial Dock -->
+    <nav class="pg-mobile-dock mobile-only" aria-label="Mobile Navigation">
+      <router-link to="/" class="dock-link" active-class="is-active" exact>
+        <span class="dock-glyph">★</span>
+        <span class="dock-text font-display">Playground</span>
       </router-link>
 
-      <router-link to="/library" class="mobile-dock-item" active-class="is-active">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-        </svg>
-        <span class="font-mono">Archive</span>
+      <router-link to="/library" class="dock-link" active-class="is-active">
+        <span class="dock-glyph">▦</span>
+        <span class="dock-text font-display">Archive</span>
+        <span v-if="playlistStore.playlists.length" class="dock-bubble font-mono">
+          {{ playlistStore.playlists.length }}
+        </span>
       </router-link>
 
-      <router-link to="/search" class="mobile-dock-item" active-class="is-active">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="11" cy="11" r="8"></circle>
-          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-        </svg>
-        <span class="font-mono">Discover</span>
+      <router-link to="/search" class="dock-link" active-class="is-active">
+        <span class="dock-glyph">⚲</span>
+        <span class="dock-text font-display">Explore</span>
       </router-link>
 
-      <button class="mobile-dock-item" @click="$emit('open-create-modal')" title="New Collection">
-        <div class="mobile-add-circle">+</div>
-        <span class="font-mono">Forge</span>
+      <button class="dock-link create-dock-btn" @click="$emit('open-create-modal')">
+        <span class="dock-glyph font-mono">+</span>
+        <span class="dock-text font-display">Create</span>
       </button>
     </nav>
   </header>
@@ -189,529 +172,527 @@ const userInitials = computed(() => {
 
 const handleLogout = async () => {
   dropdownOpen.value = false;
-  authStore.logout();
+  await authStore.logout();
   router.push('/login');
 };
 
-const handleGlobalClick = (e) => {
-  if (dropdownRef.value && !dropdownRef.value.contains(e.target)) {
+const handleClickOutside = (event) => {
+  if (dropdownRef.value && !dropdownRef.value.contains(event.target)) {
     dropdownOpen.value = false;
   }
 };
 
-const handleKeyDown = (e) => {
-  if (e.key === '/' && !['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) {
-    e.preventDefault();
-    router.push('/search');
-  }
-};
-
 onMounted(() => {
-  window.addEventListener('click', handleGlobalClick);
-  window.addEventListener('keydown', handleKeyDown);
+  document.addEventListener('click', handleClickOutside);
 });
 
 onUnmounted(() => {
-  window.removeEventListener('click', handleGlobalClick);
-  window.removeEventListener('keydown', handleKeyDown);
+  document.removeEventListener('click', handleClickOutside);
 });
 </script>
 
 <style scoped>
-.sw-orbital-nav-wrapper {
+.pg-masthead-wrapper {
   position: fixed;
-  top: 18px;
+  top: 16px;
   left: 0;
   right: 0;
+  z-index: 1000;
   display: flex;
   justify-content: center;
   padding: 0 24px;
-  z-index: 90;
   pointer-events: none;
 }
 
-.sw-orbital-capsule {
+.pg-masthead {
   pointer-events: auto;
-  width: 100%;
-  max-width: 1140px;
-  height: 60px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 16px 0 20px;
-  background: rgba(24, 13, 41, 0.82);
-  backdrop-filter: blur(28px) saturate(190%);
-  -webkit-backdrop-filter: blur(28px) saturate(190%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--sw-radius-full);
-  box-shadow:
-    0 16px 36px -8px rgba(0, 0, 0, 0.75),
-    0 0 0 1px rgba(255, 255, 255, 0.05),
-    inset 0 1px 1px 0 rgba(255, 255, 255, 0.18);
-  transition: all var(--sw-transition-normal);
+  width: 100%;
+  max-width: 1320px;
+  padding: 10px 18px;
+  background: var(--pg-canvas);
+  border: 2px solid var(--pg-border);
+  border-radius: var(--pg-radius-full);
+  box-shadow: var(--pg-shadow-solid);
+  transition: transform var(--pg-transition-spring);
 }
 
-.sw-orbital-capsule:hover {
-  border-color: rgba(204, 255, 0, 0.38);
-  box-shadow:
-    0 20px 44px -8px rgba(0, 0, 0, 0.85),
-    0 0 24px -4px rgba(204, 255, 0, 0.25),
-    inset 0 1px 1px 0 rgba(255, 255, 255, 0.22);
-}
-
-/* 1. Brand Soundmark */
-.orbital-brand {
+/* 1. Brand */
+.pg-brand {
   display: flex;
   align-items: center;
   gap: 12px;
   text-decoration: none;
-  color: var(--sw-text-primary);
+  color: var(--pg-ink);
   user-select: none;
 }
 
-.brand-soundmark {
+.brand-equalizer {
   display: flex;
   align-items: flex-end;
   gap: 3px;
-  height: 20px;
-  padding: 2px 0;
+  height: 22px;
+  padding: 2px 4px;
+  background: var(--pg-ink);
+  border-radius: var(--pg-radius-xs);
 }
 
-.eq-bar {
-  width: 3px;
+.eq-col {
+  width: 3.5px;
+  background: var(--pg-citron);
+  border-radius: 1px;
   height: 8px;
-  background: var(--sw-accent);
-  border-radius: 2px;
-  transition: height 0.2s ease, background 0.3s ease;
+  transition: height 200ms ease;
 }
 
-.bar-1 { height: 10px; }
-.bar-2 { height: 16px; }
-.bar-3 { height: 12px; }
-.bar-4 { height: 18px; }
-.bar-5 { height: 8px; }
+.brand-equalizer.is-playing .col-1 { animation: eqPlay 600ms infinite ease-in-out alternate; }
+.brand-equalizer.is-playing .col-2 { animation: eqPlay 800ms infinite ease-in-out alternate 100ms; }
+.brand-equalizer.is-playing .col-3 { animation: eqPlay 500ms infinite ease-in-out alternate 200ms; }
+.brand-equalizer.is-playing .col-4 { animation: eqPlay 700ms infinite ease-in-out alternate 300ms; }
 
-.brand-soundmark.is-active .eq-bar {
-  animation: soundwave-eq 1.2s ease-in-out infinite alternate;
-}
-.brand-soundmark.is-active .bar-1 { animation-delay: 0.1s; }
-.brand-soundmark.is-active .bar-2 { animation-delay: 0.4s; }
-.brand-soundmark.is-active .bar-3 { animation-delay: 0.2s; }
-.brand-soundmark.is-active .bar-4 { animation-delay: 0.5s; }
-.brand-soundmark.is-active .bar-5 { animation-delay: 0.3s; }
-
-@keyframes soundwave-eq {
-  0% { height: 6px; }
-  50% { height: 20px; background: var(--sw-warm); }
-  100% { height: 10px; background: var(--sw-accent); }
+@keyframes eqPlay {
+  0% { height: 4px; }
+  100% { height: 18px; }
 }
 
-.brand-text {
+.brand-typography {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.brand-title {
-  font-size: 15px;
+.brand-name {
+  font-size: 1.05rem;
   font-weight: 800;
-  letter-spacing: 0.08em;
-  color: #fff;
+  letter-spacing: -0.04em;
+  color: var(--pg-ink);
 }
 
 .brand-edition {
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  padding: 2px 7px;
-  background: rgba(204, 255, 0, 0.12);
-  border: 1px solid rgba(204, 255, 0, 0.35);
-  border-radius: var(--sw-radius-full);
-  color: var(--sw-accent);
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 2px 8px;
+  background: var(--pg-citron);
+  color: var(--pg-ink);
+  border: 1.5px solid var(--pg-border);
+  border-radius: var(--pg-radius-full);
 }
 
-/* 2. Primary Navigation Links */
-.orbital-links {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(255, 255, 255, 0.04);
-  padding: 4px;
-  border-radius: var(--sw-radius-full);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-}
-
-.orbital-link {
+/* 2. Navigation Pills */
+.pg-nav-links {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 16px;
-  border-radius: var(--sw-radius-full);
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--sw-text-secondary);
-  text-decoration: none;
-  transition: all var(--sw-transition-fast);
 }
 
-.orbital-link:hover {
-  color: var(--sw-text-primary);
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.orbital-link.is-active {
-  color: #0e0717;
-  background: var(--sw-accent);
+.pg-nav-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 16px;
+  border-radius: var(--pg-radius-full);
+  border: 1.5px solid transparent;
+  background: transparent;
+  color: var(--pg-ink-secondary);
+  font-size: 0.88rem;
   font-weight: 700;
-  box-shadow: 0 0 20px rgba(204, 255, 0, 0.4);
+  text-decoration: none;
+  transition: all var(--pg-transition-spring);
 }
 
-.link-icon {
-  opacity: 0.85;
-  transition: transform var(--sw-transition-fast);
+.pg-nav-pill:hover {
+  background: var(--pg-surface-soft);
+  color: var(--pg-ink);
+  border-color: var(--pg-border);
+  transform: translateY(-2px);
+  box-shadow: 2px 2px 0px var(--pg-border);
 }
 
-.orbital-link:hover .link-icon {
-  transform: translateY(-1px);
+.pg-nav-pill.is-active {
+  background: var(--pg-ink);
+  color: #FFFFFF;
+  border-color: var(--pg-ink);
+  box-shadow: 2px 2px 0px var(--pg-coral);
+}
+
+.pg-nav-pill.is-active .pill-text {
+  color: #FFFFFF;
+}
+
+.pill-num {
+  font-size: 0.7rem;
+  font-weight: 700;
+  opacity: 0.7;
+}
+
+.pg-nav-pill.is-active .pill-num {
+  color: var(--pg-citron);
   opacity: 1;
 }
 
-.link-badge {
-  font-size: 10px;
+.pill-badge {
+  font-size: 0.68rem;
+  font-weight: 800;
   padding: 1px 6px;
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: var(--sw-radius-full);
-  color: inherit;
-  font-weight: 700;
-}
-
-.kbd-hint {
-  font-size: 10px;
-  padding: 2px 5px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 4px;
-  color: var(--sw-text-muted);
-}
-
-/* 3. Actions & Profile */
-.orbital-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.forge-collection-btn {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 8px 16px;
-  border-radius: var(--sw-radius-full);
-  background: linear-gradient(135deg, var(--sw-warm), #e02678);
+  background: var(--pg-coral);
   color: #fff;
-  font-size: 13px;
+  border-radius: var(--pg-radius-full);
+}
+
+.kbd-badge {
+  font-size: 0.7rem;
   font-weight: 700;
-  cursor: pointer;
-  box-shadow: 0 0 20px rgba(255, 87, 34, 0.35);
-  transition: all var(--sw-transition-fast);
+  padding: 1px 6px;
+  background: var(--pg-surface-soft);
+  border: 1px solid var(--pg-border);
+  border-radius: 4px;
 }
 
-.forge-collection-btn:hover {
-  transform: translateY(-1px) scale(1.02);
-  box-shadow: 0 0 28px rgba(255, 87, 34, 0.5);
+.pg-nav-pill.is-active .kbd-badge {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
-.btn-plus {
-  font-size: 15px;
-  line-height: 1;
+/* 3. Actions Cluster */
+.pg-masthead-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-.live-playback-pill {
+.create-mixtape-btn {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 12px;
-  background: rgba(204, 255, 0, 0.12);
-  border: 1px solid rgba(204, 255, 0, 0.35);
-  border-radius: var(--sw-radius-full);
-  color: var(--sw-accent);
+  padding: 8px 18px;
+  background: var(--pg-cobalt);
+  color: #fff;
+  border: 2px solid var(--pg-border);
+  border-radius: var(--pg-radius-full);
+  font-size: 0.88rem;
+  font-weight: 800;
   cursor: pointer;
-  transition: all var(--sw-transition-fast);
+  box-shadow: 3px 3px 0px var(--pg-border);
+  transition: all var(--pg-transition-spring);
 }
 
-.live-playback-pill:hover {
-  background: rgba(204, 255, 0, 0.22);
-  box-shadow: 0 0 16px rgba(204, 255, 0, 0.3);
+.create-mixtape-btn:hover {
+  background: var(--pg-coral);
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0px var(--pg-border);
 }
 
-.mini-turntable {
-  position: relative;
+.btn-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.live-status-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: var(--pg-surface-butter);
+  border: 1.5px solid var(--pg-border);
+  border-radius: var(--pg-radius-full);
+  cursor: pointer;
+  box-shadow: 2px 2px 0px var(--pg-border);
+  transition: transform var(--pg-transition-spring);
+}
+
+.live-status-pill:hover {
+  transform: translateY(-2px);
+  box-shadow: 3px 3px 0px var(--pg-border);
+}
+
+.mini-disc {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: #111;
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: #14101E;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
-.turntable-groove {
-  position: absolute;
-  inset: 3px;
+.disc-label {
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  border: 1px dashed rgba(255, 255, 255, 0.2);
+  background: var(--pg-coral);
 }
 
-.turntable-label {
-  position: absolute;
-  inset: 6px;
-  border-radius: 50%;
-  background: var(--sw-accent);
+.mini-disc.is-spinning {
+  animation: discSpin 2.5s linear infinite;
 }
 
-.live-playback-pill.is-spinning .mini-turntable {
-  animation: spin-vinyl 3s linear infinite;
+@keyframes discSpin {
+  100% { transform: rotate(360deg); }
 }
 
-@keyframes spin-vinyl {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+.live-label {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--pg-ink);
+  letter-spacing: 0.05em;
 }
 
-.live-pill-text {
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  font-weight: 700;
-}
-
-/* Curator Profile */
+/* Curator Avatar & Popover */
 .curator-profile-container {
   position: relative;
 }
 
-.curator-badge-btn {
+.curator-avatar-btn {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 4px 10px 4px 4px;
-  border-radius: var(--sw-radius-full);
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--pg-surface-soft);
+  border: 1.5px solid var(--pg-border);
+  border-radius: var(--pg-radius-full);
   cursor: pointer;
-  transition: all var(--sw-transition-fast);
+  box-shadow: 2px 2px 0px var(--pg-border);
+  transition: all var(--pg-transition-spring);
 }
 
-.curator-badge-btn:hover,
-.curator-badge-btn.is-open {
-  background: rgba(255, 255, 255, 0.09);
-  border-color: rgba(255, 255, 255, 0.2);
+.curator-avatar-btn:hover {
+  background: var(--pg-surface);
+  transform: translateY(-2px);
+  box-shadow: 3px 3px 0px var(--pg-border);
 }
 
 .curator-avatar {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #ccff00, #ff5722);
-  color: #0e0717;
-  font-size: 11px;
+  background: var(--pg-ink);
+  color: var(--pg-citron);
+  font-size: 0.72rem;
   font-weight: 800;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.curator-name {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--sw-text-primary);
-  max-width: 110px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.curator-handle {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--pg-ink);
 }
 
 .dropdown-chevron {
-  opacity: 0.6;
-  transition: transform var(--sw-transition-fast);
+  color: var(--pg-ink-secondary);
 }
 
-.curator-badge-btn.is-open .dropdown-chevron {
-  transform: rotate(180deg);
-}
-
-/* Dropdown Menu */
-.curator-dropdown-menu {
+/* Curator Popover */
+.curator-popover {
   position: absolute;
   top: calc(100% + 12px);
   right: 0;
-  width: 240px;
-  background: rgba(24, 13, 41, 0.96);
-  backdrop-filter: blur(28px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: var(--sw-radius-lg);
+  width: 250px;
+  background: var(--pg-canvas);
+  border: 2px solid var(--pg-border);
+  border-radius: var(--pg-radius-lg);
+  box-shadow: var(--pg-shadow-solid-lg);
   padding: 16px;
-  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.85);
-  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 1001;
 }
 
-.dropdown-header {
+.popover-mast {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
-.dropdown-kicker {
-  font-size: 9px;
-  letter-spacing: 0.14em;
-  color: var(--sw-text-muted);
-}
-
-.dropdown-username {
-  font-size: 16px;
-  font-weight: 700;
-  color: #fff;
-}
-
-.dropdown-email {
-  font-size: 11px;
-  color: var(--sw-text-secondary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.dropdown-divider {
-  height: 1px;
-  background: rgba(255, 255, 255, 0.08);
-  margin: 12px 0;
-}
-
-.dropdown-stats {
-  display: flex;
-  justify-content: space-around;
-  padding: 8px 0;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: var(--sw-radius-sm);
-}
-
-.stat-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.stat-num {
-  font-size: 16px;
+.popover-kicker {
+  font-size: 0.65rem;
   font-weight: 800;
-  color: var(--sw-accent);
+  color: var(--pg-ink-muted);
+  letter-spacing: 0.08em;
 }
 
-.stat-label {
-  font-size: 10px;
-  color: var(--sw-text-muted);
+.popover-username {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--pg-ink);
 }
 
-.dropdown-action-btn {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: var(--sw-radius-sm);
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all var(--sw-transition-fast);
+.popover-email {
+  font-size: 0.72rem;
+  color: var(--pg-ink-secondary);
+  word-break: break-all;
 }
 
-.dropdown-action-btn.logout {
-  color: var(--sw-danger);
-  background: rgba(255, 51, 102, 0.1);
-  border: 1px solid rgba(255, 51, 102, 0.25);
+.popover-strip {
+  height: 2px;
+  background: var(--pg-border);
+  opacity: 0.15;
 }
 
-.dropdown-action-btn.logout:hover {
-  background: rgba(255, 51, 102, 0.2);
-  border-color: var(--sw-danger);
+.popover-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  background: var(--pg-surface-soft);
+  border: 1.5px solid var(--pg-border);
+  border-radius: var(--pg-radius-sm);
+  padding: 8px;
 }
 
-/* Mobile Floating Bottom Dock */
-.mobile-orbital-dock {
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: calc(100% - 32px);
-  max-width: 380px;
-  height: 60px;
-  background: rgba(24, 13, 41, 0.94);
-  backdrop-filter: blur(28px);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: var(--sw-radius-full);
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  padding: 0 12px;
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.85);
-  z-index: 89;
-  pointer-events: auto;
-}
-
-.mobile-dock-item {
+.popover-stat-cell {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
-  color: var(--sw-text-secondary);
-  font-size: 10px;
-  text-decoration: none;
-  padding: 6px 12px;
-  border-radius: var(--sw-radius-md);
-  transition: all var(--sw-transition-fast);
 }
 
-.mobile-dock-item.is-active {
-  color: var(--sw-accent);
+.stat-number {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--pg-cobalt);
 }
 
-.mobile-add-circle {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: var(--sw-accent);
-  color: #0e0717;
+.stat-text {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--pg-ink-muted);
+  text-transform: uppercase;
+}
+
+.popover-action-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 15px;
-  font-weight: 800;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1.5px solid var(--pg-border);
+  border-radius: var(--pg-radius-md);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  background: var(--pg-surface-peach);
+  color: var(--pg-coral);
+  box-shadow: 2px 2px 0px var(--pg-border);
+  transition: all var(--pg-transition-spring);
 }
 
-.mobile-only {
+.popover-action-btn:hover {
+  background: var(--pg-coral);
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 3px 3px 0px var(--pg-border);
+}
+
+/* Popover Animation */
+.pg-pop-enter-active,
+.pg-pop-leave-active {
+  transition: all var(--pg-transition-spring);
+}
+
+.pg-pop-enter-from,
+.pg-pop-leave-to {
+  opacity: 0;
+  transform: translateY(-10px) scale(0.95);
+}
+
+/* Mobile Bottom Editorial Dock */
+.pg-mobile-dock {
   display: none;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .desktop-only {
     display: none !important;
   }
+
   .mobile-only {
     display: flex !important;
   }
-  .sw-orbital-nav-wrapper {
-    top: 12px;
-    padding: 0 12px;
-  }
-  .sw-orbital-capsule {
-    height: 52px;
-    padding: 0 12px;
-  }
-}
 
-.sw-drop-enter-active,
-.sw-drop-leave-active {
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.sw-drop-enter-from,
-.sw-drop-leave-to {
-  opacity: 0;
-  transform: translateY(-8px) scale(0.96);
+  .pg-masthead-wrapper {
+    top: 10px;
+    padding: 0 12px;
+  }
+
+  .pg-masthead {
+    padding: 8px 12px;
+  }
+
+  .pg-mobile-dock {
+    position: fixed;
+    bottom: 14px;
+    left: 12px;
+    right: 12px;
+    height: 58px;
+    background: var(--pg-canvas);
+    border: 2px solid var(--pg-border);
+    border-radius: var(--pg-radius-full);
+    box-shadow: var(--pg-shadow-solid-lg);
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding: 0 8px;
+    pointer-events: auto;
+    z-index: 1000;
+  }
+
+  .dock-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    color: var(--pg-ink-secondary);
+    text-decoration: none;
+    font-size: 0.65rem;
+    font-weight: 700;
+    position: relative;
+    padding: 4px 8px;
+    border-radius: var(--pg-radius-md);
+  }
+
+  .dock-glyph {
+    font-size: 1.1rem;
+    line-height: 1;
+  }
+
+  .dock-link.is-active {
+    color: var(--pg-cobalt);
+  }
+
+  .dock-bubble {
+    position: absolute;
+    top: 2px;
+    right: 4px;
+    font-size: 0.55rem;
+    padding: 1px 4px;
+    background: var(--pg-coral);
+    color: #fff;
+    border-radius: var(--pg-radius-full);
+  }
+
+  .create-dock-btn {
+    background: var(--pg-cobalt);
+    color: #fff;
+    border: 1.5px solid var(--pg-border);
+    border-radius: var(--pg-radius-full);
+    padding: 4px 10px;
+    box-shadow: 2px 2px 0px var(--pg-border);
+  }
+
+  .create-dock-btn .dock-glyph {
+    color: #fff;
+  }
+
+  .create-dock-btn .dock-text {
+    color: #fff;
+  }
 }
 </style>

@@ -89,8 +89,8 @@
                 :isPlaying="playerStore.isPlaying"
                 mode="bars"
                 :barCount="36"
-                accentColor="#ccff00"
-                secondaryColor="#ff5722"
+                accentColor="#3B4BFF"
+                secondaryColor="#FF3E6C"
               />
             </div>
           </div>
@@ -306,7 +306,7 @@ watch(
   position: fixed;
   inset: 0;
   z-index: 2000;
-  background: #060709;
+  background: var(--pg-bg);
   display: flex;
   flex-direction: column;
   color: var(--sw-text-primary);
@@ -343,7 +343,7 @@ watch(
 .ambient-dark-wash {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at center, rgba(6, 7, 9, 0.6) 0%, #060709 90%);
+  background: radial-gradient(circle at center, rgba(255, 249, 238, 0.4) 0%, rgba(255, 249, 238, 0.95) 90%);
   pointer-events: none;
   z-index: 1;
 }
@@ -364,8 +364,9 @@ watch(
   align-items: center;
   gap: 8px;
   color: var(--sw-text-secondary);
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--sw-border);
+  background: var(--pg-canvas);
+  border: 2px solid var(--pg-border);
+  box-shadow: 2px 2px 0px var(--pg-border);
   padding: 8px 16px;
   border-radius: var(--sw-radius-full);
   font-size: 0.85rem;
@@ -413,8 +414,9 @@ watch(
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--sw-border);
+  background: var(--pg-canvas);
+  border: 2px solid var(--pg-border);
+  box-shadow: 2px 2px 0px var(--pg-border);
   color: var(--sw-text-secondary);
   padding: 8px 14px;
   border-radius: var(--sw-radius-full);
@@ -473,8 +475,11 @@ watch(
 .art-visualizer-bar {
   width: 100%;
   height: 48px;
-  background: rgba(19, 23, 34, 0.6);
-  border: 1px solid var(--sw-border);
+  background: var(--pg-canvas);
+  border: 2px solid var(--pg-border);
+  box-shadow: 3px 3px 0px var(--pg-border);
+  border: 2px solid var(--pg-border);
+  box-shadow: 2px 2px 0px var(--pg-border);
   border-radius: var(--sw-radius-md);
   padding: 6px 12px;
 }

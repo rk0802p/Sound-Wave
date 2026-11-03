@@ -1,6 +1,6 @@
 <template>
   <div class="sw-input-group" :class="{ 'has-error': Boolean(error), 'is-disabled': disabled }">
-    <label v-if="label" class="sw-label">
+    <label v-if="label" class="sw-label font-mono">
       {{ label }}
       <span v-if="required" class="required-star">*</span>
     </label>
@@ -26,8 +26,8 @@
       </span>
     </div>
 
-    <span v-if="error" class="error-msg">{{ error }}</span>
-    <span v-else-if="hint" class="hint-msg">{{ hint }}</span>
+    <span v-if="error" class="error-msg font-mono">{{ error }}</span>
+    <span v-else-if="hint" class="hint-msg font-mono">{{ hint }}</span>
   </div>
 </template>
 
@@ -79,13 +79,14 @@ defineEmits(['update:modelValue']);
 }
 
 .sw-label {
-  font-size: 0.82rem;
-  font-weight: 500;
-  color: var(--sw-text-secondary);
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--pg-ink);
+  letter-spacing: 0.02em;
 }
 
 .required-star {
-  color: var(--sw-accent);
+  color: var(--pg-coral);
   margin-left: 2px;
 }
 
@@ -98,65 +99,40 @@ defineEmits(['update:modelValue']);
 
 .sw-input {
   width: 100%;
-  height: 42px;
-  padding: 0 14px;
-  background: var(--sw-surface);
-  border: 1px solid var(--sw-border);
-  border-radius: var(--sw-radius-sm);
-  color: var(--sw-text-primary);
-  font-size: 0.9rem;
+  height: 44px;
+  padding: 0 16px;
+  background: var(--pg-canvas);
+  border: 1.5px solid var(--pg-border);
+  border-radius: var(--pg-radius-sm);
+  color: var(--pg-ink);
+  font-size: 0.92rem;
   outline: none;
-  transition: all var(--sw-transition-fast);
+  box-shadow: 2px 2px 0px var(--pg-border);
+  transition: all var(--pg-transition-spring);
 }
 
 .sw-input:focus {
-  border-color: var(--sw-accent);
-  background: var(--sw-surface-hover);
-  box-shadow: 0 0 0 1px var(--sw-accent);
+  border-color: var(--pg-cobalt);
+  box-shadow: 3px 3px 0px var(--pg-cobalt);
 }
 
 .sw-input::placeholder {
-  color: var(--sw-text-muted);
-}
-
-.prefix-slot {
-  position: absolute;
-  left: 12px;
-  color: var(--sw-text-muted);
-  display: flex;
-  align-items: center;
-  pointer-events: none;
-}
-
-.suffix-slot {
-  position: absolute;
-  right: 12px;
-  display: flex;
-  align-items: center;
+  color: var(--pg-ink-muted);
 }
 
 .has-error .sw-input {
-  border-color: var(--sw-danger);
-}
-
-.has-error .sw-input:focus {
-  border-color: var(--sw-danger);
-  box-shadow: 0 0 0 1px var(--sw-danger);
+  border-color: var(--pg-coral);
+  box-shadow: 3px 3px 0px var(--pg-coral);
 }
 
 .error-msg {
-  font-size: 0.78rem;
-  color: var(--sw-danger);
-  margin-top: 2px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--pg-coral);
 }
 
 .hint-msg {
-  font-size: 0.78rem;
-  color: var(--sw-text-muted);
-}
-
-.is-disabled {
-  opacity: 0.5;
-  pointer-events: none;
+  font-size: 0.72rem;
+  color: var(--pg-ink-muted);
 }
 </style>

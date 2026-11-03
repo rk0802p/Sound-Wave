@@ -1,61 +1,94 @@
 :root {
-  /* Chromatic Kinetic Atelier — Deep Cassis Plum & Obsidian Surfaces */
-  --sw-void: #09040e;
-  --sw-bg: #0e0717;
-  --sw-sidebar: #130920;
-  --sw-surface: #180d29;
-  --sw-surface-hover: #22133a;
-  --sw-surface-active: #2d1a4c;
-  --sw-surface-glass: rgba(24, 13, 41, 0.82);
-  --sw-player-bg: rgba(18, 9, 31, 0.94);
+  /* ==========================================================================
+     SOUNDWAVE / PLAYGROUND — Design Tokens
+     Warm Ivory Surfaces, Crisp Obsidian Ink, and Hyper-Expressive Accents
+     ========================================================================== */
 
-  /* Architectural Hairline Borders */
-  --sw-border: #2a1744;
-  --sw-border-subtle: #1e1033;
-  --sw-border-hover: #42246b;
-  --sw-border-focus: #ccff00;
+  /* 1. Surfaces & Canvas */
+  --pg-bg: #FFF9EE;                /* Primary Warm Ivory Background */
+  --pg-bg-alt: #FFF4DF;            /* Secondary Warm Ivory Tint */
+  --pg-canvas: #FFFDF8;            /* Pristine Off-White Paper Canvas */
+  --pg-surface: #FFFFFF;           /* Card White */
+  --pg-surface-soft: #FAF4E8;      /* Soft Card Sand */
+  --pg-surface-hover: #F4ECE0;     /* Card Hover Tint */
+  --pg-surface-active: #EDE2D0;    /* Card Active Pressed */
 
-  /* Electric Citrus Palette: Acid Lime (#ccff00), Radiant Coral (#ff5722), Neon Magenta (#e02678) */
-  --sw-accent: #ccff00;
-  --sw-accent-hover: #d9ff33;
-  --sw-accent-soft: rgba(204, 255, 0, 0.14);
-  --sw-accent-glow: rgba(204, 255, 0, 0.38);
-  --sw-accent-muted: #b3e600;
+  /* Color-Blocked Editorial Surface Tints */
+  --pg-surface-peach: #FFEFE7;     /* Soft Peach Block */
+  --pg-surface-butter: #FFF7D1;    /* Butter Yellow Block */
+  --pg-surface-lavender: #F1ECFF;  /* Pale Lavender Block */
+  --pg-surface-mint: #E7FAF2;      /* Fresh Mint Block */
+  --pg-surface-ice: #E8F4FF;       /* Pale Ice Blue Block */
 
-  --sw-warm: #ff5722;
-  --sw-warm-hover: #ff7043;
-  --sw-warm-soft: rgba(255, 87, 34, 0.16);
-  --sw-warm-glow: rgba(255, 87, 34, 0.36);
+  /* 2. Razor-Sharp Inks (AAA Accessibility) */
+  --pg-ink: #14101E;               /* Primary Obsidian Ink */
+  --pg-ink-secondary: #4A4458;     /* Secondary Editorial Ink */
+  --pg-ink-muted: #79718A;         /* Metadata & Timestamps */
+  --pg-ink-dim: #A8A1B5;           /* Dim Lines & Placeholders */
+  --pg-ink-invert: #FFFDF8;        /* Reverse Paper Text */
 
-  --sw-magenta: #e02678;
-  --sw-magenta-soft: rgba(224, 38, 120, 0.16);
-  --sw-magenta-glow: rgba(224, 38, 120, 0.36);
+  /* 3. Expressive Music Accents */
+  --pg-coral: #FF3E6C;             /* Electric Coral */
+  --pg-coral-hover: #E62A56;
+  --pg-coral-soft: rgba(255, 62, 108, 0.12);
 
-  --sw-cream: #fffdf7;
+  --pg-cobalt: #3B4BFF;            /* Hyper Cobalt */
+  --pg-cobalt-hover: #2938E0;
+  --pg-cobalt-soft: rgba(59, 75, 255, 0.12);
 
-  /* Typography Families */
-  --sw-font-display: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --sw-font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --sw-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --pg-tangerine: #FF7A00;         /* Tangerine Blaze */
+  --pg-tangerine-hover: #E66D00;
+  --pg-tangerine-soft: rgba(255, 122, 0, 0.12);
 
-  /* Typography Scale */
-  --font-display: var(--sw-font-display);
-  --font-sans: var(--sw-font-sans);
-  --font-mono: var(--sw-font-mono);
+  --pg-citron: #E2F705;            /* Acid Citron / Neon Yellow */
+  --pg-citron-hover: #CDE200;
+  --pg-citron-soft: rgba(226, 247, 5, 0.2);
 
-  /* High-Contrast Humanistic Text Colors */
-  --sw-text-primary: #fffdf7;
-  --sw-text-secondary: #b3a4c4;
-  --sw-text-muted: #7d6b91;
-  --sw-text-dim: #564868;
+  --pg-mint: #05F7A4;              /* Hyper Mint */
+  --pg-mint-hover: #00DB90;
+  --pg-mint-soft: rgba(5, 247, 164, 0.15);
 
-  /* Feedback & Telemetry States */
-  --sw-success: #ccff00;
-  --sw-warning: #ff9800;
-  --sw-danger: #ff3366;
-  --sw-info: #ff5722;
+  --pg-violet: #8438FF;            /* Vivid Violet */
+  --pg-violet-hover: #6E22E6;
+  --pg-violet-soft: rgba(132, 56, 255, 0.12);
 
-  /* Spacing Scale */
+  --pg-bubblegum: #FF70B8;         /* Bubblegum Pink */
+
+  /* 4. Architectural Borders & Tactile Drop Shadows */
+  --pg-border: #14101E;
+  --pg-border-hairline: rgba(20, 16, 30, 0.14);
+  --pg-border-dashed: 2px dashed #14101E;
+
+  --pg-shadow-solid: 4px 4px 0px #14101E;
+  --pg-shadow-solid-sm: 2px 2px 0px #14101E;
+  --pg-shadow-solid-lg: 6px 6px 0px #14101E;
+  --pg-shadow-solid-xl: 8px 8px 0px #14101E;
+
+  --pg-shadow-coral: 4px 4px 0px #FF3E6C;
+  --pg-shadow-cobalt: 4px 4px 0px #3B4BFF;
+  --pg-shadow-citron: 4px 4px 0px #E2F705;
+  --pg-shadow-soft: 0 10px 30px rgba(20, 16, 30, 0.08);
+
+  /* 5. Typography */
+  --pg-font-display: 'Syne', 'Space Grotesk', -apple-system, sans-serif;
+  --pg-font-title: 'Bricolage Grotesque', 'Space Grotesk', -apple-system, sans-serif;
+  --pg-font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --pg-font-mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+
+  --font-display: var(--pg-font-display);
+  --font-title: var(--pg-font-title);
+  --font-sans: var(--pg-font-sans);
+  --font-mono: var(--pg-font-mono);
+
+  /* 6. Radii */
+  --pg-radius-xs: 4px;
+  --pg-radius-sm: 8px;
+  --pg-radius-md: 14px;
+  --pg-radius-lg: 20px;
+  --pg-radius-xl: 32px;
+  --pg-radius-full: 9999px;
+
+  /* 7. Spacing */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -67,48 +100,86 @@
   --space-12: 48px;
   --space-16: 64px;
 
-  /* Border Radii */
-  --sw-radius-xs: 4px;
-  --sw-radius-sm: 8px;
-  --sw-radius-md: 12px;
-  --sw-radius-lg: 18px;
-  --sw-radius-xl: 26px;
-  --sw-radius-full: 9999px;
+  /* 8. Kinetic Springs & Motion */
+  --pg-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --pg-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --pg-duration-fast: 150ms;
+  --pg-duration-normal: 240ms;
+  --pg-duration-slow: 380ms;
 
-  /* Holographic Shadows & Deep Vinyl Elevation */
-  --sw-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.5);
-  --sw-shadow-md: 0 10px 28px -4px rgba(0, 0, 0, 0.65), 0 2px 8px -1px rgba(0, 0, 0, 0.4);
-  --sw-shadow-lg: 0 24px 50px -10px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.08);
-  --sw-shadow-glow: 0 0 38px -4px rgba(204, 255, 0, 0.35);
-  --sw-shadow-coral: 0 0 38px -4px rgba(255, 87, 34, 0.35);
-  --sw-shadow-vinyl: 0 20px 45px -5px rgba(0, 0, 0, 0.9), inset 0 0 0 2px rgba(255, 255, 255, 0.1);
+  --pg-transition-fast: var(--pg-duration-fast) var(--pg-ease-out);
+  --pg-transition-spring: var(--pg-duration-normal) var(--pg-ease-spring);
 
-  /* Kinetic Spring Motion & Transitions */
-  --sw-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --sw-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --sw-duration-fast: 150ms;
-  --sw-duration-normal: 240ms;
-  --sw-duration-slow: 380ms;
+  /* ==========================================================================
+     Backward Compatibility Mapping (--sw-* mapped to --pg-*)
+     Ensures existing components render beautifully in the new Playground system
+     ========================================================================== */
+  --sw-void: var(--pg-bg-alt);
+  --sw-bg: var(--pg-bg);
+  --sw-sidebar: var(--pg-surface-soft);
+  --sw-surface: var(--pg-surface);
+  --sw-surface-hover: var(--pg-surface-hover);
+  --sw-surface-active: var(--pg-surface-active);
+  --sw-surface-glass: rgba(255, 253, 248, 0.94);
+  --sw-player-bg: rgba(255, 253, 248, 0.96);
 
-  --sw-transition-fast: var(--sw-duration-fast) var(--sw-ease-out);
-  --sw-transition-normal: var(--sw-duration-normal) var(--sw-ease-out);
-  --sw-transition-slow: var(--sw-duration-slow) var(--sw-ease-out);
-  --sw-transition-spring: var(--sw-duration-normal) var(--sw-ease-spring);
+  --sw-border: var(--pg-border);
+  --sw-border-subtle: var(--pg-border-hairline);
+  --sw-border-hover: var(--pg-ink);
+  --sw-border-focus: var(--pg-cobalt);
 
-  /* Layout Clearance */
-  --sw-player-height: 80px;
+  --sw-accent: var(--pg-cobalt);
+  --sw-accent-hover: var(--pg-cobalt-hover);
+  --sw-accent-soft: var(--pg-cobalt-soft);
+  --sw-accent-glow: rgba(59, 75, 255, 0.25);
+  --sw-accent-muted: #5A67FF;
 
-  /* Aliases */
-  --bg-app: var(--sw-bg);
-  --bg-surface: var(--sw-surface);
-  --bg-elevated: var(--sw-surface-hover);
-  --bg-hover: var(--sw-surface-active);
-  --border-default: var(--sw-border);
-  --border-focus: var(--sw-accent);
-  --accent-primary: var(--sw-accent);
-  --accent-hover: var(--sw-accent-hover);
-  --accent-soft: var(--sw-accent-soft);
-  --text-primary: var(--sw-text-primary);
-  --text-secondary: var(--sw-text-secondary);
-  --text-muted: var(--sw-text-muted);
+  --sw-warm: var(--pg-coral);
+  --sw-warm-hover: var(--pg-coral-hover);
+  --sw-warm-soft: var(--pg-coral-soft);
+  --sw-warm-glow: rgba(255, 62, 108, 0.25);
+
+  --sw-magenta: var(--pg-violet);
+  --sw-cream: var(--pg-canvas);
+
+  --sw-font-display: var(--pg-font-display);
+  --sw-font-sans: var(--pg-font-sans);
+  --sw-font-mono: var(--pg-font-mono);
+
+  --sw-text-primary: var(--pg-ink);
+  --sw-text-secondary: var(--pg-ink-secondary);
+  --sw-text-muted: var(--pg-ink-muted);
+  --sw-text-dim: var(--pg-ink-dim);
+
+  --sw-success: var(--pg-mint);
+  --sw-warning: var(--pg-tangerine);
+  --sw-danger: var(--pg-coral);
+  --sw-info: var(--pg-cobalt);
+
+  --sw-radius-xs: var(--pg-radius-xs);
+  --sw-radius-sm: var(--pg-radius-sm);
+  --sw-radius-md: var(--pg-radius-md);
+  --sw-radius-lg: var(--pg-radius-lg);
+  --sw-radius-xl: var(--pg-radius-xl);
+  --sw-radius-full: var(--pg-radius-full);
+
+  --sw-shadow-sm: var(--pg-shadow-solid-sm);
+  --sw-shadow-md: var(--pg-shadow-solid);
+  --sw-shadow-lg: var(--pg-shadow-solid-lg);
+  --sw-shadow-glow: var(--pg-shadow-cobalt);
+  --sw-shadow-coral: var(--pg-shadow-coral);
+  --sw-shadow-vinyl: var(--pg-shadow-solid-lg);
+
+  --sw-ease-out: var(--pg-ease-out);
+  --sw-ease-spring: var(--pg-ease-spring);
+  --sw-duration-fast: var(--pg-duration-fast);
+  --sw-duration-normal: var(--pg-duration-normal);
+  --sw-duration-slow: var(--pg-duration-slow);
+
+  --sw-transition-fast: var(--pg-transition-fast);
+  --sw-transition-normal: var(--pg-duration-normal) var(--pg-ease-out);
+  --sw-transition-slow: var(--pg-duration-slow) var(--pg-ease-out);
+  --sw-transition-spring: var(--pg-transition-spring);
+
+  --sw-player-height: 84px;
 }

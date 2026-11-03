@@ -168,12 +168,12 @@ watch(
   width: 100%;
   max-width: 400px;
   height: 100%;
-  background: var(--sw-sidebar);
-  border-left: 1px solid var(--sw-border);
+  background: var(--pg-canvas);
+  border-left: 2px solid var(--pg-border);
   display: flex;
   flex-direction: column;
   padding: 24px 20px;
-  box-shadow: -10px 0 40px rgba(0, 0, 0, 0.7);
+  box-shadow: -6px 0 0px var(--pg-border);
   animation: drawerSlide 260ms var(--sw-ease-out);
 }
 

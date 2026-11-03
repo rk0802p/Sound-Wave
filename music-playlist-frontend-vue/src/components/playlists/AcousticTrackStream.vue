@@ -3,21 +3,21 @@
     <!-- Stream Control & Filter Bar -->
     <div class="stream-toolbar">
       <div class="stream-filter-capsule">
-        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <circle cx="11" cy="11" r="8"></circle>
           <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
         </svg>
         <input
           v-model="filterQuery"
           type="text"
-          placeholder="Filter acoustic sequence..."
+          placeholder="Filter mixtape tracks..."
           class="stream-filter-input font-mono"
         />
         <button v-if="filterQuery" class="clear-filter-btn" @click="filterQuery = ''" aria-label="Clear filter">✕</button>
       </div>
 
       <div class="stream-metrics font-mono">
-        <span class="metrics-count">{{ filteredSongs.length }} {{ filteredSongs.length === 1 ? 'Frequency' : 'Frequencies' }}</span>
+        <span class="metrics-count">{{ filteredSongs.length }} {{ filteredSongs.length === 1 ? 'Track' : 'Tracks' }}</span>
         <span class="metrics-divider">•</span>
         <span class="metrics-runtime">{{ formattedTotalDuration }}</span>
       </div>
@@ -26,27 +26,24 @@
     <!-- Empty State: Zero Tracks -->
     <div v-if="songs.length === 0" class="stream-empty-atelier">
       <div class="empty-sound-ring">
-        <div class="ring ring-1"></div>
-        <div class="ring ring-2"></div>
-        <div class="ring ring-3"></div>
-        <span class="empty-icon font-mono">∅</span>
+        <span class="empty-icon font-display">00</span>
       </div>
-      <h3 class="empty-heading font-display">Acoustic Void</h3>
+      <h3 class="empty-heading font-display">No Tracks Yet</h3>
       <p class="empty-desc">
-        This atelier holds no frequencies yet. Inject high-res audio URLs, YouTube videos, Spotify links, or load verified master tracks.
+        This mixtape is currently silent. Add high-res audio URLs, YouTube videos, or Spotify links to build your track sequence.
       </p>
       <div class="empty-action-cluster">
-        <button class="stream-action-btn primary" @click="$emit('open-add-song')">
+        <button class="stream-action-btn primary font-display" @click="$emit('open-add-song')">
           <span class="btn-plus">+</span>
-          <span>Inject First Frequency</span>
+          <span>Add First Audio Track</span>
         </button>
       </div>
     </div>
 
     <!-- Empty State: Filter Returned No Match -->
     <div v-else-if="filteredSongs.length === 0" class="stream-empty-filter">
-      <p class="font-mono">NO FREQUENCIES MATCH "{{ filterQuery }}"</p>
-      <button class="clear-pill font-mono" @click="filterQuery = ''">Reset Sequence</button>
+      <p class="font-mono">NO TRACKS MATCH "{{ filterQuery }}"</p>
+      <button class="clear-pill font-mono" @click="filterQuery = ''">Reset Filter</button>
     </div>
 
     <!-- The Acoustic Sequence (Tactile Strips, Zero HTML Tables) -->
@@ -70,7 +67,7 @@
       >
         <!-- Drag Handle Grip -->
         <div class="strip-drag-handle" title="Drag to reorder sequence">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <circle cx="9" cy="6" r="1.5" fill="currentColor"></circle>
             <circle cx="15" cy="6" r="1.5" fill="currentColor"></circle>
             <circle cx="9" cy="12" r="1.5" fill="currentColor"></circle>
@@ -84,7 +81,7 @@
         <button
           class="strip-play-badge"
           @click="handleTrackPlay(song, index)"
-          :title="isCurrentTrack(song) && playerStore.isPlaying ? 'Pause' : 'Play frequency'"
+          :title="isCurrentTrack(song) && playerStore.isPlaying ? 'Pause' : 'Play track'"
         >
           <!-- When active & playing: Animated Equalizer -->
           <div v-if="isCurrentTrack(song) && playerStore.isPlaying" class="strip-equalizer">
@@ -118,7 +115,7 @@
             </span>
           </div>
           <div class="strip-secondary-row font-mono">
-            <span class="strip-artist">{{ song.artist || 'Unknown Resonance' }}</span>
+            <span class="strip-artist">{{ song.artist || 'Unknown Artist' }}</span>
             <span v-if="song.album" class="strip-album">• {{ song.album }}</span>
           </div>
         </div>
@@ -146,9 +143,9 @@
           <button
             class="strip-options-btn"
             @click.stop="toggleActionMenu(index)"
-            title="Frequency actions"
+            title="Track options"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <circle cx="12" cy="12" r="1.5" fill="currentColor"></circle>
               <circle cx="19" cy="12" r="1.5" fill="currentColor"></circle>
               <circle cx="5" cy="12" r="1.5" fill="currentColor"></circle>
@@ -181,7 +178,7 @@
                   <polyline points="3 6 5 6 21 6"></polyline>
                   <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                 </svg>
-                <span>Remove Frequency</span>
+                <span>Remove Track</span>
               </button>
             </div>
           </transition>
@@ -343,7 +340,6 @@ const handleDrop = (dropIndex, event) => {
     return;
   }
 
-  // Construct new order of song IDs
   const reordered = [...props.songs];
   const [removed] = reordered.splice(draggedIndex.value, 1);
   reordered.splice(dropIndex, 0, removed);
@@ -387,45 +383,45 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 12px 18px;
-  background: rgba(13, 16, 23, 0.45);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: var(--sw-radius-lg);
+  padding: 10px 18px;
+  background: var(--pg-canvas);
+  border: 2px solid var(--pg-border);
+  border-radius: var(--pg-radius-full);
+  box-shadow: 2px 2px 0px var(--pg-border);
 }
 
 .stream-filter-capsule {
   display: flex;
   align-items: center;
   gap: 10px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: var(--sw-radius-full);
+  background: var(--pg-surface-soft);
+  border: 1.5px solid var(--pg-border);
+  border-radius: var(--pg-radius-full);
   padding: 6px 14px;
   flex: 1;
-  max-width: 360px;
+  max-width: 380px;
 }
 
 .search-icon {
-  color: var(--sw-text-muted);
+  color: var(--pg-ink-secondary);
 }
 
 .stream-filter-input {
   background: transparent;
   border: none;
   outline: none;
-  color: #fff;
-  font-size: 12px;
+  color: var(--pg-ink);
+  font-size: 0.82rem;
   width: 100%;
 }
 
 .stream-filter-input::placeholder {
-  color: var(--sw-text-muted);
+  color: var(--pg-ink-muted);
 }
 
 .clear-filter-btn {
-  color: var(--sw-text-muted);
-  font-size: 12px;
+  color: var(--pg-ink-muted);
+  font-size: 0.75rem;
   cursor: pointer;
 }
 
@@ -433,16 +429,21 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 11px;
-  color: var(--sw-text-secondary);
+  font-size: 0.76rem;
+  color: var(--pg-ink-secondary);
 }
 
 .metrics-count {
-  color: var(--sw-accent);
+  font-weight: 800;
+  color: var(--pg-cobalt);
 }
 
 .metrics-divider {
   opacity: 0.4;
+}
+
+.metrics-runtime {
+  font-weight: 700;
 }
 
 /* Empty State */
@@ -451,57 +452,36 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 80px 24px;
+  padding: 60px 24px;
   text-align: center;
-  background: rgba(13, 16, 23, 0.35);
-  border: 1px dashed rgba(255, 255, 255, 0.1);
-  border-radius: var(--sw-radius-xl);
+  background: var(--pg-surface-soft);
+  border: 2px dashed var(--pg-border);
+  border-radius: var(--pg-radius-xl);
 }
 
 .empty-sound-ring {
-  position: relative;
-  width: 72px;
-  height: 72px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 20px;
-}
-
-.ring {
-  position: absolute;
-  border-radius: 50%;
-  border: 1px solid var(--sw-accent);
-  opacity: 0.2;
-}
-
-.ring-1 { inset: 0; animation: pulse-ring 3s ease-out infinite; }
-.ring-2 { inset: 8px; animation: pulse-ring 3s ease-out infinite 0.8s; }
-.ring-3 { inset: 16px; animation: pulse-ring 3s ease-out infinite 1.6s; }
-
-@keyframes pulse-ring {
-  0% { transform: scale(0.9); opacity: 0.4; }
-  100% { transform: scale(1.3); opacity: 0; }
+  margin-bottom: 12px;
 }
 
 .empty-icon {
-  font-size: 24px;
-  color: var(--sw-accent);
+  font-size: 3.5rem;
+  font-weight: 800;
+  color: var(--pg-ink-dim);
 }
 
 .empty-heading {
-  font-size: 22px;
-  font-weight: 700;
-  color: #fff;
-  margin-bottom: 8px;
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--pg-ink);
+  margin-bottom: 6px;
 }
 
 .empty-desc {
-  font-size: 14px;
-  color: var(--sw-text-secondary);
+  font-size: 0.88rem;
+  color: var(--pg-ink-secondary);
   max-width: 440px;
-  line-height: 1.6;
-  margin-bottom: 24px;
+  line-height: 1.5;
+  margin-bottom: 20px;
 }
 
 .stream-action-btn.primary {
@@ -509,143 +489,183 @@ onUnmounted(() => {
   align-items: center;
   gap: 8px;
   padding: 10px 22px;
-  border-radius: var(--sw-radius-full);
-  background: linear-gradient(135deg, var(--sw-accent), var(--sw-warm));
-  color: #060709;
-  font-size: 13px;
-  font-weight: 700;
+  border-radius: var(--pg-radius-full);
+  background: var(--pg-cobalt);
+  color: #fff;
+  border: 2px solid var(--pg-border);
+  font-size: 0.88rem;
+  font-weight: 800;
   cursor: pointer;
-  box-shadow: 0 0 24px rgba(204, 255, 0, 0.4);
-  transition: transform var(--sw-transition-fast);
+  box-shadow: 2px 2px 0px var(--pg-border);
+  transition: all var(--pg-transition-spring);
 }
 
 .stream-action-btn.primary:hover {
-  transform: translateY(-2px);
+  background: var(--pg-coral);
+  transform: translate(-2px, -2px);
+  box-shadow: 4px 4px 0px var(--pg-border);
+}
+
+/* Empty State: Filter Returned No Match */
+.stream-empty-filter {
+  padding: 40px 20px;
+  text-align: center;
+  background: var(--pg-surface-soft);
+  border: 1.5px dashed var(--pg-border);
+  border-radius: var(--pg-radius-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--pg-ink);
+}
+
+.clear-pill {
+  padding: 6px 14px;
+  background: var(--pg-canvas);
+  border: 1.5px solid var(--pg-border);
+  border-radius: var(--pg-radius-full);
+  font-size: 0.75rem;
+  cursor: pointer;
 }
 
 /* Sequence List */
 .stream-sequence-list {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
-/* Tactile Acoustic Strip */
+/* Tactile Strip */
 .stream-track-strip {
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 10px 16px;
-  background: rgba(13, 16, 23, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: var(--sw-radius-md);
-  transition: all var(--sw-transition-fast);
+  padding: 12px 18px;
+  background: var(--pg-canvas);
+  border: 1.5px solid var(--pg-border);
+  border-radius: var(--pg-radius-md);
+  box-shadow: 2px 2px 0px var(--pg-border);
+  transition: all var(--pg-transition-spring);
   user-select: none;
   position: relative;
 }
 
 .stream-track-strip:hover {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.12);
   transform: translateX(4px);
+  box-shadow: 4px 4px 0px var(--pg-border);
+  border-color: var(--pg-cobalt);
 }
 
 .stream-track-strip.is-active {
-  background: rgba(204, 255, 0, 0.08);
-  border-color: rgba(204, 255, 0, 0.35);
-  box-shadow: inset 0 0 20px rgba(204, 255, 0, 0.05);
+  background: var(--pg-surface-butter);
+  border-color: var(--pg-border);
+  box-shadow: 3px 3px 0px var(--pg-coral);
 }
 
 .stream-track-strip.is-playing {
-  border-color: var(--sw-accent);
-  box-shadow: 0 0 24px -4px rgba(204, 255, 0, 0.25);
+  border-color: var(--pg-border);
 }
 
 .stream-track-strip.is-dragging {
-  opacity: 0.4;
-  border: 1px dashed var(--sw-accent);
+  opacity: 0.35;
+  border: 2px dashed var(--pg-cobalt);
 }
 
 .stream-track-strip.is-drag-over {
-  border-top: 2px solid var(--sw-accent);
+  border-top: 3px solid var(--pg-coral);
 }
 
 /* Drag Handle */
 .strip-drag-handle {
-  opacity: 0.3;
+  opacity: 0.35;
   cursor: grab;
-  color: var(--sw-text-muted);
-  transition: opacity var(--sw-transition-fast);
+  color: var(--pg-ink-secondary);
+  transition: opacity var(--pg-transition-fast);
 }
 
 .stream-track-strip:hover .strip-drag-handle {
-  opacity: 0.9;
+  opacity: 1;
 }
 
 /* Play Badge / Index */
 .strip-play-badge {
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--sw-text-secondary);
+  background: var(--pg-surface-soft);
+  border: 1.5px solid var(--pg-border);
+  color: var(--pg-ink);
   flex-shrink: 0;
   cursor: pointer;
-  transition: all var(--sw-transition-fast);
+  transition: all var(--pg-transition-spring);
   position: relative;
+  box-shadow: 1.5px 1.5px 0px var(--pg-border);
+}
+
+.stream-track-strip:hover .strip-play-badge {
+  background: var(--pg-citron);
+  transform: scale(1.05);
 }
 
 .strip-play-icon {
   display: none;
 }
 
+.stream-track-strip:hover .strip-play-icon {
+  display: flex;
+}
+
 .stream-track-strip:hover .strip-index {
   display: none;
 }
 
-.stream-track-strip:hover .strip-play-icon {
-  display: flex;
-  color: #fff;
-}
-
-.stream-track-strip:hover .strip-play-badge {
-  background: var(--sw-accent);
-  color: #060709;
+.stream-track-strip.is-playing .strip-index {
+  display: none;
 }
 
 .strip-equalizer {
   display: flex;
   align-items: flex-end;
-  gap: 2px;
+  gap: 2.5px;
   height: 14px;
 }
 
 .strip-equalizer span {
-  width: 3px;
-  background: var(--sw-accent);
+  width: 2.5px;
+  background: var(--pg-coral);
   border-radius: 1px;
-  animation: eq-bounce 0.8s ease-in-out infinite alternate;
+  animation: eqBounce 0.6s infinite ease-in-out alternate;
 }
 
-.strip-equalizer span:nth-child(1) { height: 12px; animation-delay: 0.1s; }
-.strip-equalizer span:nth-child(2) { height: 6px; animation-delay: 0.4s; }
-.strip-equalizer span:nth-child(3) { height: 14px; animation-delay: 0.2s; }
+.strip-equalizer span:nth-child(2) {
+  animation-delay: 0.2s;
+}
 
-@keyframes eq-bounce {
-  0% { height: 4px; }
+.strip-equalizer span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes eqBounce {
+  0% { height: 3px; }
   100% { height: 14px; }
 }
 
 .strip-index {
-  font-size: 11px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--pg-ink);
 }
 
-/* Metadata */
+/* Metadata Body */
 .strip-meta-body {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -661,53 +681,60 @@ onUnmounted(() => {
 }
 
 .strip-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--pg-ink);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .stream-track-strip.is-active .strip-title {
-  color: var(--sw-accent);
+  color: var(--pg-cobalt);
 }
 
 .strip-provider-pill {
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
   padding: 1px 6px;
-  border-radius: var(--sw-radius-full);
+  border-radius: var(--pg-radius-full);
+  border: 1px solid var(--pg-border);
+  flex-shrink: 0;
 }
 
 .strip-provider-pill.prov-direct {
-  color: var(--sw-accent);
-  background: rgba(204, 255, 0, 0.12);
-  border: 1px solid rgba(204, 255, 0, 0.25);
+  color: var(--pg-ink);
+  background: var(--pg-citron);
 }
 
 .strip-provider-pill.prov-youtube {
-  color: #f43f5e;
-  background: rgba(244, 63, 94, 0.12);
-  border: 1px solid rgba(244, 63, 94, 0.25);
+  color: #fff;
+  background: var(--pg-coral);
 }
 
 .strip-provider-pill.prov-spotify {
-  color: #10b981;
-  background: rgba(16, 185, 129, 0.12);
-  border: 1px solid rgba(16, 185, 129, 0.25);
+  color: var(--pg-ink);
+  background: var(--pg-mint);
 }
 
 .strip-secondary-row {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
-  color: var(--sw-text-muted);
+  font-size: 0.78rem;
+  color: var(--pg-ink-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.strip-artist {
+  font-weight: 700;
+}
+
+.strip-album {
+  color: var(--pg-ink-muted);
 }
 
 /* Waveform Rhythm Graphic */
@@ -716,23 +743,23 @@ onUnmounted(() => {
   align-items: center;
   gap: 2px;
   height: 20px;
-  opacity: 0.35;
-  transition: opacity var(--sw-transition-fast);
+  opacity: 0.45;
+  transition: opacity var(--pg-transition-fast);
 }
 
 .stream-track-strip:hover .strip-waveform-bar,
 .stream-track-strip.is-playing .strip-waveform-bar {
-  opacity: 0.85;
+  opacity: 1;
 }
 
 .strip-wave-bar {
-  width: 2px;
-  background: rgba(255, 255, 255, 0.5);
+  width: 2.5px;
+  background: var(--pg-ink);
   border-radius: 1px;
 }
 
 .stream-track-strip.is-playing .strip-wave-bar {
-  background: var(--sw-accent);
+  background: var(--pg-cobalt);
   animation: wave-jitter 0.6s ease-in-out infinite alternate;
 }
 
@@ -742,8 +769,9 @@ onUnmounted(() => {
 }
 
 .strip-duration {
-  font-size: 12px;
-  color: var(--sw-text-secondary);
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--pg-ink-secondary);
   width: 44px;
   text-align: right;
 }
@@ -759,27 +787,27 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--sw-text-muted);
+  color: var(--pg-ink-muted);
   border-radius: 50%;
-  transition: all var(--sw-transition-fast);
+  cursor: pointer;
+  transition: all var(--pg-transition-fast);
 }
 
 .strip-options-btn:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.08);
+  color: var(--pg-ink);
+  background: var(--pg-surface-soft);
 }
 
 .strip-popover-menu {
   position: absolute;
-  top: calc(100% + 4px);
+  top: calc(100% + 6px);
   right: 0;
-  width: 170px;
-  background: rgba(13, 16, 23, 0.98);
-  backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: var(--sw-radius-md);
+  width: 175px;
+  background: var(--pg-canvas);
+  border: 2px solid var(--pg-border);
+  border-radius: var(--pg-radius-md);
   padding: 6px;
-  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.8);
+  box-shadow: var(--pg-shadow-solid);
   z-index: 50;
 }
 
@@ -789,29 +817,31 @@ onUnmounted(() => {
   align-items: center;
   gap: 8px;
   padding: 8px 10px;
-  font-size: 11px;
-  color: var(--sw-text-secondary);
-  border-radius: var(--sw-radius-xs);
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--pg-ink);
+  border-radius: var(--pg-radius-xs);
   cursor: pointer;
-  transition: all var(--sw-transition-fast);
+  transition: all var(--pg-transition-fast);
 }
 
 .menu-item:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: #fff;
+  background: var(--pg-surface-butter);
+  color: var(--pg-ink);
 }
 
 .menu-item.danger {
-  color: var(--sw-danger);
+  color: var(--pg-coral);
 }
 
 .menu-item.danger:hover {
-  background: rgba(244, 63, 94, 0.12);
+  background: var(--pg-surface-peach);
 }
 
 .menu-divider {
-  height: 1px;
-  background: rgba(255, 255, 255, 0.08);
+  height: 1.5px;
+  background: var(--pg-border);
+  opacity: 0.15;
   margin: 4px 0;
 }
 

@@ -1,53 +1,49 @@
 <template>
   <div
     v-if="playerStore.hasTrack"
-    class="sw-acoustic-capsule-wrapper"
+    class="pg-deck-wrapper"
     :class="{ 'is-active': playerStore.isPlaying, 'is-embedded': isEmbeddedProvider }"
   >
-    <div class="sw-acoustic-capsule">
-      <!-- 1. Left Cluster: Vinyl Turntable Disc & Metadata -->
-      <div class="capsule-track-group">
-        <!-- Spinning Tactile Vinyl Disc -->
+    <div class="pg-deck">
+      <!-- 1. Left Cluster: Tactile Vinyl Disc & Track Meta -->
+      <div class="deck-track-cluster">
+        <!-- Spinning Physical Vinyl Disc -->
         <div
-          class="vinyl-turntable-disc"
+          class="deck-vinyl-disc"
           :class="{ 'is-spinning': playerStore.isPlaying }"
           @click="playerStore.toggleExpanded()"
-          title="Open Full Immersion Canvas"
+          title="Open Listening Salon"
         >
-          <div class="turntable-grooves"></div>
-          <div class="turntable-label">
-            <span class="label-spindle"></span>
+          <div class="vinyl-groove-lines"></div>
+          <div class="vinyl-center-label">
+            <span class="vinyl-hole"></span>
           </div>
         </div>
 
-        <!-- Track Info & Provider Badge -->
-        <div class="track-info" @click="playerStore.toggleExpanded()">
-          <div class="title-row">
+        <!-- Track Info & Format Sticker -->
+        <div class="deck-track-info" @click="playerStore.toggleExpanded()">
+          <div class="track-header-row">
             <span class="track-title font-display">{{ playerStore.currentTrack.title }}</span>
-            <!-- Provider Pill Badge -->
-            <span
-              class="provider-pill font-mono"
-              :class="providerBadgeClass"
-            >
+            <span class="format-sticker font-mono" :class="providerBadgeClass">
               {{ providerLabel }}
             </span>
           </div>
-          <div class="artist-row">
+          <div class="track-sub-row">
             <span class="track-artist">{{ playerStore.currentTrack.artist || 'Unknown Artist' }}</span>
             <span v-if="playerStore.currentTrack.album" class="track-album font-mono">
-              • {{ playerStore.currentTrack.album }}
+              / {{ playerStore.currentTrack.album }}
             </span>
           </div>
         </div>
       </div>
 
-      <!-- 2. Center Cluster: Controls & Scrubbing Ribbon -->
-      <div class="capsule-controls-group">
+      <!-- 2. Center Cluster: Controls & Graphic Scrubber Ribbon -->
+      <div class="deck-controls-cluster">
         <!-- Transport Buttons -->
-        <div class="transport-bar">
+        <div class="deck-transport-bar">
           <button
-            class="control-btn"
-            :class="{ active: playerStore.shuffle }"
+            class="deck-btn"
+            :class="{ 'is-active': playerStore.shuffle }"
             @click="playerStore.toggleShuffle()"
             title="Shuffle (S)"
           >
@@ -61,29 +57,29 @@
           </button>
 
           <button
-            class="control-btn"
+            class="deck-btn"
             :disabled="!playerStore.hasPrevious"
             @click="playerStore.prevTrack()"
             title="Previous (K)"
           >
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
               <polygon points="19 20 9 12 19 4 19 20"></polygon>
-              <line x1="5" y1="19" x2="5" y2="5" stroke="currentColor" stroke-width="2"></line>
+              <line x1="5" y1="19" x2="5" y2="5" stroke="currentColor" stroke-width="2.5"></line>
             </svg>
           </button>
 
-          <!-- Main Play/Pause Magnetic Button -->
+          <!-- Main Play/Pause Button -->
           <button
-            class="main-play-btn"
+            class="deck-main-play-btn"
             :disabled="playerStore.isLoading"
             @click="playerStore.togglePlay()"
             title="Play / Pause (Space)"
           >
-            <div v-if="playerStore.isLoading" class="play-spinner"></div>
+            <div v-if="playerStore.isLoading" class="deck-play-spinner"></div>
             <svg
               v-else-if="!playerStore.isPlaying"
-              width="20"
-              height="20"
+              width="18"
+              height="18"
               viewBox="0 0 24 24"
               fill="currentColor"
             >
@@ -91,8 +87,8 @@
             </svg>
             <svg
               v-else
-              width="20"
-              height="20"
+              width="18"
+              height="18"
               viewBox="0 0 24 24"
               fill="currentColor"
             >
@@ -102,20 +98,20 @@
           </button>
 
           <button
-            class="control-btn"
+            class="deck-btn"
             :disabled="!playerStore.hasNext"
             @click="playerStore.nextTrack()"
             title="Next (J)"
           >
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
               <polygon points="5 4 15 12 5 20 5 4"></polygon>
-              <line x1="19" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="2"></line>
+              <line x1="19" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="2.5"></line>
             </svg>
           </button>
 
           <button
-            class="control-btn"
-            :class="{ active: playerStore.repeatMode !== 'off' }"
+            class="deck-btn"
+            :class="{ 'is-active': playerStore.repeatMode !== 'off' }"
             @click="playerStore.cycleRepeat()"
             title="Repeat Mode (R)"
           >
@@ -125,102 +121,104 @@
               <polyline points="7 23 3 19 7 15"></polyline>
               <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
             </svg>
-            <span v-if="playerStore.repeatMode === 'one'" class="repeat-one-pill font-mono">1</span>
+            <span v-if="playerStore.repeatMode === 'one'" class="repeat-one-badge font-mono">1</span>
           </button>
         </div>
 
-        <!-- Scrubbing Ribbon with Hover Tooltip -->
-        <div class="scrubbing-ribbon" v-if="!isEmbeddedProvider">
-          <span class="time-readout font-mono">{{ formattedCurrentTime }}</span>
+        <!-- Graphic Scrubber Ribbon -->
+        <div class="deck-scrubber-bar" v-if="!isEmbeddedProvider">
+          <span class="time-code font-mono">{{ formattedCurrentTime }}</span>
 
           <div
             class="scrubber-track"
             ref="scrubberRef"
             @mousemove="handleScrubberHover"
             @mouseleave="hoverTime = null"
-            @click="handleScrubberSeek"
+            @click="handleScrubberClick"
+            role="slider"
+            :aria-valuenow="playerStore.currentTime"
+            :aria-valuemin="0"
+            :aria-valuemax="playerStore.duration"
+            aria-label="Playback Position"
           >
-            <!-- Background Micro-Waveform Rhythm -->
-            <div class="micro-waveform-bg">
-              <span v-for="n in 36" :key="n" class="micro-wave-tick" :style="{ height: `${((n * 7) % 10) + 4}px` }"></span>
-            </div>
+            <!-- Background Rail -->
+            <div class="rail-bg"></div>
 
-            <!-- Filled Progress Bar in Acid Lime & Coral -->
+            <!-- Buffered / Fill Progress Rail -->
             <div
-              class="scrubber-fill"
+              class="rail-fill"
               :style="{ width: `${playerStore.progressPercentage}%` }"
             >
-              <div class="scrubber-head"></div>
+              <span class="scrubber-thumb"></span>
             </div>
 
-            <!-- Hover Preview Tooltip -->
+            <!-- Hover Preview Time -->
             <div
               v-if="hoverTime !== null"
               class="scrubber-tooltip font-mono"
-              :style="{ left: `${hoverX}px` }"
+              :style="{ left: `${hoverPosition}%` }"
             >
-              {{ formatSeconds(hoverTime) }}
+              {{ formattedHoverTime }}
             </div>
           </div>
 
-          <span class="time-readout font-mono">{{ formattedDuration }}</span>
+          <span class="time-code font-mono">{{ formattedDuration }}</span>
         </div>
 
-        <div v-else class="embedded-provider-notice font-mono">
-          <span>HOSTED STREAM ACTIVE • INTERACT VIA EMBED</span>
+        <!-- Embedded Provider Notice -->
+        <div v-else class="embedded-source-pill font-mono">
+          <span>HOSTED AUDIO STREAM: {{ playerStore.providerCapabilities.providerName }}</span>
         </div>
       </div>
 
-      <!-- 3. Right Cluster: Volume, Queue, Immersion -->
-      <div class="capsule-aux-group">
-        <!-- Volume Control with Floating Popover -->
-        <div class="volume-container" ref="volumeContainerRef">
+      <!-- 3. Right Cluster: Volume, Queue, and Expanded Salon Toggle -->
+      <div class="deck-meta-cluster">
+        <!-- Volume Control Popover Trigger -->
+        <div class="volume-container">
           <button
-            class="aux-btn"
-            @click="toggleVolumePopover"
-            title="Volume"
+            class="deck-tool-btn"
+            :class="{ 'is-muted': playerStore.muted }"
+            @click="playerStore.toggleMute()"
+            title="Volume / Mute (M)"
           >
-            <svg v-if="playerStore.muted || playerStore.volume === 0" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg v-if="playerStore.muted || playerStore.volume === 0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
               <line x1="23" y1="9" x2="17" y2="15"></line>
               <line x1="17" y1="9" x2="23" y2="15"></line>
             </svg>
-            <svg v-else-if="playerStore.volume < 0.5" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg v-else-if="playerStore.volume < 0.5" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
               <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
             </svg>
-            <svg v-else width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-              <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-              <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
             </svg>
           </button>
 
-          <!-- Volume Popover Slider -->
-          <transition name="sw-drop">
-            <div v-if="showVolumePopover" class="volume-popover">
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.01"
-                :value="playerStore.muted ? 0 : playerStore.volume"
-                @input="handleVolumeChange"
-                class="volume-slider"
-              />
-              <span class="vol-percent font-mono">{{ Math.round((playerStore.muted ? 0 : playerStore.volume) * 100) }}%</span>
-            </div>
-          </transition>
+          <!-- Desktop Volume Slider -->
+          <div class="desktop-volume-bar desktop-only">
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              :value="playerStore.muted ? 0 : playerStore.volume"
+              @input="handleVolumeInput"
+              class="volume-range-input"
+              aria-label="Volume Slider"
+            />
+          </div>
         </div>
 
-        <!-- Queue Drawer Button -->
+        <!-- Queue Slide-out Button -->
         <button
-          class="aux-btn queue-btn"
-          :class="{ active: playerStore.isQueueOpen }"
+          class="deck-tool-btn queue-trigger"
+          :class="{ 'is-active': playerStore.isQueueOpen }"
           @click="playerStore.toggleQueue()"
-          title="Listening Queue (Q)"
+          title="Playback Queue (Q)"
         >
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="8" y1="6" x2="21" y2="6"></line>
             <line x1="8" y1="12" x2="21" y2="12"></line>
             <line x1="8" y1="18" x2="21" y2="18"></line>
@@ -228,18 +226,16 @@
             <line x1="3" y1="12" x2="3.01" y2="12"></line>
             <line x1="3" y1="18" x2="3.01" y2="18"></line>
           </svg>
-          <span v-if="playerStore.queue.length" class="queue-badge font-mono">
-            {{ playerStore.queue.length }}
-          </span>
+          <span class="queue-counter font-mono">{{ playerStore.queue.length }}</span>
         </button>
 
-        <!-- Full Immersion Expand Button -->
+        <!-- Listening Salon Expand Button -->
         <button
-          class="aux-btn expand-btn desktop-only"
+          class="deck-tool-btn expand-trigger"
           @click="playerStore.toggleExpanded()"
-          title="Expand Immersion Canvas (E)"
+          title="Expand Listening Salon (L)"
         >
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="15 3 21 3 21 9"></polyline>
             <polyline points="9 21 3 21 3 15"></polyline>
             <line x1="21" y1="3" x2="14" y2="10"></line>
@@ -256,208 +252,203 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { usePlayerStore } from '../../stores/player';
 
 const playerStore = usePlayerStore();
-
 const scrubberRef = ref(null);
-const volumeContainerRef = ref(null);
 const hoverTime = ref(null);
-const hoverX = ref(0);
-const showVolumePopover = ref(false);
+const hoverPosition = ref(0);
 
-const isEmbeddedProvider = computed(() => {
-  return playerStore.providerCapabilities?.isEmbedded || playerStore.currentProviderType === 'spotify';
-});
+const formatTime = (secs) => {
+  if (isNaN(secs) || secs < 0) return '0:00';
+  const m = Math.floor(secs / 60);
+  const s = Math.floor(secs % 60);
+  return `${m}:${s < 10 ? '0' : ''}${s}`;
+};
+
+const formattedCurrentTime = computed(() => formatTime(playerStore.currentTime));
+const formattedDuration = computed(() => formatTime(playerStore.duration));
+const formattedHoverTime = computed(() => formatTime(hoverTime.value || 0));
+
+const isEmbeddedProvider = computed(() => playerStore.providerCapabilities.isEmbedded);
 
 const providerLabel = computed(() => {
-  const type = playerStore.currentProviderType;
-  if (type === 'youtube') return 'YOUTUBE HQ';
-  if (type === 'spotify') return 'SPOTIFY';
+  const prov = playerStore.currentProviderType;
+  if (prov === 'youtube') return 'YOUTUBE';
+  if (prov === 'spotify') return 'SPOTIFY';
   return 'LOSSLESS MP3';
 });
 
 const providerBadgeClass = computed(() => {
-  const type = playerStore.currentProviderType;
-  return `provider-${type}`;
+  const prov = playerStore.currentProviderType;
+  return {
+    'badge-direct': prov === 'direct',
+    'badge-youtube': prov === 'youtube',
+    'badge-spotify': prov === 'spotify',
+  };
 });
-
-const formatSeconds = (sec) => {
-  if (isNaN(sec) || sec === null || sec < 0) return '0:00';
-  const m = Math.floor(sec / 60);
-  const s = Math.floor(sec % 60);
-  return `${m}:${s < 10 ? '0' : ''}${s}`;
-};
-
-const formattedCurrentTime = computed(() => formatSeconds(playerStore.currentTime));
-const formattedDuration = computed(() => formatSeconds(playerStore.duration));
 
 const handleScrubberHover = (e) => {
   if (!scrubberRef.value || !playerStore.duration) return;
   const rect = scrubberRef.value.getBoundingClientRect();
-  const clickX = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
-  const ratio = clickX / rect.width;
+  const relX = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
+  const ratio = relX / rect.width;
+  hoverPosition.value = ratio * 100;
   hoverTime.value = ratio * playerStore.duration;
-  hoverX.value = clickX;
 };
 
-const handleScrubberSeek = (e) => {
+const handleScrubberClick = (e) => {
   if (!scrubberRef.value || !playerStore.duration) return;
   const rect = scrubberRef.value.getBoundingClientRect();
-  const clickX = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
-  const ratio = clickX / rect.width;
-  playerStore.seekTo(ratio * playerStore.duration);
+  const relX = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
+  const targetTime = (relX / rect.width) * playerStore.duration;
+  playerStore.seek(targetTime);
 };
 
-const toggleVolumePopover = () => {
-  showVolumePopover.value = !showVolumePopover.value;
-};
-
-const handleVolumeChange = (e) => {
+const handleVolumeInput = (e) => {
   const val = parseFloat(e.target.value);
   playerStore.setVolume(val);
-  if (playerStore.muted && val > 0) {
-    playerStore.toggleMute();
-  }
 };
 
-const handleGlobalClick = (e) => {
-  if (volumeContainerRef.value && !volumeContainerRef.value.contains(e.target)) {
-    showVolumePopover.value = false;
-  }
-};
-
+// Global Hotkeys
 const handleKeyDown = (e) => {
-  if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+  const activeEl = document.activeElement;
+  const isInput = activeEl && ['INPUT', 'TEXTAREA'].includes(activeEl.tagName);
+  if (isInput) return;
 
-  if (e.code === 'Space') {
-    e.preventDefault();
-    playerStore.togglePlay();
-  } else if (e.key === 'j' || e.key === 'J') {
-    if (playerStore.hasNext) playerStore.nextTrack();
-  } else if (e.key === 'k' || e.key === 'K') {
-    if (playerStore.hasPrevious) playerStore.prevTrack();
-  } else if (e.key === 'q' || e.key === 'Q') {
-    playerStore.toggleQueue();
-  } else if (e.key === 'e' || e.key === 'E') {
-    playerStore.toggleExpanded();
+  switch (e.code) {
+    case 'Space':
+      e.preventDefault();
+      playerStore.togglePlay();
+      break;
+    case 'KeyJ':
+      playerStore.nextTrack();
+      break;
+    case 'KeyK':
+      playerStore.prevTrack();
+      break;
+    case 'KeyS':
+      playerStore.toggleShuffle();
+      break;
+    case 'KeyR':
+      playerStore.cycleRepeat();
+      break;
+    case 'KeyM':
+      playerStore.toggleMute();
+      break;
+    case 'KeyL':
+      playerStore.toggleExpanded();
+      break;
+    case 'KeyQ':
+      playerStore.toggleQueue();
+      break;
   }
 };
 
 onMounted(() => {
-  window.addEventListener('click', handleGlobalClick);
   window.addEventListener('keydown', handleKeyDown);
 });
 
 onUnmounted(() => {
-  window.removeEventListener('click', handleGlobalClick);
   window.removeEventListener('keydown', handleKeyDown);
 });
 </script>
 
 <style scoped>
-.sw-acoustic-capsule-wrapper {
+.pg-deck-wrapper {
   position: fixed;
-  bottom: 22px;
+  bottom: 20px;
   left: 0;
   right: 0;
   display: flex;
   justify-content: center;
   padding: 0 24px;
-  z-index: 85;
+  z-index: 990;
   pointer-events: none;
 }
 
-.sw-acoustic-capsule {
+.pg-deck {
   pointer-events: auto;
-  width: 100%;
-  max-width: 1020px;
-  height: 74px;
-  background: rgba(24, 13, 41, 0.88);
-  backdrop-filter: blur(32px) saturate(190%);
-  -webkit-backdrop-filter: blur(32px) saturate(190%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--sw-radius-full);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 16px;
-  box-shadow:
-    0 24px 50px -10px rgba(0, 0, 0, 0.85),
-    0 0 0 1px rgba(255, 255, 255, 0.05),
-    inset 0 1px 1px 0 rgba(255, 255, 255, 0.16);
-  transition: all var(--sw-transition-normal);
+  gap: 20px;
+  width: 100%;
+  max-width: 1320px;
+  padding: 10px 20px;
+  background: var(--pg-canvas);
+  border: 2px solid var(--pg-border);
+  border-radius: var(--pg-radius-full);
+  box-shadow: var(--pg-shadow-solid-lg);
+  transition: transform var(--pg-transition-spring);
 }
 
-.sw-acoustic-capsule-wrapper.is-active .sw-acoustic-capsule {
-  border-color: rgba(204, 255, 0, 0.45);
-  box-shadow:
-    0 24px 50px -10px rgba(0, 0, 0, 0.9),
-    0 0 30px -4px rgba(204, 255, 0, 0.3),
-    inset 0 1px 1px 0 rgba(255, 255, 255, 0.22);
-}
-
-/* 1. Left Cluster */
-.capsule-track-group {
+/* 1. Track Cluster */
+.deck-track-cluster {
   display: flex;
   align-items: center;
   gap: 14px;
-  max-width: 300px;
-  flex: 1 1 240px;
-  overflow: hidden;
-}
-
-.vinyl-turntable-disc {
-  position: relative;
-  width: 44px;
-  height: 44px;
-  flex-shrink: 0;
-  border-radius: 50%;
-  background: radial-gradient(circle at center, #222 15%, #0d0d0d 60%, #151515 100%);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  min-width: 240px;
+  max-width: 320px;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
-  transition: transform var(--sw-transition-fast);
 }
 
-.vinyl-turntable-disc:hover {
-  transform: scale(1.08);
+.deck-vinyl-disc {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #14101E;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--pg-border);
+  box-shadow: 2px 2px 0px var(--pg-border);
+  flex-shrink: 0;
+  transition: transform var(--pg-transition-spring);
 }
 
-.turntable-grooves {
+.deck-track-cluster:hover .deck-vinyl-disc {
+  transform: scale(1.05) rotate(15deg);
+}
+
+.vinyl-groove-lines {
   position: absolute;
   inset: 4px;
   border-radius: 50%;
-  border: 1px dashed rgba(255, 255, 255, 0.18);
+  border: 1px dashed rgba(255, 255, 255, 0.2);
 }
 
-.turntable-label {
-  position: absolute;
-  inset: 12px;
+.vinyl-center-label {
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--sw-accent), var(--sw-warm));
+  background: var(--pg-coral);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.label-spindle {
-  width: 4px;
-  height: 4px;
+.vinyl-hole {
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
-  background: #09040e;
+  background: #14101E;
 }
 
-.vinyl-turntable-disc.is-spinning {
-  animation: spin-vinyl 4s linear infinite;
+.deck-vinyl-disc.is-spinning {
+  animation: vinylSpin 3s linear infinite;
 }
 
-.track-info {
+@keyframes vinylSpin {
+  100% { transform: rotate(360deg); }
+}
+
+.deck-track-info {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
   overflow: hidden;
-  cursor: pointer;
 }
 
-.title-row {
+.track-header-row {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -465,342 +456,347 @@ onUnmounted(() => {
 }
 
 .track-title {
-  font-size: 14px;
-  font-weight: 700;
-  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--pg-ink);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.provider-pill {
-  font-size: 9px;
+.format-sticker {
+  font-size: 0.62rem;
   font-weight: 800;
-  letter-spacing: 0.08em;
   padding: 1px 6px;
-  border-radius: var(--sw-radius-full);
+  border-radius: var(--pg-radius-full);
+  border: 1px solid var(--pg-border);
   flex-shrink: 0;
 }
 
-.provider-pill.provider-direct {
-  color: var(--sw-accent);
-  background: rgba(204, 255, 0, 0.14);
-  border: 1px solid rgba(204, 255, 0, 0.35);
+.badge-direct {
+  background: var(--pg-citron);
+  color: var(--pg-ink);
 }
 
-.provider-pill.provider-youtube {
-  color: var(--sw-warm);
-  background: rgba(255, 87, 34, 0.14);
-  border: 1px solid rgba(255, 87, 34, 0.35);
+.badge-youtube {
+  background: var(--pg-coral);
+  color: #fff;
 }
 
-.provider-pill.provider-spotify {
-  color: #10b981;
-  background: rgba(16, 185, 129, 0.14);
-  border: 1px solid rgba(16, 185, 129, 0.35);
+.badge-spotify {
+  background: var(--pg-mint);
+  color: var(--pg-ink);
 }
 
-.artist-row {
+.track-sub-row {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
-  color: var(--sw-text-secondary);
+  font-size: 0.76rem;
+  color: var(--pg-ink-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .track-artist {
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-weight: 700;
+  color: var(--pg-ink-secondary);
 }
 
 .track-album {
-  font-size: 11px;
-  color: var(--sw-text-muted);
+  color: var(--pg-ink-muted);
 }
 
-/* 2. Center Cluster */
-.capsule-controls-group {
+/* 2. Center Controls Cluster */
+.deck-controls-cluster {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  flex: 2 1 400px;
-  max-width: 480px;
+  flex: 1;
+  max-width: 540px;
 }
 
-.transport-bar {
+.deck-transport-bar {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.control-btn {
-  position: relative;
+.deck-btn {
   width: 32px;
   height: 32px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--sw-text-secondary);
-  border-radius: 50%;
-  transition: all var(--sw-transition-fast);
+  color: var(--pg-ink-secondary);
+  border: 1.5px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+  transition: all var(--pg-transition-spring);
 }
 
-.control-btn:hover:not(:disabled) {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.08);
+.deck-btn:hover:not(:disabled) {
+  background: var(--pg-surface-soft);
+  color: var(--pg-ink);
+  border-color: var(--pg-border);
+  transform: translateY(-2px);
+  box-shadow: 2px 2px 0px var(--pg-border);
 }
 
-.control-btn:disabled {
-  opacity: 0.35;
+.deck-btn:disabled {
+  opacity: 0.3;
   cursor: not-allowed;
 }
 
-.control-btn.active {
-  color: var(--sw-accent);
+.deck-btn.is-active {
+  background: var(--pg-surface-butter);
+  color: var(--pg-ink);
+  border-color: var(--pg-border);
+  box-shadow: 2px 2px 0px var(--pg-border);
 }
 
-.repeat-one-pill {
+.repeat-one-badge {
   position: absolute;
-  top: 4px;
-  right: 2px;
-  font-size: 8px;
+  top: -2px;
+  right: -2px;
+  font-size: 0.55rem;
   font-weight: 800;
-  color: var(--sw-accent);
+  background: var(--pg-coral);
+  color: #fff;
+  padding: 0 4px;
+  border-radius: var(--pg-radius-full);
 }
 
-.main-play-btn {
-  width: 38px;
-  height: 38px;
+.deck-main-play-btn {
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  background: var(--sw-accent);
-  color: #0e0717;
+  background: var(--pg-cobalt);
+  color: #fff;
+  border: 2px solid var(--pg-border);
+  box-shadow: 3px 3px 0px var(--pg-border);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 20px rgba(204, 255, 0, 0.4);
-  transition: transform var(--sw-transition-fast), background var(--sw-transition-fast), box-shadow var(--sw-transition-fast);
+  cursor: pointer;
+  transition: all var(--pg-transition-spring);
 }
 
-.main-play-btn:hover:not(:disabled) {
-  transform: scale(1.12);
-  background: #d9ff33;
-  box-shadow: 0 0 28px rgba(204, 255, 0, 0.6);
+.deck-main-play-btn:hover:not(:disabled) {
+  background: var(--pg-coral);
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0px var(--pg-border);
 }
 
-.play-spinner {
-  width: 16px;
-  height: 16px;
-  border: 2px solid rgba(0, 0, 0, 0.2);
-  border-top-color: #000;
+.deck-play-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
   border-radius: 50%;
-  animation: spin-vinyl 0.8s linear infinite;
+  animation: spin 0.8s linear infinite;
 }
 
-/* Scrubbing Ribbon */
-.scrubbing-ribbon {
+@keyframes spin {
+  100% { transform: rotate(360deg); }
+}
+
+/* Scrubber */
+.deck-scrubber-bar {
   width: 100%;
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.time-readout {
-  font-size: 11px;
-  color: var(--sw-text-muted);
-  width: 32px;
-  text-align: center;
+.time-code {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--pg-ink-secondary);
+  min-width: 32px;
 }
 
 .scrubber-track {
-  position: relative;
   flex: 1;
-  height: 16px;
+  height: 18px;
   display: flex;
   align-items: center;
+  position: relative;
   cursor: pointer;
 }
 
-.micro-waveform-bg {
+.rail-bg {
   position: absolute;
-  inset: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: var(--pg-surface-soft);
+  border: 1.5px solid var(--pg-border);
+  border-radius: var(--pg-radius-full);
+}
+
+.rail-fill {
+  position: relative;
+  height: 6px;
+  background: var(--pg-cobalt);
+  border: 1.5px solid var(--pg-border);
+  border-radius: var(--pg-radius-full);
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  opacity: 0.25;
-  pointer-events: none;
+  justify-content: flex-end;
+  z-index: 2;
 }
 
-.micro-wave-tick {
-  width: 2px;
-  background: rgba(255, 255, 255, 0.35);
-  border-radius: 1px;
-}
-
-.scrubber-fill {
-  position: relative;
-  height: 4px;
-  background: linear-gradient(90deg, var(--sw-accent), var(--sw-warm));
-  border-radius: var(--sw-radius-full);
-  box-shadow: 0 0 12px rgba(204, 255, 0, 0.45);
-  transition: height var(--sw-transition-fast);
-}
-
-.scrubber-track:hover .scrubber-fill {
-  height: 6px;
-}
-
-.scrubber-head {
-  position: absolute;
-  right: -5px;
-  top: 50%;
-  transform: translateY(-50%) scale(0);
-  width: 10px;
-  height: 10px;
+.scrubber-thumb {
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 0 8px rgba(255, 255, 255, 0.85);
-  transition: transform var(--sw-transition-fast);
+  background: var(--pg-citron);
+  border: 2px solid var(--pg-border);
+  box-shadow: 1.5px 1.5px 0px var(--pg-border);
+  transform: translateX(50%);
+  transition: transform var(--pg-transition-spring);
 }
 
-.scrubber-track:hover .scrubber-head {
-  transform: translateY(-50%) scale(1);
+.scrubber-track:hover .scrubber-thumb {
+  transform: translateX(50%) scale(1.25);
+  background: var(--pg-coral);
 }
 
 .scrubber-tooltip {
   position: absolute;
   bottom: 22px;
   transform: translateX(-50%);
+  background: var(--pg-ink);
+  color: var(--pg-canvas);
+  font-size: 0.65rem;
+  font-weight: 800;
   padding: 2px 6px;
-  font-size: 10px;
-  background: rgba(14, 7, 23, 0.95);
-  border: 1px solid rgba(204, 255, 0, 0.3);
   border-radius: 4px;
-  color: #fff;
   pointer-events: none;
 }
 
-.embedded-provider-notice {
-  font-size: 10px;
-  color: var(--sw-text-muted);
-  letter-spacing: 0.08em;
+.embedded-source-pill {
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 4px 12px;
+  background: var(--pg-surface-soft);
+  border: 1px solid var(--pg-border);
+  border-radius: var(--pg-radius-full);
+  color: var(--pg-ink-secondary);
 }
 
-/* 3. Right Cluster */
-.capsule-aux-group {
+/* 3. Meta Cluster */
+.deck-meta-cluster {
   display: flex;
   align-items: center;
-  gap: 8px;
-  flex: 1 1 140px;
+  gap: 10px;
+  min-width: 180px;
   justify-content: flex-end;
 }
 
-.aux-btn {
+.deck-tool-btn {
   width: 34px;
   height: 34px;
+  border-radius: var(--pg-radius-md);
+  border: 1.5px solid var(--pg-border);
+  background: var(--pg-surface-soft);
+  color: var(--pg-ink);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--sw-text-secondary);
-  border-radius: 50%;
-  transition: all var(--sw-transition-fast);
+  cursor: pointer;
+  box-shadow: 2px 2px 0px var(--pg-border);
+  transition: all var(--pg-transition-spring);
   position: relative;
 }
 
-.aux-btn:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.08);
+.deck-tool-btn:hover {
+  background: var(--pg-canvas);
+  transform: translateY(-2px);
+  box-shadow: 3px 3px 0px var(--pg-border);
 }
 
-.aux-btn.active {
-  color: var(--sw-accent);
+.deck-tool-btn.is-active {
+  background: var(--pg-citron);
 }
 
-.queue-badge {
+.queue-counter {
   position: absolute;
-  top: 2px;
-  right: 2px;
-  font-size: 9px;
+  top: -4px;
+  right: -4px;
+  font-size: 0.62rem;
   font-weight: 800;
-  padding: 1px 4px;
-  background: var(--sw-accent);
-  color: #0e0717;
-  border-radius: var(--sw-radius-full);
+  background: var(--pg-coral);
+  color: #fff;
+  border-radius: var(--pg-radius-full);
+  padding: 0 4px;
+  border: 1px solid var(--pg-border);
 }
 
-/* Volume Popover */
 .volume-container {
-  position: relative;
-}
-
-.volume-popover {
-  position: absolute;
-  bottom: calc(100% + 14px);
-  right: 50%;
-  transform: translateX(50%);
-  width: 140px;
-  background: rgba(24, 13, 41, 0.96);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: var(--sw-radius-md);
-  padding: 10px 12px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8);
+  gap: 6px;
 }
 
-.volume-slider {
-  flex: 1;
-  accent-color: var(--sw-accent);
+.desktop-volume-bar {
+  width: 72px;
+  display: flex;
+  align-items: center;
+}
+
+.volume-range-input {
+  width: 100%;
+  accent-color: var(--pg-cobalt);
   cursor: pointer;
-}
-
-.vol-percent {
-  font-size: 10px;
-  color: var(--sw-text-muted);
-  width: 28px;
-  text-align: right;
+  height: 6px;
 }
 
 @media (max-width: 900px) {
-  .sw-acoustic-capsule-wrapper {
-    bottom: 96px;
+  .desktop-only {
+    display: none !important;
+  }
+
+  .pg-deck-wrapper {
+    bottom: 82px; /* Positioned directly above the mobile bottom dock with clear separation */
     padding: 0 12px;
   }
-  .sw-acoustic-capsule {
-    height: 56px;
-    padding: 0 12px;
+
+  .pg-deck {
+    padding: 8px 14px;
+    gap: 10px;
   }
-  .vinyl-turntable-disc {
+
+  .deck-track-cluster {
+    min-width: unset;
+    max-width: 180px;
+  }
+
+  .deck-vinyl-disc {
     width: 36px;
     height: 36px;
   }
-  .turntable-label {
-    inset: 9px;
-  }
-  .main-play-btn {
-    width: 32px;
-    height: 32px;
-  }
-  .scrubbing-ribbon {
-    display: none;
-  }
-  .capsule-track-group {
-    max-width: 170px;
-    gap: 10px;
-  }
+
   .track-title {
-    font-size: 12px;
+    font-size: 0.82rem;
   }
-  .track-artist {
-    font-size: 11px;
+
+  .deck-main-play-btn {
+    width: 36px;
+    height: 36px;
   }
-  .provider-pill {
+
+  .deck-scrubber-bar {
     display: none;
+  }
+
+  .deck-meta-cluster {
+    min-width: unset;
   }
 }
 </style>

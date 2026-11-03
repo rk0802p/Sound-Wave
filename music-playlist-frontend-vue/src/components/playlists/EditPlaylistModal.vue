@@ -1,6 +1,6 @@
 <template>
   <AppModal
-    title="Edit Sound Archive"
+    title="Edit Mixtape"
     description="Update playlist title, atmosphere description, and artwork sleeve."
     width="680px"
     @close="$emit('close')"

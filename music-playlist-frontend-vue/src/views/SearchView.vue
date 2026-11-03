@@ -1,14 +1,15 @@
 <template>
-  <div class="sw-spatial-discovery">
-    <!-- 1. Kinetic Discovery Scanner Input -->
-    <header class="discovery-hero-stage">
-      <div class="discovery-kicker font-mono">
-        <span class="scanner-dot" :class="{ 'is-scanning': query.trim().length > 0 }"></span>
-        <span>FREQUENCY SCANNER // SPATIAL DISCOVERY</span>
+  <div class="pg-search-root">
+    <!-- 1. Editorial Search Header Stage -->
+    <header class="pg-search-header">
+      <div class="search-kicker-strip font-mono">
+        <span class="search-kicker-tag">EXPLORATION</span>
+        <span class="search-kicker-sub">DISCOVER MIXTAPES, TRACKS & SONIC GENRES</span>
       </div>
 
-      <div class="scanner-search-capsule">
-        <svg class="scanner-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <!-- Massive Editorial Search Bar -->
+      <div class="pg-search-input-box">
+        <svg class="search-input-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <circle cx="11" cy="11" r="8"></circle>
           <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
         </svg>
@@ -16,74 +17,75 @@
         <input
           v-model="query"
           type="text"
-          placeholder="Scan frequencies by track, artist, album, or collection... (Esc to reset)"
-          class="scanner-input font-display"
+          placeholder="Search by track title, artist, album, or genre..."
+          class="search-text-input font-display"
           autofocus
           @keydown.esc="query = ''"
         />
 
-        <button v-if="query" class="scanner-clear-btn" @click="query = ''" title="Clear scanner" aria-label="Clear Search">
+        <button v-if="query" class="search-clear-btn font-mono" @click="query = ''" aria-label="Clear Search">
           ✕
         </button>
 
-        <span v-else class="scanner-shortcut-hint font-mono desktop-only">ESC TO CLEAR</span>
+        <span v-else class="search-esc-hint font-mono desktop-only">ESC TO CLEAR</span>
       </div>
 
-      <!-- Filter Category Tabs (Active when searching) -->
-      <div v-if="query.trim()" class="scanner-filter-pills font-mono">
+      <!-- Filter Category Tabs (Visible when typing) -->
+      <div v-if="query.trim()" class="search-filter-tabs font-mono">
         <button
-          class="filter-tab-pill"
-          :class="{ active: activeCategory === 'all' }"
+          class="category-tab-btn"
+          :class="{ 'is-active': activeCategory === 'all' }"
           @click="activeCategory = 'all'"
         >
           All Results ({{ totalResultCount }})
         </button>
         <button
-          class="filter-tab-pill"
-          :class="{ active: activeCategory === 'playlists' }"
+          class="category-tab-btn"
+          :class="{ 'is-active': activeCategory === 'playlists' }"
           @click="activeCategory = 'playlists'"
         >
-          Collections ({{ matchedPlaylists.length }})
+          Mixtapes ({{ matchedPlaylists.length }})
         </button>
         <button
-          class="filter-tab-pill"
-          :class="{ active: activeCategory === 'tracks' }"
+          class="category-tab-btn"
+          :class="{ 'is-active': activeCategory === 'tracks' }"
           @click="activeCategory = 'tracks'"
         >
-          Frequencies ({{ matchedTracks.length }})
+          Tracks ({{ matchedTracks.length }})
         </button>
       </div>
     </header>
 
-    <!-- 2. Idle Discovery State: Atmospheric Frequency Tiles -->
-    <div v-if="!query.trim()" class="discovery-portals-view">
-      <div class="discovery-section-label font-mono">CURATED ATMOSPHERIC PORTALS</div>
+    <!-- 2. Idle Discovery State: 6 Editorial Genre Portals -->
+    <div v-if="!query.trim()" class="pg-portals-view">
+      <div class="portals-header">
+        <h3 class="portals-title font-display">Curated Sound Portals</h3>
+        <span class="portals-subtitle font-mono">TAP TO INSTANTLY EXPLORE</span>
+      </div>
 
-      <div class="frequency-portals-grid">
+      <div class="editorial-portals-grid">
         <div
           v-for="vibe in genreVibes"
           :key="vibe.name"
-          class="frequency-portal-card"
+          class="editorial-portal-tile"
+          :style="{ '--tile-bg': vibe.tint }"
           @click="query = vibe.query"
         >
-          <div class="portal-halo" :style="{ background: vibe.color }"></div>
-          <span class="portal-badge font-mono">{{ vibe.code }}</span>
-          <div class="portal-text">
-            <h3 class="portal-title font-display">{{ vibe.name }}</h3>
-            <p class="portal-desc">{{ vibe.desc }}</p>
-          </div>
-          <div class="portal-foot font-mono">SCAN FREQUENCY →</div>
+          <div class="tile-code font-mono">{{ vibe.code }}</div>
+          <h4 class="tile-title font-display">{{ vibe.name }}</h4>
+          <p class="tile-desc">{{ vibe.desc }}</p>
+          <span class="tile-cta font-mono">EXPLORE FREQUENCY →</span>
         </div>
       </div>
 
       <!-- Suggested Archival Keywords -->
-      <div v-if="suggestedKeywords.length" class="archival-keywords-strip">
-        <span class="keywords-label font-mono">ARCHIVED KEYWORDS:</span>
-        <div class="keywords-wrap">
+      <div v-if="suggestedKeywords.length" class="keywords-pill-strip">
+        <span class="keywords-label font-mono">POPULAR TAGS:</span>
+        <div class="keywords-row">
           <button
             v-for="kw in suggestedKeywords"
             :key="kw"
-            class="kw-pill font-mono"
+            class="tag-pill font-mono"
             @click="query = kw"
           >
             {{ kw }}
@@ -93,96 +95,85 @@
     </div>
 
     <!-- 3. Zero Results State -->
-    <div v-else-if="matchedPlaylists.length === 0 && matchedTracks.length === 0" class="discovery-empty-state">
-      <div class="empty-scanner-ring font-mono">∅</div>
-      <h2 class="font-display">No Resonance Detected for "{{ query }}"</h2>
-      <p>Try searching for a different keyword, artist name, or track title in your collection.</p>
-      <button class="stage-btn secondary font-mono" @click="query = ''">Reset Scanner</button>
+    <div v-else-if="matchedPlaylists.length === 0 && matchedTracks.length === 0" class="pg-empty-search">
+      <div class="empty-glyph font-display">00</div>
+      <h3 class="empty-title font-display">No Results for "{{ query }}"</h3>
+      <p class="empty-text">Check your spelling or explore one of the curated sound portals below.</p>
+      <button class="reset-search-btn font-mono" @click="query = ''">Reset Search</button>
     </div>
 
-    <!-- 4. Populated Search Results -->
-    <div v-else class="discovery-results-stream">
-      <!-- A. Matching Collections / Playlists -->
-      <section
-        v-if="(activeCategory === 'all' || activeCategory === 'playlists') && matchedPlaylists.length"
-        class="results-block"
-      >
-        <div class="block-header">
-          <span class="block-kicker font-mono">MATCHING ARCHIVES</span>
-          <h3 class="block-title font-display">Collections ({{ matchedPlaylists.length }})</h3>
+    <!-- 4. Active Results State -->
+    <div v-else class="pg-results-stage">
+      <!-- Matched Mixtapes Section -->
+      <section v-if="(activeCategory === 'all' || activeCategory === 'playlists') && matchedPlaylists.length" class="results-section">
+        <div class="results-header">
+          <h4 class="results-title font-display">Archived Mixtapes</h4>
+          <span class="results-count font-mono">{{ matchedPlaylists.length }} FOUND</span>
         </div>
 
-        <div class="results-collections-grid">
+        <div class="mixtapes-results-grid">
           <div
-            v-for="(p, idx) in matchedPlaylists"
-            :key="p._id"
-            class="result-collection-card"
-            @click="router.push(`/playlists/${p._id}`)"
+            v-for="playlist in matchedPlaylists"
+            :key="playlist._id"
+            class="result-mixtape-card"
+            @click="router.push(`/playlists/${playlist._id}`)"
           >
-            <div class="collection-sleeve-thumb">
-              <img v-if="p.coverImage" :src="p.coverImage" :alt="p.name" class="thumb-img" />
-              <div v-else class="thumb-gen font-display" :style="getGenerativeCoverStyle(p.name)">
-                {{ getMonogram(p.name) }}
+            <div class="result-cover-box">
+              <img
+                v-if="playlist.coverImage"
+                :src="playlist.coverImage"
+                :alt="playlist.name"
+                class="result-cover-img"
+              />
+              <div v-else class="result-cover-fallback font-display">
+                {{ playlist.name?.slice(0, 2).toUpperCase() || 'SW' }}
               </div>
             </div>
-
-            <div class="collection-info">
-              <div class="collection-top font-mono">
-                <span class="col-count">{{ p.songs?.length || 0 }} FREQ</span>
-              </div>
-              <h4 class="col-name font-display">{{ p.name }}</h4>
-              <p v-if="p.description" class="col-desc">{{ p.description }}</p>
+            <div class="result-info">
+              <span class="result-track-tag font-mono">{{ playlist.songs?.length || 0 }} Tracks</span>
+              <h5 class="result-name font-display">{{ playlist.name }}</h5>
+              <p v-if="playlist.description" class="result-desc">{{ playlist.description }}</p>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- B. Matching Acoustic Tracks -->
-      <section
-        v-if="(activeCategory === 'all' || activeCategory === 'tracks') && matchedTracks.length"
-        class="results-block"
-      >
-        <div class="block-header">
-          <span class="block-kicker font-mono">MATCHING FREQUENCIES</span>
-          <h3 class="block-title font-display">Acoustic Tracks ({{ matchedTracks.length }})</h3>
+      <!-- Matched Tracks Section -->
+      <section v-if="(activeCategory === 'all' || activeCategory === 'tracks') && matchedTracks.length" class="results-section">
+        <div class="results-header">
+          <h4 class="results-title font-display">Audio Tracks</h4>
+          <span class="results-count font-mono">{{ matchedTracks.length }} FOUND</span>
         </div>
 
-        <div class="results-tracks-sequence">
+        <div class="tracks-results-list">
           <div
             v-for="(item, idx) in matchedTracks"
             :key="item.song._id || idx"
-            class="result-track-strip"
-            :class="{ 'is-active': isCurrentTrack(item.song), 'is-playing': isCurrentTrack(item.song) && playerStore.isPlaying }"
-            @click="handlePlaySearchResult(item)"
+            class="result-track-row"
+            :class="{ 'is-active': isTrackPlaying(item.song) }"
+            @click="handlePlayResultTrack(item)"
           >
-            <!-- Play trigger / index -->
-            <button class="track-strip-play-btn font-mono">
-              <div v-if="isCurrentTrack(item.song) && playerStore.isPlaying" class="strip-eq">
-                <span></span><span></span><span></span>
-              </div>
-              <span v-else class="play-arrow">▶</span>
+            <button class="result-play-icon font-mono">
+              {{ isTrackPlaying(item.song) && playerStore.isPlaying ? '❚❚' : '▶' }}
             </button>
 
-            <!-- Metadata -->
-            <div class="track-strip-info">
-              <div class="strip-row">
-                <span class="track-name font-display">{{ item.song.title }}</span>
-                <span class="track-provider font-mono" :class="getProviderClass(item.song.url)">
-                  {{ getProviderName(item.song.url) }}
+            <div class="result-track-details">
+              <div class="result-track-top">
+                <span class="track-title-text font-display">{{ item.song.title }}</span>
+                <span class="track-source-pill font-mono" :class="getProviderPillClass(item.song.url)">
+                  {{ getProviderLabel(item.song.url) }}
                 </span>
               </div>
-              <div class="strip-sub font-mono">
+              <div class="result-track-sub font-mono">
                 <span>{{ item.song.artist || 'Unknown Artist' }}</span>
-                <span v-if="item.playlistName" class="strip-playlist-parent">
-                  • IN ARCHIVE: {{ item.playlistName }}
-                </span>
+                <span v-if="item.song.album">/ {{ item.song.album }}</span>
+                <span class="from-mixtape">• From {{ item.playlistName }}</span>
               </div>
             </div>
 
-            <!-- Duration -->
-            <div class="track-strip-duration font-mono">
+            <span class="result-track-time font-mono">
               {{ formatDuration(item.song.duration) }}
-            </div>
+            </span>
           </div>
         </div>
       </section>
@@ -191,14 +182,13 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { ref, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import { usePlaylistStore } from '../stores/playlist';
 import { usePlayerStore } from '../stores/player';
 import { useToastStore } from '../stores/toast';
 import { detectProviderType } from '../services/providers/detector';
 
-const route = useRoute();
 const router = useRouter();
 const playlistStore = usePlaylistStore();
 const playerStore = usePlayerStore();
@@ -208,61 +198,14 @@ const query = ref('');
 const activeCategory = ref('all'); // 'all' | 'playlists' | 'tracks'
 
 const genreVibes = [
-  { name: 'Late Night Lo-Fi', desc: 'Analog tape warmth & vinyl dust', code: 'FREQ // 01', query: 'Lo-Fi', color: 'rgba(204, 255, 0, 0.22)' },
-  { name: 'Deep Space Ambient', desc: 'Infinite reverberations & drones', code: 'FREQ // 02', query: 'Ambient', color: 'rgba(168, 85, 247, 0.22)' },
-  { name: 'Cyberpunk Synthwave', desc: '80s analog neon voltage', code: 'FREQ // 03', query: 'Synthwave', color: 'rgba(244, 63, 94, 0.22)' },
-  { name: 'Velvet Midnight Jazz', desc: 'Acoustic brass, double bass & smoke', code: 'FREQ // 04', query: 'Jazz', color: 'rgba(245, 158, 11, 0.22)' },
-  { name: 'Neo-Classical Piano', desc: 'Felt piano & acoustic spatial strings', code: 'FREQ // 05', query: 'Classical', color: 'rgba(16, 185, 129, 0.22)' },
-  { name: 'Electronic Modular', desc: 'Analog synthesis & hypnotic sub-bass', code: 'FREQ // 06', query: 'Electronic', color: 'rgba(234, 179, 8, 0.22)' },
+  { name: 'Late Night Lo-Fi', desc: 'Analog tape warmth, dust & cracked vinyl', code: 'FREQ // 01', query: 'Lo-Fi', tint: '#FFEFE7' },
+  { name: 'Deep Space Ambient', desc: 'Infinite reverberations & acoustic spatial drones', code: 'FREQ // 02', query: 'Ambient', tint: '#F1ECFF' },
+  { name: 'Cyberpunk Synthwave', desc: '80s analog neon voltage & highway arpeggios', code: 'FREQ // 03', query: 'Synthwave', tint: '#E7FAF2' },
+  { name: 'Velvet Midnight Jazz', desc: 'Acoustic brass, double bass & smoky rooms', code: 'FREQ // 04', query: 'Jazz', tint: '#FFF7D1' },
+  { name: 'Neo-Classical Piano', desc: 'Felt piano & acoustic spatial strings', code: 'FREQ // 05', query: 'Classical', tint: '#FFE5EC' },
+  { name: 'Electronic Modular', desc: 'Analog synthesis & hypnotic sub-bass', code: 'FREQ // 06', query: 'Electronic', tint: '#E8F4FF' },
 ];
 
-const getMonogram = (name) => {
-  if (!name) return 'SW';
-  return name.slice(0, 2).toUpperCase();
-};
-
-const getGenerativeCoverStyle = (name) => {
-  let hash = 0;
-  for (let i = 0; i < (name || 'SW').length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  const hue1 = Math.abs(hash % 360);
-  const hue2 = (hue1 + 45) % 360;
-  return {
-    background: `linear-gradient(135deg, hsl(${hue1}, 70%, 14%) 0%, hsl(${hue2}, 60%, 8%) 100%)`,
-    color: `hsl(${hue1}, 80%, 65%)`,
-  };
-};
-
-const formatDuration = (sec) => {
-  if (!sec || isNaN(sec)) return '--:--';
-  const m = Math.floor(sec / 60);
-  const s = Math.floor(sec % 60);
-  return `${m}:${s < 10 ? '0' : ''}${s}`;
-};
-
-const isCurrentTrack = (song) => {
-  if (!playerStore.currentTrack) return false;
-  return (
-    playerStore.currentTrack._id === song._id ||
-    (playerStore.currentTrack.title === song.title &&
-      playerStore.currentTrack.artist === song.artist)
-  );
-};
-
-const getProviderName = (url) => {
-  if (!url) return 'MP3';
-  const type = detectProviderType(url);
-  if (type === 'youtube') return 'YOUTUBE';
-  if (type === 'spotify') return 'SPOTIFY';
-  return 'LOSSLESS';
-};
-
-const getProviderClass = (url) => {
-  if (!url) return 'prov-direct';
-  const type = detectProviderType(url);
-  return `prov-${type}`;
-};
-
-// Matched Playlists
 const matchedPlaylists = computed(() => {
   if (!query.value.trim()) return [];
   const q = query.value.toLowerCase().trim();
@@ -273,27 +216,28 @@ const matchedPlaylists = computed(() => {
   );
 });
 
-// Matched Individual Tracks across all playlists
 const matchedTracks = computed(() => {
   if (!query.value.trim()) return [];
   const q = query.value.toLowerCase().trim();
   const results = [];
 
   playlistStore.playlists.forEach((playlist) => {
-    (playlist.songs || []).forEach((song) => {
-      if (
-        (song.title && song.title.toLowerCase().includes(q)) ||
-        (song.artist && song.artist.toLowerCase().includes(q)) ||
-        (song.album && song.album.toLowerCase().includes(q))
-      ) {
-        results.push({
-          song,
-          playlistId: playlist._id,
-          playlistName: playlist.name,
-          playlist,
-        });
-      }
-    });
+    if (playlist.songs && playlist.songs.length) {
+      playlist.songs.forEach((song) => {
+        const matchesTitle = song.title && song.title.toLowerCase().includes(q);
+        const matchesArtist = song.artist && song.artist.toLowerCase().includes(q);
+        const matchesAlbum = song.album && song.album.toLowerCase().includes(q);
+
+        if (matchesTitle || matchesArtist || matchesAlbum) {
+          results.push({
+            song,
+            playlistId: playlist._id,
+            playlistName: playlist.name,
+            playlist,
+          });
+        }
+      });
+    }
   });
 
   return results;
@@ -306,553 +250,567 @@ const totalResultCount = computed(() => {
 const suggestedKeywords = computed(() => {
   const words = new Set();
   playlistStore.playlists.forEach((p) => {
-    (p.songs || []).forEach((s) => {
-      if (s.artist) words.add(s.artist);
-    });
+    if (p.songs) {
+      p.songs.forEach((s) => {
+        if (s.artist) words.add(s.artist);
+      });
+    }
   });
   return Array.from(words).slice(0, 6);
 });
 
-const handlePlaySearchResult = (item) => {
-  if (isCurrentTrack(item.song)) {
-    playerStore.togglePlay();
-  } else {
-    playerStore.playTrack(item.song, item.playlist, item.playlist?.songs || [item.song]);
-    toastStore.info(`Resonating "${item.song.title}"`);
-  }
+const formatDuration = (sec) => {
+  if (!sec || isNaN(sec)) return '--:--';
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return `${m}:${s < 10 ? '0' : ''}${s}`;
 };
 
-watch(
-  () => route.query.q,
-  (newQ) => {
-    if (newQ !== undefined) query.value = newQ;
-  },
-  { immediate: true }
-);
+const isTrackPlaying = (song) => {
+  if (!playerStore.currentTrack) return false;
+  return (
+    playerStore.currentTrack._id === song._id ||
+    (playerStore.currentTrack.title === song.title &&
+      playerStore.currentTrack.artist === song.artist)
+  );
+};
 
-watch(query, (newQ) => {
-  if (newQ !== route.query.q) {
-    router.replace({ query: newQ ? { q: newQ } : {} });
+const getProviderLabel = (url) => {
+  if (!url) return 'MP3';
+  const type = detectProviderType(url);
+  if (type === 'youtube') return 'YOUTUBE';
+  if (type === 'spotify') return 'SPOTIFY';
+  return 'LOSSLESS';
+};
+
+const getProviderPillClass = (url) => {
+  if (!url) return 'prov-direct';
+  const type = detectProviderType(url);
+  return `prov-${type}`;
+};
+
+const handlePlayResultTrack = (item) => {
+  if (isTrackPlaying(item.song)) {
+    playerStore.togglePlay();
+  } else {
+    playerStore.playTrack(item.song, item.playlist, item.playlist.songs);
+    toastStore.info(`Playing ${item.song.title}`);
   }
-});
+};
 </script>
 
 <style scoped>
-.sw-spatial-discovery {
-  width: 100%;
+.pg-search-root {
   display: flex;
   flex-direction: column;
-  gap: 40px;
+  gap: 36px;
+  padding-bottom: 40px;
 }
 
-/* 1. Scanner Hero Stage */
-.discovery-hero-stage {
+/* 1. Header */
+.pg-search-header {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  padding-top: 10px;
 }
 
-.discovery-kicker {
+.search-kicker-strip {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 11px;
-  letter-spacing: 0.12em;
-  color: var(--sw-text-muted);
+  gap: 10px;
 }
 
-.scanner-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--sw-accent);
+.search-kicker-tag {
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  background: var(--pg-coral);
+  color: #fff;
+  border: 1.5px solid var(--pg-border);
+  border-radius: var(--pg-radius-full);
 }
 
-.scanner-dot.is-scanning {
-  animation: pulse-beacon-anim 1s infinite;
+.search-kicker-sub {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--pg-ink-secondary);
 }
 
-.scanner-search-capsule {
-  position: relative;
+.pg-search-input-box {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 16px 24px;
-  background: rgba(13, 16, 23, 0.7);
-  backdrop-filter: blur(28px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--sw-radius-full);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
-  transition: all var(--sw-transition-normal);
+  padding: 14px 24px;
+  background: var(--pg-canvas);
+  border: 2px solid var(--pg-border);
+  border-radius: var(--pg-radius-full);
+  box-shadow: var(--pg-shadow-solid-lg);
+  transition: all var(--pg-transition-spring);
 }
 
-.scanner-search-capsule:focus-within {
-  border-color: rgba(204, 255, 0, 0.5);
-  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.75), 0 0 28px rgba(204, 255, 0, 0.2);
+.pg-search-input-box:focus-within {
+  transform: translateY(-2px);
+  box-shadow: 6px 6px 0px var(--pg-cobalt);
 }
 
-.scanner-icon {
-  color: var(--sw-accent);
+.search-input-icon {
+  color: var(--pg-cobalt);
+  flex-shrink: 0;
 }
 
-.scanner-input {
+.search-text-input {
   flex: 1;
   background: transparent;
   border: none;
   outline: none;
-  font-size: clamp(16px, 2.5vw, 22px);
-  font-weight: 600;
-  color: #fff;
-}
-
-.scanner-input::placeholder {
-  color: var(--sw-text-dim);
-}
-
-.scanner-clear-btn {
-  color: var(--sw-text-muted);
-  cursor: pointer;
-  font-size: 16px;
-}
-
-.scanner-clear-btn:hover {
-  color: #fff;
-}
-
-.scanner-shortcut-hint {
-  font-size: 10px;
-  padding: 4px 8px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-  color: var(--sw-text-muted);
-}
-
-.scanner-filter-pills {
-  display: flex;
-  gap: 8px;
-  margin-top: 4px;
-}
-
-.filter-tab-pill {
-  padding: 6px 16px;
-  border-radius: var(--sw-radius-full);
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: var(--sw-text-secondary);
-  font-size: 11px;
-  cursor: pointer;
-  transition: all var(--sw-transition-fast);
-}
-
-.filter-tab-pill:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.filter-tab-pill.active {
-  background: rgba(204, 255, 0, 0.15);
-  border-color: rgba(204, 255, 0, 0.35);
-  color: #fff;
-}
-
-/* 2. Frequency Portals (Idle) */
-.discovery-portals-view {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.discovery-section-label {
-  font-size: 10px;
-  letter-spacing: 0.14em;
-  color: var(--sw-text-muted);
-}
-
-.frequency-portals-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 20px;
-}
-
-.frequency-portal-card {
-  position: relative;
-  padding: 24px;
-  background: rgba(13, 16, 23, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: var(--sw-radius-xl);
-  overflow: hidden;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  min-height: 180px;
-  transition: all var(--sw-transition-fast);
-}
-
-.frequency-portal-card:hover {
-  transform: translateY(-4px);
-  border-color: rgba(255, 255, 255, 0.2);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7);
-}
-
-.portal-halo {
-  position: absolute;
-  inset: 0;
-  opacity: 0.15;
-  transition: opacity var(--sw-transition-fast);
-}
-
-.frequency-portal-card:hover .portal-halo {
-  opacity: 0.35;
-}
-
-.portal-badge {
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  color: var(--sw-accent);
-  position: relative;
-  z-index: 1;
-}
-
-.portal-text {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.portal-title {
-  font-size: 20px;
+  font-size: clamp(1.1rem, 2.5vw, 1.45rem);
   font-weight: 700;
-  color: #fff;
+  color: var(--pg-ink);
 }
 
-.portal-desc {
-  font-size: 13px;
-  color: var(--sw-text-secondary);
-  line-height: 1.5;
+.search-text-input::placeholder {
+  color: var(--pg-ink-muted);
 }
 
-.portal-foot {
-  font-size: 10px;
-  color: var(--sw-text-muted);
-  position: relative;
-  z-index: 1;
-  transition: color var(--sw-transition-fast);
+.search-clear-btn {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--pg-ink);
+  padding: 4px 10px;
+  background: var(--pg-surface-soft);
+  border: 1.5px solid var(--pg-border);
+  border-radius: var(--pg-radius-full);
+  cursor: pointer;
 }
 
-.frequency-portal-card:hover .portal-foot {
-  color: #fff;
+.search-esc-hint {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--pg-ink-muted);
+  letter-spacing: 0.05em;
 }
 
-.archival-keywords-strip {
+/* Category Tabs */
+.search-filter-tabs {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 16px 20px;
-  background: rgba(13, 16, 23, 0.45);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: var(--sw-radius-md);
+  gap: 10px;
   flex-wrap: wrap;
+}
+
+.category-tab-btn {
+  padding: 7px 16px;
+  background: var(--pg-canvas);
+  border: 1.5px solid var(--pg-border);
+  border-radius: var(--pg-radius-full);
+  box-shadow: 2px 2px 0px var(--pg-border);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--pg-ink-secondary);
+  cursor: pointer;
+  transition: all var(--pg-transition-spring);
+}
+
+.category-tab-btn:hover {
+  background: var(--pg-surface-soft);
+  color: var(--pg-ink);
+  transform: translateY(-2px);
+  box-shadow: 3px 3px 0px var(--pg-border);
+}
+
+.category-tab-btn.is-active {
+  background: var(--pg-cobalt);
+  color: #fff;
+  border-color: var(--pg-border);
+  box-shadow: 2px 2px 0px var(--pg-border);
+}
+
+/* 2. Genre Portals (Idle) */
+.pg-portals-view {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.portals-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.portals-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--pg-ink);
+  letter-spacing: -0.03em;
+}
+
+.portals-subtitle {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--pg-ink-muted);
+}
+
+.editorial-portals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+.editorial-portal-tile {
+  background: var(--tile-bg);
+  border: 2px solid var(--pg-border);
+  border-radius: var(--pg-radius-lg);
+  box-shadow: var(--pg-shadow-solid);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  cursor: pointer;
+  transition: all var(--pg-transition-spring);
+}
+
+.editorial-portal-tile:hover {
+  transform: translate(-3px, -3px);
+  box-shadow: var(--pg-shadow-solid-lg);
+}
+
+.tile-code {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--pg-ink-secondary);
+}
+
+.tile-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--pg-ink);
+}
+
+.tile-desc {
+  font-size: 0.82rem;
+  color: var(--pg-ink-secondary);
+  line-height: 1.4;
+  flex: 1;
+}
+
+.tile-cta {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--pg-cobalt);
+  margin-top: 8px;
+}
+
+.keywords-pill-strip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 14px 20px;
+  background: var(--pg-canvas);
+  border: 1.5px solid var(--pg-border);
+  border-radius: var(--pg-radius-lg);
+  box-shadow: 2px 2px 0px var(--pg-border);
 }
 
 .keywords-label {
-  font-size: 10px;
-  color: var(--sw-text-muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--pg-ink-muted);
 }
 
-.keywords-wrap {
+.keywords-row {
   display: flex;
-  gap: 8px;
   flex-wrap: wrap;
+  gap: 8px;
 }
 
-.kw-pill {
+.tag-pill {
   padding: 4px 12px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: var(--sw-radius-full);
-  color: var(--sw-text-secondary);
-  font-size: 11px;
-  cursor: pointer;
-  transition: all var(--sw-transition-fast);
-}
-
-.kw-pill:hover {
-  background: rgba(204, 255, 0, 0.12);
-  border-color: var(--sw-accent);
-  color: #fff;
-}
-
-/* 3. Empty State */
-.discovery-empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 80px 24px;
-  text-align: center;
-  gap: 16px;
-  background: rgba(13, 16, 23, 0.35);
-  border: 1px dashed rgba(255, 255, 255, 0.1);
-  border-radius: var(--sw-radius-xl);
-}
-
-.empty-scanner-ring {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  border: 1px solid var(--sw-accent);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-  color: var(--sw-accent);
-}
-
-.stage-btn.secondary {
-  padding: 10px 20px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: var(--sw-radius-full);
-  color: #fff;
-  cursor: pointer;
-}
-
-/* 4. Results Stream */
-.discovery-results-stream {
-  display: flex;
-  flex-direction: column;
-  gap: 40px;
-}
-
-.results-block {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.block-header {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.block-kicker {
-  font-size: 10px;
-  color: var(--sw-text-muted);
-  letter-spacing: 0.12em;
-}
-
-.block-title {
-  font-size: 22px;
+  background: var(--pg-surface-soft);
+  border: 1.5px solid var(--pg-border);
+  border-radius: var(--pg-radius-full);
+  font-size: 0.72rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--pg-ink);
+  cursor: pointer;
+  transition: all var(--pg-transition-spring);
 }
 
-.results-collections-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 16px;
+.tag-pill:hover {
+  background: var(--pg-citron);
+  transform: translateY(-2px);
+  box-shadow: 2px 2px 0px var(--pg-border);
 }
 
-.result-collection-card {
+/* 3. Empty Search */
+.pg-empty-search {
+  padding: 60px 24px;
+  text-align: center;
+  background: var(--pg-surface-soft);
+  border: 2px dashed var(--pg-border);
+  border-radius: var(--pg-radius-xl);
   display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 14px;
-  padding: 12px;
-  background: rgba(13, 16, 23, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: var(--sw-radius-md);
+}
+
+.empty-glyph {
+  font-size: 3.5rem;
+  font-weight: 800;
+  color: var(--pg-ink-dim);
+}
+
+.empty-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--pg-ink);
+}
+
+.empty-text {
+  font-size: 0.88rem;
+  color: var(--pg-ink-secondary);
+  max-width: 440px;
+}
+
+.reset-search-btn {
+  padding: 10px 22px;
+  background: var(--pg-cobalt);
+  color: #fff;
+  border: 2px solid var(--pg-border);
+  border-radius: var(--pg-radius-full);
+  font-size: 0.85rem;
+  font-weight: 800;
+  box-shadow: 2px 2px 0px var(--pg-border);
   cursor: pointer;
-  transition: all var(--sw-transition-fast);
 }
 
-.result-collection-card:hover {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.15);
-  transform: translateY(-2px);
+.reset-search-btn:hover {
+  background: var(--pg-coral);
+  transform: translate(-2px, -2px);
+  box-shadow: 4px 4px 0px var(--pg-border);
 }
 
-.collection-sleeve-thumb {
-  width: 52px;
-  height: 52px;
-  border-radius: var(--sw-radius-sm);
+/* 4. Active Results */
+.pg-results-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+}
+
+.results-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.results-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.results-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--pg-ink);
+}
+
+.results-count {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--pg-cobalt);
+}
+
+.mixtapes-results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+.result-mixtape-card {
+  background: var(--pg-canvas);
+  border: 2px solid var(--pg-border);
+  border-radius: var(--pg-radius-lg);
+  box-shadow: var(--pg-shadow-solid);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  cursor: pointer;
+  transition: all var(--pg-transition-spring);
+}
+
+.result-mixtape-card:hover {
+  transform: translate(-3px, -3px);
+  box-shadow: var(--pg-shadow-solid-lg);
+}
+
+.result-cover-box {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: var(--pg-radius-sm);
+  border: 1.5px solid var(--pg-border);
   overflow: hidden;
-  flex-shrink: 0;
+  background: var(--pg-surface-peach);
 }
 
-.thumb-img {
+.result-cover-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.thumb-gen {
+.result-cover-fallback {
   width: 100%;
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
-  font-weight: 700;
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--pg-coral);
 }
 
-.collection-info {
-  flex: 1;
+.result-info {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  overflow: hidden;
 }
 
-.col-count {
-  font-size: 9px;
-  color: var(--sw-accent);
+.result-track-tag {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--pg-cobalt);
 }
 
-.col-name {
-  font-size: 14px;
-  font-weight: 600;
-  color: #fff;
+.result-name {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--pg-ink);
+}
+
+.result-desc {
+  font-size: 0.75rem;
+  color: var(--pg-ink-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.col-desc {
-  font-size: 11px;
-  color: var(--sw-text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Results Tracks Sequence */
-.results-tracks-sequence {
+/* Track Results List */
+.tracks-results-list {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
-.result-track-strip {
+.result-track-row {
   display: flex;
   align-items: center;
   gap: 14px;
   padding: 12px 18px;
-  background: rgba(13, 16, 23, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: var(--sw-radius-md);
+  background: var(--pg-canvas);
+  border: 1.5px solid var(--pg-border);
+  border-radius: var(--pg-radius-md);
+  box-shadow: 2px 2px 0px var(--pg-border);
   cursor: pointer;
-  transition: all var(--sw-transition-fast);
+  transition: all var(--pg-transition-spring);
 }
 
-.result-track-strip:hover {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.12);
+.result-track-row:hover {
   transform: translateX(4px);
+  box-shadow: 4px 4px 0px var(--pg-border);
+  border-color: var(--pg-cobalt);
 }
 
-.result-track-strip.is-active {
-  background: rgba(204, 255, 0, 0.08);
-  border-color: rgba(204, 255, 0, 0.35);
+.result-track-row.is-active {
+  background: var(--pg-surface-butter);
+  border-color: var(--pg-border);
+  box-shadow: 3px 3px 0px var(--pg-coral);
 }
 
-.track-strip-play-btn {
+.result-play-icon {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--sw-text-secondary);
+  background: var(--pg-surface-soft);
+  border: 1.5px solid var(--pg-border);
+  color: var(--pg-ink);
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 0.75rem;
   flex-shrink: 0;
-  transition: all var(--sw-transition-fast);
 }
 
-.result-track-strip:hover .track-strip-play-btn {
-  background: var(--sw-accent);
-  color: #060709;
+.result-track-row:hover .result-play-icon {
+  background: var(--pg-citron);
 }
 
-.strip-eq {
-  display: flex;
-  align-items: flex-end;
-  gap: 2px;
-  height: 12px;
-}
-
-.strip-eq span {
-  width: 3px;
-  background: var(--sw-accent);
-  animation: eq-bounce 0.8s ease-in-out infinite alternate;
-}
-
-.track-strip-info {
+.result-track-details {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 2px;
-  overflow: hidden;
 }
 
-.strip-row {
+.result-track-top {
   display: flex;
   align-items: center;
-  gap: 8px;
-  overflow: hidden;
+  gap: 10px;
 }
 
-.track-name {
-  font-size: 14px;
-  font-weight: 600;
-  color: #fff;
+.track-title-text {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--pg-ink);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.track-provider {
-  font-size: 8px;
-  font-weight: 700;
+.track-source-pill {
+  font-size: 0.62rem;
+  font-weight: 800;
   padding: 1px 6px;
-  border-radius: var(--sw-radius-full);
+  border-radius: var(--pg-radius-full);
+  border: 1px solid var(--pg-border);
 }
 
-.prov-direct {
-  background: rgba(204, 255, 0, 0.15);
-  color: var(--sw-accent);
+.track-source-pill.prov-direct {
+  background: var(--pg-citron);
+  color: var(--pg-ink);
 }
 
-.prov-youtube {
-  background: rgba(244, 63, 94, 0.15);
-  color: #f43f5e;
+.track-source-pill.prov-youtube {
+  background: var(--pg-coral);
+  color: #fff;
 }
 
-.prov-spotify {
-  background: rgba(16, 185, 129, 0.15);
-  color: #10b981;
+.track-source-pill.prov-spotify {
+  background: var(--pg-mint);
+  color: var(--pg-ink);
 }
 
-.strip-sub {
-  font-size: 11px;
-  color: var(--sw-text-muted);
+.result-track-sub {
+  font-size: 0.76rem;
+  color: var(--pg-ink-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.strip-playlist-parent {
-  color: var(--sw-text-dim);
+.from-mixtape {
+  color: var(--pg-ink-muted);
 }
 
-.track-strip-duration {
-  font-size: 12px;
-  color: var(--sw-text-secondary);
-  text-align: right;
-  width: 44px;
+.result-track-time {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--pg-ink-secondary);
 }
 </style>

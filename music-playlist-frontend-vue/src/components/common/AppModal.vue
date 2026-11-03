@@ -17,10 +17,10 @@
         <!-- Modal Header -->
         <div class="sw-modal-header">
           <div class="header-titles">
-            <h2 v-if="title" class="modal-title">{{ title }}</h2>
+            <h2 v-if="title" class="modal-title font-display">{{ title }}</h2>
             <p v-if="description" class="modal-desc">{{ description }}</p>
           </div>
-          <button v-if="showClose" class="close-icon-btn" @click="handleClose" title="Close (Esc)">
+          <button v-if="showClose" class="close-icon-btn font-mono" @click="handleClose" title="Close (Esc)">
             ✕
           </button>
         </div>
@@ -82,6 +82,7 @@ const handleBackdropClick = () => {
   }
 };
 
+// Trap focus and prevent background scroll
 watch(
   () => props.isOpen,
   (open) => {
@@ -97,6 +98,15 @@ watch(
   { immediate: true }
 );
 
+onMounted(() => {
+  if (props.isOpen) {
+    document.body.style.overflow = 'hidden';
+    nextTick(() => {
+      backdropRef.value?.focus();
+    });
+  }
+});
+
 onUnmounted(() => {
   document.body.style.overflow = '';
 });
@@ -106,14 +116,15 @@ onUnmounted(() => {
 .sw-modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(4, 4, 6, 0.75);
-  backdrop-filter: blur(8px);
-  z-index: 1050;
+  background: rgba(20, 16, 30, 0.45);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 2100;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
-  animation: fadeIn var(--sw-transition-fast);
+  padding: 24px;
+  animation: fadeIn 200ms ease;
   outline: none;
 }
 
@@ -124,19 +135,19 @@ onUnmounted(() => {
 
 .sw-modal-panel {
   width: 100%;
-  background: var(--sw-surface);
-  border: 1px solid var(--sw-border);
-  border-radius: var(--sw-radius-lg);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+  background: var(--pg-canvas);
+  border: 2px solid var(--pg-border);
+  border-radius: var(--pg-radius-xl);
+  box-shadow: var(--pg-shadow-solid-xl);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  animation: scaleIn var(--sw-transition-normal);
+  animation: scaleIn var(--pg-transition-spring);
 }
 
 @keyframes scaleIn {
   from {
-    transform: scale(0.96) translateY(8px);
+    transform: scale(0.96) translateY(12px);
     opacity: 0;
   }
   to {
@@ -146,41 +157,48 @@ onUnmounted(() => {
 }
 
 .sw-modal-header {
-  padding: 24px 28px 16px 28px;
+  padding: 24px 28px 18px 28px;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  border-bottom: 1px solid var(--sw-border-subtle);
+  border-bottom: 2px solid var(--pg-border);
 }
 
 .modal-title {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--sw-text-primary);
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: var(--pg-ink);
   margin-bottom: 4px;
+  letter-spacing: -0.03em;
 }
 
 .modal-desc {
-  font-size: 0.85rem;
-  color: var(--sw-text-secondary);
+  font-size: 0.88rem;
+  color: var(--pg-ink-secondary);
 }
 
 .close-icon-btn {
-  background: transparent;
-  border: none;
-  color: var(--sw-text-muted);
-  font-size: 1.1rem;
-  padding: 6px;
-  border-radius: var(--sw-radius-sm);
+  background: var(--pg-surface-soft);
+  border: 1.5px solid var(--pg-border);
+  color: var(--pg-ink);
+  font-size: 0.85rem;
+  font-weight: 800;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  transition: all var(--sw-transition-fast);
-  line-height: 1;
+  box-shadow: 2px 2px 0px var(--pg-border);
+  transition: all var(--pg-transition-spring);
 }
 
 .close-icon-btn:hover {
-  background: var(--sw-surface-hover);
-  color: var(--sw-text-primary);
+  background: var(--pg-coral);
+  color: #fff;
+  transform: translate(-1px, -1px);
 }
 
 .sw-modal-body {
@@ -190,8 +208,8 @@ onUnmounted(() => {
 }
 
 .sw-modal-footer {
-  padding: 16px 28px 24px 28px;
-  border-top: 1px solid var(--sw-border-subtle);
+  padding: 18px 28px 24px 28px;
+  border-top: 2px solid var(--pg-border);
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -204,7 +222,7 @@ onUnmounted(() => {
     align-items: flex-end;
   }
   .sw-modal-panel {
-    border-radius: var(--sw-radius-lg) var(--sw-radius-lg) 0 0;
+    border-radius: var(--pg-radius-xl) var(--pg-radius-xl) 0 0;
     max-height: 90vh;
   }
 }

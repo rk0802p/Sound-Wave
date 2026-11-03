@@ -1,26 +1,27 @@
 <template>
   <div class="auth-page-wrapper">
-    <div class="auth-ambient-glow"></div>
-
     <div class="auth-card">
       <!-- Brand Header -->
       <div class="auth-brand">
-        <div class="brand-sound-mark">
-          <span></span><span></span><span></span><span></span><span></span>
+        <div class="brand-equalizer">
+          <span class="eq-bar bar-1"></span>
+          <span class="eq-bar bar-2"></span>
+          <span class="eq-bar bar-3"></span>
+          <span class="eq-bar bar-4"></span>
         </div>
         <div class="brand-text-lockup">
           <span class="brand-title font-display">SOUNDWAVE</span>
-          <span class="brand-badge font-mono">ATELIER</span>
+          <span class="brand-badge font-mono">PLAYGROUND</span>
         </div>
       </div>
 
       <div class="auth-intro">
-        <h1 class="auth-heading font-display">Create your space.</h1>
-        <p class="auth-subheading">Build a personal sound library that resonates with you.</p>
+        <h1 class="auth-heading font-display">Create Your Space.</h1>
+        <p class="auth-subheading">Build your personal mixtape and audio collection.</p>
       </div>
 
       <!-- Inline API Error -->
-      <div v-if="errorMessage" class="auth-alert error">
+      <div v-if="errorMessage" class="auth-alert error font-mono">
         {{ errorMessage }}
       </div>
 
@@ -30,7 +31,7 @@
           label="Username"
           type="text"
           v-model="username"
-          placeholder="e.g. nocturnal_listener"
+          placeholder="e.g. tape_curator"
           required
           autocomplete="username"
           :error="fieldErrors.username"
@@ -48,7 +49,7 @@
 
         <div class="password-field-group">
           <div class="password-label-row">
-            <label class="field-label">Password <span class="required-star">*</span></label>
+            <label class="field-label font-mono">Password <span class="required-star">*</span></label>
             <button
               type="button"
               class="pw-toggle-btn font-mono"
@@ -70,7 +71,7 @@
               :class="{ 'has-error': fieldErrors.password }"
             />
           </div>
-          <span v-if="fieldErrors.password" class="field-error-text">{{ fieldErrors.password }}</span>
+          <span v-if="fieldErrors.password" class="field-error-text font-mono">{{ fieldErrors.password }}</span>
         </div>
 
         <AppButton
@@ -80,7 +81,7 @@
           :full-width="true"
           :loading="loading"
         >
-          Create Account
+          Create Account →
         </AppButton>
       </form>
 
@@ -125,8 +126,8 @@ const validate = () => {
   if (!username.value.trim()) {
     fieldErrors.username = 'Username is required';
     valid = false;
-  } else if (username.value.trim().length < 3) {
-    fieldErrors.username = 'Username must be at least 3 characters';
+  } else if (username.value.trim().length < 2) {
+    fieldErrors.username = 'Username must be at least 2 characters';
     valid = false;
   }
 
@@ -159,7 +160,7 @@ const handleSignup = async () => {
     await authStore.signup(username.value.trim(), email.value.trim(), password.value);
     router.push('/');
   } catch (err) {
-    errorMessage.value = err.response?.data?.message || err.message || 'Registration failed. Please try again.';
+    errorMessage.value = err.response?.data?.message || err.message || 'Registration failed.';
   } finally {
     loading.value = false;
   }
@@ -173,39 +174,25 @@ const handleSignup = async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--sw-void);
+  background: var(--pg-bg);
   padding: 24px;
-  position: relative;
-  overflow: hidden;
-}
-
-.auth-ambient-glow {
-  position: absolute;
-  width: 500px;
-  height: 500px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(204, 255, 0, 0.12) 0%, transparent 70%);
-  pointer-events: none;
-  filter: blur(50px);
 }
 
 .auth-card {
   width: 100%;
   max-width: 440px;
-  background: var(--sw-surface);
-  border: 1px solid var(--sw-border);
-  border-radius: var(--sw-radius-xl);
-  padding: 40px 36px;
-  position: relative;
-  z-index: 10;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
-  animation: cardEnter 260ms var(--sw-ease-out);
+  background: var(--pg-canvas);
+  border: 2px solid var(--pg-border);
+  border-radius: var(--pg-radius-xl);
+  padding: 44px 38px;
+  box-shadow: var(--pg-shadow-solid-lg);
+  animation: cardEnter 260ms var(--pg-ease-spring);
 }
 
 @keyframes cardEnter {
   from {
     opacity: 0;
-    transform: translateY(12px) scale(0.98);
+    transform: translateY(14px) scale(0.97);
   }
   to {
     opacity: 1;
@@ -221,48 +208,48 @@ const handleSignup = async () => {
   margin-bottom: 24px;
 }
 
-.brand-sound-mark {
+.brand-equalizer {
   display: flex;
-  align-items: center;
-  gap: 2.5px;
-  height: 20px;
+  align-items: flex-end;
+  gap: 3px;
+  height: 22px;
+  padding: 2px 4px;
+  background: var(--pg-ink);
+  border-radius: var(--pg-radius-xs);
 }
 
-.brand-sound-mark span {
-  width: 3px;
-  background: var(--sw-accent);
-  border-radius: 2px;
-  animation: markWave 1.4s infinite ease-in-out alternate;
+.eq-bar {
+  width: 3.5px;
+  background: var(--pg-citron);
+  border-radius: 1px;
 }
 
-.brand-sound-mark span:nth-child(1) { height: 6px; animation-delay: 0.1s; }
-.brand-sound-mark span:nth-child(2) { height: 16px; animation-delay: 0.3s; }
-.brand-sound-mark span:nth-child(3) { height: 10px; animation-delay: 0.15s; }
-.brand-sound-mark span:nth-child(4) { height: 20px; animation-delay: 0.4s; }
-.brand-sound-mark span:nth-child(5) { height: 8px; animation-delay: 0.25s; }
-
-@keyframes markWave {
-  0% { transform: scaleY(0.4); }
-  100% { transform: scaleY(1.1); }
-}
+.bar-1 { height: 8px; }
+.bar-2 { height: 16px; }
+.bar-3 { height: 10px; }
+.bar-4 { height: 18px; }
 
 .brand-text-lockup {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: 8px;
 }
 
 .brand-title {
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   font-weight: 800;
-  letter-spacing: 0.08em;
-  color: var(--sw-text-primary);
+  color: var(--pg-ink);
+  letter-spacing: -0.04em;
 }
 
 .brand-badge {
-  font-size: 0.6rem;
-  font-weight: 700;
-  color: var(--sw-accent);
-  letter-spacing: 0.14em;
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  background: var(--pg-coral);
+  color: #fff;
+  border: 1.5px solid var(--pg-border);
+  border-radius: var(--pg-radius-full);
 }
 
 .auth-intro {
@@ -273,33 +260,34 @@ const handleSignup = async () => {
 .auth-heading {
   font-size: 1.8rem;
   font-weight: 800;
-  color: var(--sw-text-primary);
+  color: var(--pg-ink);
+  letter-spacing: -0.03em;
   margin-bottom: 6px;
-  letter-spacing: -0.02em;
 }
 
 .auth-subheading {
-  font-size: 0.88rem;
-  color: var(--sw-text-secondary);
+  font-size: 0.9rem;
+  color: var(--pg-ink-secondary);
 }
 
 .auth-alert {
   padding: 10px 14px;
-  border-radius: var(--sw-radius-sm);
-  font-size: 0.82rem;
+  border-radius: var(--pg-radius-md);
+  font-size: 0.8rem;
+  font-weight: 700;
   margin-bottom: 20px;
+  border: 1.5px solid var(--pg-border);
 }
 
 .auth-alert.error {
-  background: rgba(244, 63, 94, 0.12);
-  border: 1px solid rgba(244, 63, 94, 0.3);
-  color: var(--sw-danger);
+  background: var(--pg-surface-peach);
+  color: var(--pg-coral);
 }
 
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 18px;
 }
 
 .password-field-group {
@@ -315,52 +303,51 @@ const handleSignup = async () => {
 }
 
 .field-label {
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--sw-text-secondary);
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--pg-ink);
 }
 
 .required-star {
-  color: var(--sw-accent);
+  color: var(--pg-coral);
 }
 
 .pw-toggle-btn {
-  font-size: 0.72rem;
-  color: var(--sw-text-muted);
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--pg-cobalt);
   cursor: pointer;
   padding: 2px 6px;
 }
 
-.pw-toggle-btn:hover {
-  color: var(--sw-text-primary);
-}
-
 .sw-password-input {
   width: 100%;
-  height: 42px;
-  padding: 0 14px;
-  background: var(--sw-surface-hover);
-  border: 1px solid var(--sw-border);
-  border-radius: var(--sw-radius-md);
-  color: var(--sw-text-primary);
-  font-size: 0.9rem;
+  height: 44px;
+  padding: 0 16px;
+  background: var(--pg-canvas);
+  border: 1.5px solid var(--pg-border);
+  border-radius: var(--pg-radius-sm);
+  color: var(--pg-ink);
+  font-size: 0.92rem;
   outline: none;
-  transition: all var(--sw-transition-fast);
+  box-shadow: 2px 2px 0px var(--pg-border);
+  transition: all var(--pg-transition-spring);
 }
 
 .sw-password-input:focus {
-  border-color: var(--sw-accent);
-  background: var(--sw-surface-active);
-  box-shadow: 0 0 14px var(--sw-accent-soft);
+  border-color: var(--pg-cobalt);
+  box-shadow: 3px 3px 0px var(--pg-cobalt);
 }
 
 .sw-password-input.has-error {
-  border-color: var(--sw-danger);
+  border-color: var(--pg-coral);
+  box-shadow: 3px 3px 0px var(--pg-coral);
 }
 
 .field-error-text {
-  font-size: 0.76rem;
-  color: var(--sw-danger);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--pg-coral);
 }
 
 .auth-footer {
@@ -369,16 +356,13 @@ const handleSignup = async () => {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  font-size: 0.86rem;
-  color: var(--sw-text-secondary);
+  font-size: 0.88rem;
+  color: var(--pg-ink-secondary);
 }
 
 .switch-link {
-  color: var(--sw-accent);
-  font-weight: 700;
-}
-
-.switch-link:hover {
+  color: var(--pg-cobalt);
+  font-weight: 800;
   text-decoration: underline;
 }
 </style>
