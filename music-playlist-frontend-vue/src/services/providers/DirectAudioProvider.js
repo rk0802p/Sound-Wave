@@ -18,6 +18,7 @@ export class DirectAudioProvider {
       isEmbedded: false,
       providerName: 'Direct Audio',
       badge: 'FLAC/MP3',
+      embedUrl: null,
     };
   }
 

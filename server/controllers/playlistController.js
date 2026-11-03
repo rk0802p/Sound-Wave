@@ -169,13 +169,29 @@ const addSong = async (req, res, next) => {
       (typeof url === "string" ? url.trim() : "") ||
       (source && typeof source.url === "string" ? source.url.trim() : "");
 
-    // Validate provider format if URL is provided
+    // Validate provider format authoritatively if URL is provided
     let parsedSource = null;
     if (rawUrl) {
-      parsedSource = source && source.provider ? source : parseMusicSource(rawUrl);
-      if (!parsedSource.isValid && parsedSource.error) {
-        return res.status(400).json({ message: parsedSource.error });
+      const canonical = parseMusicSource(rawUrl);
+      if (!canonical.isValid) {
+        return res.status(400).json({ message: canonical.error || "Invalid music source URL" });
       }
+      // If client supplied source, verify it does not contradict the canonical source
+      if (source && source.provider && source.provider !== canonical.provider) {
+        return res.status(400).json({
+          message: `Provider mismatch: URL belongs to '${canonical.provider}' but source.provider was specified as '${source.provider}'`,
+        });
+      }
+      if (source && source.externalId && canonical.externalId && source.externalId !== canonical.externalId) {
+        return res.status(400).json({
+          message: `External ID mismatch for ${canonical.provider} URL: expected '${canonical.externalId}', received '${source.externalId}'`,
+        });
+      }
+      parsedSource = {
+        provider: canonical.provider,
+        externalId: canonical.externalId || null,
+        url: canonical.url || rawUrl,
+      };
     }
 
     let trimmedTitle = typeof title === "string" ? title.trim() : "";
@@ -269,6 +285,38 @@ const updateSong = async (req, res, next) => {
 
     const { title, artist, album, duration, url, source, coverImage, position } = req.body;
 
+    // Duplicate detection on update (performed before mutating document)
+    const targetTitle = typeof title === "string" && title.trim() ? title.trim() : song.title;
+    const targetArtist = typeof artist === "string" && artist.trim() ? artist.trim() : song.artist;
+    const targetUrl = typeof url === "string" ? url.trim() : (source?.url?.trim() ?? song.url);
+    const targetExternalId = targetUrl ? parseMusicSource(targetUrl).externalId : null;
+    const isIdentityChanged =
+      targetTitle.toLowerCase() !== song.title.toLowerCase() ||
+      targetArtist.toLowerCase() !== song.artist.toLowerCase() ||
+      targetUrl.toLowerCase() !== (song.url || "").toLowerCase();
+
+    if (isIdentityChanged && !req.body.allowDuplicate) {
+      const duplicateSong = req.playlist.songs.find((s) => {
+        if (s._id.toString() === songId) return false;
+        const matchTitleArtist =
+          s.title.toLowerCase() === targetTitle.toLowerCase() &&
+          s.artist.toLowerCase() === targetArtist.toLowerCase();
+        const sExtId = s.source?.externalId;
+        const matchExternalId = Boolean(sExtId && targetExternalId && sExtId === targetExternalId);
+        const sUrl = s.url || s.source?.url;
+        const matchUrl = Boolean(sUrl && targetUrl && sUrl.toLowerCase() === targetUrl.toLowerCase());
+        return matchTitleArtist || matchExternalId || matchUrl;
+      });
+
+      if (duplicateSong) {
+        return res.status(409).json({
+          message: `"${targetTitle}" by ${targetArtist} is already in this playlist`,
+          isDuplicate: true,
+          existingSong: duplicateSong,
+        });
+      }
+    }
+
     if (typeof title === "string" && title.trim()) song.title = title.trim();
     if (typeof artist === "string" && artist.trim()) song.artist = artist.trim();
     if (typeof album === "string") song.album = album.trim();
@@ -277,16 +325,26 @@ const updateSong = async (req, res, next) => {
     if (typeof position === "number" && position >= 0) song.position = position;
 
     if (typeof url === "string" || (source && typeof source === "object")) {
-      const newUrl = typeof url === "string" ? url.trim() : source?.url?.trim() ?? song.url;
+      const newUrl = typeof url === "string" ? url.trim() : (source?.url?.trim() ?? song.url);
       if (newUrl) {
-        const parsed = parseMusicSource(newUrl);
-        if (!parsed.isValid && parsed.error) {
-          return res.status(400).json({ message: parsed.error });
+        const canonical = parseMusicSource(newUrl);
+        if (!canonical.isValid) {
+          return res.status(400).json({ message: canonical.error || "Invalid music source URL" });
+        }
+        if (source && source.provider && source.provider !== canonical.provider) {
+          return res.status(400).json({
+            message: `Provider mismatch: URL belongs to '${canonical.provider}' but source.provider was specified as '${source.provider}'`,
+          });
+        }
+        if (source && source.externalId && canonical.externalId && source.externalId !== canonical.externalId) {
+          return res.status(400).json({
+            message: `External ID mismatch for ${canonical.provider} URL: expected '${canonical.externalId}', received '${source.externalId}'`,
+          });
         }
         song.url = newUrl;
         song.source = {
-          provider: parsed.provider,
-          externalId: parsed.externalId,
+          provider: canonical.provider,
+          externalId: canonical.externalId || null,
           url: newUrl,
         };
       } else {

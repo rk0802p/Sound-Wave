@@ -67,10 +67,12 @@ export class SpotifyProvider {
   }
 
   play() {
-    // Spotify embedded iframes require user interaction within the iframe container
-    // Mark playback intent without falsely claiming active audio playback
-    this.isPlaying = true;
-    this.callbacks.onPlay?.();
+    // Spotify iframe embeds do not expose remote play API without Web Playback SDK / OAuth.
+    // Notify the user that playback must be initiated within the embed iframe itself.
+    this.isPlaying = false;
+    this.callbacks.onError?.(
+      new Error('Spotify playback must be controlled directly inside the Spotify embed player.')
+    );
   }
 
   pause() {
@@ -79,7 +81,9 @@ export class SpotifyProvider {
   }
 
   seek() {
-    // Spotify embedded iframe restricts remote seek
+    this.callbacks.onError?.(
+      new Error('Seeking is not supported for Spotify embed player.')
+    );
   }
 
   setVolume() {

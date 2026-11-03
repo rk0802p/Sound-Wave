@@ -58,6 +58,7 @@ export class YouTubeProvider {
       isEmbedded: true,
       providerName: 'YouTube Audio Stream',
       badge: 'YouTube',
+      embedUrl: null,
     };
   }
 
@@ -215,6 +216,10 @@ export class YouTubeProvider {
 
     this.currentVideoId = videoId;
 
+    if (!this.player) {
+      this.ensureIFrameAPI();
+    }
+
     if (!this.isReady || !this.player || typeof this.player.loadVideoById !== 'function') {
       this.pendingVideoId = videoId;
       this.pendingPlay = true;
@@ -238,6 +243,7 @@ export class YouTubeProvider {
   }
 
   pause() {
+    this.pendingPlay = false;
     if (this.player && typeof this.player.pauseVideo === 'function') {
       this.player.pauseVideo();
     }

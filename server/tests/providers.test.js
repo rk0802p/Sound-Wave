@@ -612,5 +612,98 @@ describe("Music Provider Integration & Backward Compatibility Tests", () => {
       expect(reorderedSongs[1].source.provider).toBe("direct");
       expect(reorderedSongs[1].position).toBe(1);
     });
+
+    it("should reject adding song with mismatched provider in source object", async () => {
+      const res = await request(app)
+        .post(`/api/playlists/${testPlaylist._id}/songs`)
+        .set("Authorization", `Bearer ${token}`)
+        .send({
+          title: "Mismatched Provider Track",
+          artist: "Artist",
+          url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+          source: { provider: "spotify", externalId: "fakeId" },
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toMatch(/provider mismatch/i);
+    });
+
+    it("should reject adding song with mismatched external ID in source object", async () => {
+      const res = await request(app)
+        .post(`/api/playlists/${testPlaylist._id}/songs`)
+        .set("Authorization", `Bearer ${token}`)
+        .send({
+          title: "Mismatched ExternalId Track",
+          artist: "Artist",
+          url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+          source: { provider: "youtube", externalId: "wrongId1234" },
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toMatch(/external id mismatch/i);
+    });
+
+    it("should clear externalId and reset provider to direct when URL is removed on update", async () => {
+      const addRes = await request(app)
+        .post(`/api/playlists/${testPlaylist._id}/songs`)
+        .set("Authorization", `Bearer ${token}`)
+        .send({
+          title: "Temporary YouTube Track",
+          artist: "Artist",
+          url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        });
+
+      const songId = addRes.body.addedSong._id;
+
+      // Update removing URL
+      const updateRes = await request(app)
+        .put(`/api/playlists/${testPlaylist._id}/songs/${songId}`)
+        .set("Authorization", `Bearer ${token}`)
+        .send({
+          url: "",
+        });
+
+      expect(updateRes.status).toBe(200);
+      const updatedSong = updateRes.body.songs.find((s) => s._id === songId);
+      expect(updatedSong.url).toBe("");
+      expect(updatedSong.source.provider).toBe("direct");
+      expect(updatedSong.source.externalId).toBeNull();
+    });
+
+    it("should reject updating song to duplicate title and artist of another song in the playlist", async () => {
+      // Song 1
+      await request(app)
+        .post(`/api/playlists/${testPlaylist._id}/songs`)
+        .set("Authorization", `Bearer ${token}`)
+        .send({
+          title: "First Unique Track",
+          artist: "Artist One",
+          url: "https://example.com/one.mp3",
+        });
+
+      // Song 2
+      const res2 = await request(app)
+        .post(`/api/playlists/${testPlaylist._id}/songs`)
+        .set("Authorization", `Bearer ${token}`)
+        .send({
+          title: "Second Unique Track",
+          artist: "Artist Two",
+          url: "https://example.com/two.mp3",
+        });
+
+      const song2Id = res2.body.addedSong._id;
+
+      // Try to rename Song 2 to Song 1's title and artist
+      const updateRes = await request(app)
+        .put(`/api/playlists/${testPlaylist._id}/songs/${song2Id}`)
+        .set("Authorization", `Bearer ${token}`)
+        .send({
+          title: "First Unique Track",
+          artist: "Artist One",
+        });
+
+      expect(updateRes.status).toBe(409);
+      expect(updateRes.body.isDuplicate).toBe(true);
+    });
   });
 });

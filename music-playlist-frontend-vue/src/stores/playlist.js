@@ -343,6 +343,11 @@ export const usePlaylistStore = defineStore('playlist', {
     async reorderSongs(playlistId, songIds) {
       this.isMutating = true;
       this.error = null;
+      const previousSongs =
+        this.currentPlaylist && this.currentPlaylist._id === playlistId && Array.isArray(this.currentPlaylist.songs)
+          ? [...this.currentPlaylist.songs]
+          : null;
+
       if (this.currentPlaylist && this.currentPlaylist._id === playlistId) {
         const songMap = new Map((this.currentPlaylist.songs || []).map((s) => [s._id, s]));
         const reordered = songIds
@@ -366,6 +371,10 @@ export const usePlaylistStore = defineStore('playlist', {
         saveOfflinePlaylists(this.playlists);
         return res;
       } catch (err) {
+        // Immediate synchronous rollback
+        if (previousSongs && this.currentPlaylist && this.currentPlaylist._id === playlistId) {
+          this.currentPlaylist.songs = previousSongs;
+        }
         if (!err.response || err.code === 'ERR_NETWORK') {
           const idx = this.playlists.findIndex((p) => p._id === playlistId);
           if (idx !== -1 && this.currentPlaylist) {
@@ -375,12 +384,6 @@ export const usePlaylistStore = defineStore('playlist', {
           }
         }
         this.error = err.response?.data?.message || 'Failed to reorder songs';
-        // Rollback by fetching fresh state
-        if (this.currentPlaylist && this.currentPlaylist._id === playlistId) {
-          try {
-            await this.fetchPlaylist(playlistId);
-          } catch {}
-        }
         throw err;
       } finally {
         this.isMutating = false;

@@ -203,6 +203,10 @@ export const usePlayerStore = defineStore('player', {
       try {
         this.isLoading = true;
         await soundController.loadAndPlay(track);
+        if (providerType === 'spotify') {
+          this.isPlaying = false;
+          this.isLoading = false;
+        }
       } catch (err) {
         console.warn('Play request interrupted:', err);
         this.isPlaying = false;
@@ -371,6 +375,7 @@ export const usePlayerStore = defineStore('player', {
       this.isPlaying = false;
       this.isExpanded = false;
       this.isQueueOpen = false;
+      this.providerCapabilities.embedUrl = null;
     },
 
     resetPlayer() {
