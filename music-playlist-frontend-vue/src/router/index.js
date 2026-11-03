@@ -1,48 +1,67 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router';
 
 // Views
-import LoginView from '../views/LoginView.vue'
-import SignupView from '../views/SignupView.vue'
-import HomeView from '../views/HomeView.vue'
-import AboutView from '../views/AboutView.vue'
-import DashboardView from '../views/DashboardView.vue'
+import HomeView from '../views/HomeView.vue';
+import LoginView from '../views/LoginView.vue';
+import SignupView from '../views/SignupView.vue';
+import PlayListView from '../views/PlayListView.vue';
 
 const routes = [
   {
     path: '/',
     name: 'Home',
-    component: HomeView
-  },
-  {
-    path: '/login',
-    name: 'Login',
-    component: LoginView
-  },
-  {
-    path: '/signup',
-    name: 'Signup',
-    component: SignupView
-  },
-  {
-    path: '/about',
-    name: 'About',
-    component: AboutView
-  },
-  {
-    path: '/dashboard',
-    name: 'Dashboard',
-    component: DashboardView
+    component: HomeView,
+    meta: { requiresAuth: true },
   },
   {
     path: '/playlists/:id',
     name: 'PlaylistView',
-    component: () => import('../views/PlayListView.vue')
-  }
-]
+    component: PlayListView,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/login',
+    name: 'Login',
+    component: LoginView,
+    meta: { guestOnly: true },
+  },
+  {
+    path: '/signup',
+    name: 'Signup',
+    component: SignupView,
+    meta: { guestOnly: true },
+  },
+  {
+    path: '/dashboard',
+    redirect: '/',
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    redirect: '/',
+  },
+];
 
 const router = createRouter({
   history: createWebHistory(),
-  routes
-})
+  routes,
+  scrollBehavior() {
+    return { top: 0 };
+  },
+});
 
-export default router
+router.beforeEach((to, from, next) => {
+  const token = localStorage.getItem('token');
+  const isAuthenticated = Boolean(token);
+
+  if (to.meta.requiresAuth && !isAuthenticated) {
+    return next({ name: 'Login' });
+  }
+
+  if (to.meta.guestOnly && isAuthenticated) {
+    return next({ name: 'Home' });
+  }
+
+  next();
+});
+
+export default router;
