@@ -483,7 +483,8 @@ const getProviderStatusLabel = (name) => {
   if (!prov) return 'ACTIVE';
   if (prov.status === 'unconfigured') return 'OFF';
   if (prov.status === 'rate_limited') return 'LIMIT';
-  if (prov.status === 'unavailable') return 'DOWN';
+  if (prov.status === 'circuit_broken') return 'COOLDOWN';
+  if (prov.status === 'unavailable' || prov.status === 'down') return 'DOWN';
   return 'ACTIVE';
 };
 
@@ -491,7 +492,7 @@ const getProviderStatusClass = (name) => {
   const prov = providerStatuses.value[name];
   if (!prov || prov.status === 'available') return 'status-online';
   if (prov.status === 'unconfigured') return 'status-unconfigured';
-  if (prov.status === 'rate_limited') return 'status-limited';
+  if (prov.status === 'rate_limited' || prov.status === 'circuit_broken') return 'status-limited';
   return 'status-down';
 };
 
@@ -565,12 +566,14 @@ const handlePlayOnlineTrack = (track) => {
       duration: track.duration || 0,
       url: track.streamUrl || track.url,
       streamUrl: track.streamUrl || track.url,
-      coverImage: track.coverImage || '',
+      coverImage: track.coverImage || track.artwork || '',
       source: {
         provider: track.provider || 'direct',
         url: track.url || track.streamUrl,
-        externalId: track.externalId || track.id || '',
+        externalId: track.providerTrackId || track.externalId || (track.id ? String(track.id).replace(/^(archive|jamendo|audius):/, '') : ''),
       },
+      provider: track.provider,
+      providerTrackId: track.providerTrackId || (track.id ? String(track.id).replace(/^(archive|jamendo|audius):/, '') : ''),
       license: track.license,
       licenseUrl: track.licenseUrl,
       attribution: track.attribution,

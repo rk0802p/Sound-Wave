@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { soundController } from '../services/providers';
 import { MOOD_PLAYLISTS } from '../data/moodPlaylists';
 import { resolvePlayableAudioUrl } from '../services/providers/detector';
+import { searchApi } from '../api/search';
 
 export const usePlayerStore = defineStore('player', {
   state: () => {
@@ -16,6 +17,7 @@ export const usePlayerStore = defineStore('player', {
       queue: initialPlaylist.songs,
       isPlaying: false,
       isLoading: false,
+      playRequestId: 0,
       currentTime: 0,
       duration: initialTrack?.duration || 233,
       volume: 0.85,
@@ -167,12 +169,44 @@ export const usePlayerStore = defineStore('player', {
       this.duration = track.duration || 240;
       this.currentTime = 0;
 
-      const audioUrl = resolvePlayableAudioUrl(track);
-      if (!audioUrl) {
+      // Unique request sequence ID to guard against rapid track-switching races
+      this.playRequestId = (this.playRequestId || 0) + 1;
+      const reqId = this.playRequestId;
+
+      const provider = track.provider || track.source?.provider;
+      const providerTrackId = track.providerTrackId || track.source?.externalId;
+      let audioUrl = resolvePlayableAudioUrl(track);
+
+      // On-demand playback resolution if URL is missing or marked for resolution
+      if ((!audioUrl || track.needsResolution) && provider && provider !== 'spotify' && providerTrackId) {
+        try {
+          this.isLoading = true;
+          const resolved = await searchApi.resolve(provider, providerTrackId);
+
+          // Discard if user clicked another track during async resolution
+          if (this.playRequestId !== reqId) return;
+
+          if (resolved?.streamUrl) {
+            track.streamUrl = resolved.streamUrl;
+            track.url = resolved.streamUrl;
+            track.duration = resolved.metadata?.duration || track.duration;
+            audioUrl = resolved.streamUrl;
+          }
+        } catch (resErr) {
+          console.warn('On-demand resolution notice:', resErr);
+        }
+      }
+
+      // If user navigated away during resolution, abort
+      if (this.playRequestId !== reqId) return;
+
+      const isSpotify = provider === 'spotify' || (track.url && track.url.includes('spotify.com'));
+      if (!audioUrl && !isSpotify) {
         soundController.pause();
         this.isPlaying = false;
         this.isLoading = false;
         this.currentTime = 0;
+        this.error = 'No playable audio stream available for this track';
         if (typeof document !== 'undefined') {
           document.body.classList.remove('playing');
         }
@@ -182,21 +216,49 @@ export const usePlayerStore = defineStore('player', {
       try {
         this.isLoading = true;
         await soundController.load(track);
+        if (this.playRequestId !== reqId) return;
         this.isPlaying = true;
       } catch (err) {
+        if (this.playRequestId !== reqId) return;
         console.warn('Sound controller load warning:', err);
+
+        // One-time auto re-resolution retry if stream URL expired or failed
+        if (provider && provider !== 'spotify' && providerTrackId && !track._retriedOnce) {
+          track._retriedOnce = true;
+          try {
+            const fresh = await searchApi.resolve(provider, providerTrackId);
+            if (this.playRequestId !== reqId) return;
+            if (fresh?.streamUrl) {
+              track.streamUrl = fresh.streamUrl;
+              track.url = fresh.streamUrl;
+              await soundController.load(track);
+              this.isPlaying = true;
+              return;
+            }
+          } catch (retryErr) {
+            console.warn('Re-resolution attempt failed:', retryErr);
+          }
+        }
+
         // Fallback direct audio if needed
         try {
-          if (typeof window !== 'undefined' && window._soundwaveAudio) {
+          if (typeof window !== 'undefined' && window._soundwaveAudio && audioUrl) {
             window._soundwaveAudio.src = audioUrl;
             await window._soundwaveAudio.play();
-            this.isPlaying = true;
+            if (this.playRequestId === reqId) {
+              this.isPlaying = true;
+            }
           }
         } catch (e) {
-          console.warn('Direct audio fallback error:', e);
+          if (this.playRequestId === reqId) {
+            this.isPlaying = false;
+            this.error = 'Playback failed. The remote audio stream may be unavailable.';
+          }
         }
       } finally {
-        this.isLoading = false;
+        if (this.playRequestId === reqId) {
+          this.isLoading = false;
+        }
       }
     },
 
