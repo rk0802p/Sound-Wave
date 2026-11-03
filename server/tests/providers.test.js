@@ -4,10 +4,15 @@ const User = require("../models/User");
 const Playlist = require("../models/Playlist");
 const { connectTestDB, closeTestDB, clearTestDB } = require("./setup");
 const {
+  isValidYouTubeId,
+  isValidSpotifyId,
   extractYouTubeId,
   extractSpotifyInfo,
   isDirectAudioUrl,
   parseMusicSource,
+  fetchYouTubeMetadata,
+  fetchSpotifyMetadata,
+  resolveTrackMetadata,
 } = require("../utils/musicLinkParser");
 
 beforeAll(async () => {
@@ -20,23 +25,33 @@ afterAll(async () => {
 
 describe("Music Provider Integration & Backward Compatibility Tests", () => {
   let token;
+  let userBToken;
   let userId;
+  let userBId;
   let testPlaylist;
 
   beforeEach(async () => {
     await clearTestDB();
 
-    // Register and authenticate user
-    const res = await request(app).post("/api/auth/signup").send({
+    // Register User A
+    const resA = await request(app).post("/api/auth/signup").send({
       username: "audiophile",
       email: "audiophile@soundwave.io",
       password: "Password123!",
     });
+    token = resA.body.token;
+    userId = resA.body.user.id;
 
-    token = res.body.token;
-    userId = res.body.user.id;
+    // Register User B
+    const resB = await request(app).post("/api/auth/signup").send({
+      username: "otherlistener",
+      email: "other@soundwave.io",
+      password: "Password123!",
+    });
+    userBToken = resB.body.token;
+    userBId = resB.body.user.id;
 
-    // Create a base playlist
+    // Create a base playlist owned by User A
     const pRes = await request(app)
       .post("/api/playlists")
       .set("Authorization", `Bearer ${token}`)
@@ -48,7 +63,25 @@ describe("Music Provider Integration & Backward Compatibility Tests", () => {
     testPlaylist = pRes.body;
   });
 
-  describe("Unit: musicLinkParser Utility", () => {
+  describe("Unit: musicLinkParser Utility & Format Validation", () => {
+    it("should correctly validate YouTube video IDs", () => {
+      expect(isValidYouTubeId("dQw4w9WgXcQ")).toBe(true);
+      expect(isValidYouTubeId("5qap5aO4i9A")).toBe(true);
+      expect(isValidYouTubeId("invalid")).toBe(false); // too short
+      expect(isValidYouTubeId("toolongvideoid123")).toBe(false); // too long
+      expect(isValidYouTubeId("")).toBe(false);
+      expect(isValidYouTubeId(null)).toBe(false);
+    });
+
+    it("should correctly validate Spotify track IDs", () => {
+      expect(isValidSpotifyId("4cOdK2wGLETKBW3PvgPWqT")).toBe(true);
+      expect(isValidSpotifyId("7ouMYWpwJ422jRcDASZB7P")).toBe(true);
+      expect(isValidSpotifyId("shortid")).toBe(false); // too short
+      expect(isValidSpotifyId("4cOdK2wGLETKBW3PvgPWqT123")).toBe(false); // too long
+      expect(isValidSpotifyId("")).toBe(false);
+      expect(isValidSpotifyId(null)).toBe(false);
+    });
+
     it("should correctly extract YouTube video IDs from various formats", () => {
       const urls = [
         "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
@@ -63,6 +96,23 @@ describe("Music Provider Integration & Backward Compatibility Tests", () => {
         const parsed = parseMusicSource(url);
         expect(parsed.provider).toBe("youtube");
         expect(parsed.externalId).toBe("dQw4w9WgXcQ");
+        expect(parsed.isValid).toBe(true);
+      });
+    });
+
+    it("should reject malformed or truncated YouTube URLs", () => {
+      const invalidUrls = [
+        "https://www.youtube.com/watch?v=short",
+        "https://youtu.be/",
+        "https://www.youtube.com/embed/",
+      ];
+
+      invalidUrls.forEach((url) => {
+        expect(extractYouTubeId(url)).toBeNull();
+        const parsed = parseMusicSource(url);
+        expect(parsed.provider).toBe("youtube");
+        expect(parsed.isValid).toBe(false);
+        expect(parsed.error).toContain("Invalid YouTube URL");
       });
     });
 
@@ -79,6 +129,20 @@ describe("Music Provider Integration & Backward Compatibility Tests", () => {
       const parsed = parseMusicSource(trackUrl);
       expect(parsed.provider).toBe("spotify");
       expect(parsed.externalId).toBe("4cOdK2wGLETKBW3PvgPWqT");
+      expect(parsed.isValid).toBe(true);
+    });
+
+    it("should reject unsupported Spotify resource types or malformed IDs", () => {
+      const artistUrl = "https://open.spotify.com/artist/4Z8W4fKeB5YxbusRsdQVPb";
+      const malformedUrl = "https://open.spotify.com/track/badId";
+
+      const parsedArtist = parseMusicSource(artistUrl);
+      expect(parsedArtist.isValid).toBe(false);
+      expect(parsedArtist.error).toContain("Only single tracks are supported");
+
+      const parsedMalformed = parseMusicSource(malformedUrl);
+      expect(parsedMalformed.isValid).toBe(false);
+      expect(parsedMalformed.error).toContain("missing or malformed 22-character track ID");
     });
 
     it("should identify direct audio stream URLs", () => {
@@ -95,7 +159,84 @@ describe("Music Provider Integration & Backward Compatibility Tests", () => {
         const parsed = parseMusicSource(url);
         expect(parsed.provider).toBe("direct");
         expect(parsed.externalId).toBeNull();
+        expect(parsed.isValid).toBe(true);
       });
+    });
+  });
+
+  describe("Metadata Retrieval & Error Resilience", () => {
+    it("should retrieve YouTube metadata via oEmbed for a known video", async () => {
+      const meta = await fetchYouTubeMetadata("dQw4w9WgXcQ");
+      expect(meta.isAvailable).toBe(true);
+      expect(meta.title).toBeTruthy();
+      expect(meta.artist).toBeTruthy();
+      expect(meta.coverImage).toContain("hqdefault.jpg");
+    });
+
+    it("should retrieve Spotify metadata via oEmbed for a known track", async () => {
+      const meta = await fetchSpotifyMetadata("4cOdK2wGLETKBW3PvgPWqT");
+      expect(meta.isAvailable).toBe(true);
+      expect(meta.title).toBeTruthy();
+      expect(meta.coverImage).toBeTruthy();
+    });
+
+    it("should gracefully handle unavailable YouTube video IDs without crashing", async () => {
+      const meta = await fetchYouTubeMetadata("invalid00000");
+      expect(meta.isAvailable).toBe(false);
+      expect(meta.error).toBeTruthy();
+    });
+
+    it("should gracefully handle unavailable Spotify track IDs without crashing", async () => {
+      const meta = await fetchSpotifyMetadata("invalid0000000000000000");
+      expect(meta.isAvailable).toBe(false);
+      expect(meta.error).toBeTruthy();
+    });
+  });
+
+  describe("GET /api/playlists/resolve/track (Metadata Resolution Endpoint)", () => {
+    it("should resolve track info from a valid YouTube URL", async () => {
+      const res = await request(app)
+        .get("/api/playlists/resolve/track")
+        .query({ url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" })
+        .set("Authorization", `Bearer ${token}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.provider).toBe("youtube");
+      expect(res.body.externalId).toBe("dQw4w9WgXcQ");
+      expect(res.body.title).toBeTruthy();
+      expect(res.body.artist).toBeTruthy();
+      expect(res.body.coverImage).toBeTruthy();
+    });
+
+    it("should resolve track info from a valid Spotify URL", async () => {
+      const res = await request(app)
+        .get("/api/playlists/resolve/track")
+        .query({ url: "https://open.spotify.com/track/4cOdK2wGLETKBW3PvgPWqT" })
+        .set("Authorization", `Bearer ${token}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.provider).toBe("spotify");
+      expect(res.body.externalId).toBe("4cOdK2wGLETKBW3PvgPWqT");
+      expect(res.body.title).toBeTruthy();
+    });
+
+    it("should reject resolution request without url parameter", async () => {
+      const res = await request(app)
+        .get("/api/playlists/resolve/track")
+        .set("Authorization", `Bearer ${token}`);
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toContain("URL parameter is required");
+    });
+
+    it("should reject resolution request with invalid YouTube link", async () => {
+      const res = await request(app)
+        .get("/api/playlists/resolve/track")
+        .query({ url: "https://www.youtube.com/watch?v=short" })
+        .set("Authorization", `Bearer ${token}`);
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toContain("Invalid YouTube URL");
     });
   });
 
@@ -118,6 +259,49 @@ describe("Music Provider Integration & Backward Compatibility Tests", () => {
       expect(res.body.addedSong.source).toBeDefined();
       expect(res.body.addedSong.source.provider).toBe("youtube");
       expect(res.body.addedSong.source.externalId).toBe("5qap5aO4i9A");
+    });
+
+    it("should auto-resolve title and artist when adding YouTube link with omitted titles", async () => {
+      const ytUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+      const res = await request(app)
+        .post(`/api/playlists/${testPlaylist._id}/songs`)
+        .set("Authorization", `Bearer ${token}`)
+        .send({
+          url: ytUrl,
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.addedSong.title).toBeTruthy();
+      expect(res.body.addedSong.artist).toBeTruthy();
+      expect(res.body.addedSong.source.provider).toBe("youtube");
+    });
+
+    it("should reject adding song with malformed YouTube video ID", async () => {
+      const res = await request(app)
+        .post(`/api/playlists/${testPlaylist._id}/songs`)
+        .set("Authorization", `Bearer ${token}`)
+        .send({
+          title: "Broken Track",
+          artist: "Nobody",
+          url: "https://www.youtube.com/watch?v=not11chars",
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toContain("Invalid YouTube URL");
+    });
+
+    it("should reject adding song with malformed Spotify track ID", async () => {
+      const res = await request(app)
+        .post(`/api/playlists/${testPlaylist._id}/songs`)
+        .set("Authorization", `Bearer ${token}`)
+        .send({
+          title: "Broken Track",
+          artist: "Nobody",
+          url: "https://open.spotify.com/track/not22chars",
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toContain("Invalid Spotify URL");
     });
 
     it("should add a Spotify track and populate source object", async () => {
@@ -184,7 +368,60 @@ describe("Music Provider Integration & Backward Compatibility Tests", () => {
       expect(dupRes.body.isDuplicate).toBe(true);
     });
 
-    it("should maintain backward-compatibility when reading songs saved with legacy format (url only)", async () => {
+    it("should detect duplicate Spotify songs by track ID", async () => {
+      const spUrl1 = "https://open.spotify.com/track/4cOdK2wGLETKBW3PvgPWqT";
+      const spUrl2 = "spotify:track:4cOdK2wGLETKBW3PvgPWqT";
+
+      await request(app)
+        .post(`/api/playlists/${testPlaylist._id}/songs`)
+        .set("Authorization", `Bearer ${token}`)
+        .send({
+          title: "Track A",
+          artist: "Artist A",
+          url: spUrl1,
+        });
+
+      const dupRes = await request(app)
+        .post(`/api/playlists/${testPlaylist._id}/songs`)
+        .set("Authorization", `Bearer ${token}`)
+        .send({
+          title: "Track A Alias",
+          artist: "Artist A",
+          url: spUrl2,
+          allowDuplicate: false,
+        });
+
+      expect(dupRes.status).toBe(409);
+      expect(dupRes.body.isDuplicate).toBe(true);
+    });
+
+    it("should allow duplicate song addition when allowDuplicate is true", async () => {
+      const ytUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+
+      await request(app)
+        .post(`/api/playlists/${testPlaylist._id}/songs`)
+        .set("Authorization", `Bearer ${token}`)
+        .send({
+          title: "Rickroll",
+          artist: "Rick Astley",
+          url: ytUrl,
+        });
+
+      const dupRes = await request(app)
+        .post(`/api/playlists/${testPlaylist._id}/songs`)
+        .set("Authorization", `Bearer ${token}`)
+        .send({
+          title: "Rickroll",
+          artist: "Rick Astley",
+          url: ytUrl,
+          allowDuplicate: true,
+        });
+
+      expect(dupRes.status).toBe(201);
+      expect(dupRes.body.playlist.songs.length).toBe(2);
+    });
+
+    it("should maintain backward-compatibility when reading legacy songs saved with url only", async () => {
       // Direct raw DB insert simulating an old MongoDB document created before provider integration
       await Playlist.findByIdAndUpdate(testPlaylist._id, {
         $push: {
@@ -240,6 +477,70 @@ describe("Music Provider Integration & Backward Compatibility Tests", () => {
         : updateRes.body.songs.find((s) => s._id === songId);
       expect(updatedSong.source.provider).toBe("youtube");
       expect(updatedSong.source.externalId).toBe("3JZ_D3ELwOQ");
+    });
+
+    it("should support mixed-provider playlist with direct, YouTube, Spotify, and legacy tracks simultaneously", async () => {
+      // 1. Add Direct Audio
+      await request(app)
+        .post(`/api/playlists/${testPlaylist._id}/songs`)
+        .set("Authorization", `Bearer ${token}`)
+        .send({
+          title: "Direct OGG Track",
+          artist: "Open Audio",
+          url: "https://upload.wikimedia.org/wikipedia/commons/4/4b/Canon_in_D.ogg",
+        });
+
+      // 2. Add YouTube Track
+      await request(app)
+        .post(`/api/playlists/${testPlaylist._id}/songs`)
+        .set("Authorization", `Bearer ${token}`)
+        .send({
+          title: "YouTube Video Track",
+          artist: "Rick Astley",
+          url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        });
+
+      // 3. Add Spotify Track
+      await request(app)
+        .post(`/api/playlists/${testPlaylist._id}/songs`)
+        .set("Authorization", `Bearer ${token}`)
+        .send({
+          title: "Spotify Track",
+          artist: "Muse",
+          url: "https://open.spotify.com/track/7ouMYWpwJ422jRcDASZB7P",
+        });
+
+      // 4. Retrieve complete playlist
+      const getRes = await request(app)
+        .get(`/api/playlists/${testPlaylist._id}`)
+        .set("Authorization", `Bearer ${token}`);
+
+      expect(getRes.status).toBe(200);
+      expect(getRes.body.songs.length).toBe(3);
+
+      const providers = getRes.body.songs.map((s) => s.source.provider);
+      expect(providers).toContain("direct");
+      expect(providers).toContain("youtube");
+      expect(providers).toContain("spotify");
+
+      // Verify correct positions
+      expect(getRes.body.songs[0].position).toBe(0);
+      expect(getRes.body.songs[1].position).toBe(1);
+      expect(getRes.body.songs[2].position).toBe(2);
+    });
+
+    it("should prevent User B from adding songs to User A's playlist (ownership enforcement)", async () => {
+      const res = await request(app)
+        .post(`/api/playlists/${testPlaylist._id}/songs`)
+        .set("Authorization", `Bearer ${userBToken}`)
+        .send({
+          title: "Intruder Track",
+          artist: "Intruder",
+          url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        });
+
+      expect(res.status).toBe(403);
+      expect(res.body.message).toContain("Not authorized");
     });
   });
 });

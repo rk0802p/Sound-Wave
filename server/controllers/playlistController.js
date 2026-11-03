@@ -4,7 +4,7 @@ const {
   sanitizePlaylistInput,
   sanitizeSongInput,
 } = require("../utils/validation");
-const { parseMusicSource } = require("../utils/musicLinkParser");
+const { parseMusicSource, resolveTrackMetadata } = require("../utils/musicLinkParser");
 
 // GET /api/playlists
 const getPlaylists = async (req, res, next) => {
@@ -134,25 +134,71 @@ const deletePlaylist = async (req, res, next) => {
   }
 };
 
+// GET /api/playlists/resolve/track?url=...
+const resolveTrack = async (req, res, next) => {
+  try {
+    const rawUrl = req.query.url || req.body?.url;
+    if (!rawUrl || typeof rawUrl !== "string" || !rawUrl.trim()) {
+      return res.status(400).json({ message: "URL parameter is required" });
+    }
+
+    const trimmedUrl = rawUrl.trim();
+    const parsed = parseMusicSource(trimmedUrl);
+
+    if (!parsed.isValid) {
+      return res.status(400).json({
+        message: parsed.error || "Invalid music source URL",
+        provider: parsed.provider,
+        url: trimmedUrl,
+      });
+    }
+
+    const resolved = await resolveTrackMetadata(trimmedUrl);
+    return res.status(200).json(resolved);
+  } catch (err) {
+    next(err);
+  }
+};
+
 // POST /api/playlists/:id/songs
 const addSong = async (req, res, next) => {
   try {
     const { title, artist, album, duration, url, source, coverImage, allowDuplicate } = req.body;
 
-    if (!title || typeof title !== "string" || !title.trim()) {
+    const rawUrl =
+      (typeof url === "string" ? url.trim() : "") ||
+      (source && typeof source.url === "string" ? source.url.trim() : "");
+
+    // Validate provider format if URL is provided
+    let parsedSource = null;
+    if (rawUrl) {
+      parsedSource = source && source.provider ? source : parseMusicSource(rawUrl);
+      if (!parsedSource.isValid && parsedSource.error) {
+        return res.status(400).json({ message: parsedSource.error });
+      }
+    }
+
+    let trimmedTitle = typeof title === "string" ? title.trim() : "";
+    let trimmedArtist = typeof artist === "string" ? artist.trim() : "";
+    let finalCoverImage = typeof coverImage === "string" ? coverImage.trim() : "";
+
+    // If title or artist is omitted and URL is provided, attempt auto-resolution
+    if ((!trimmedTitle || !trimmedArtist) && rawUrl) {
+      const resolved = await resolveTrackMetadata(rawUrl);
+      if (resolved) {
+        if (!trimmedTitle && resolved.title) trimmedTitle = resolved.title;
+        if (!trimmedArtist && resolved.artist) trimmedArtist = resolved.artist;
+        if (!finalCoverImage && resolved.coverImage) finalCoverImage = resolved.coverImage;
+      }
+    }
+
+    if (!trimmedTitle) {
       return res.status(400).json({ message: "Song title is required" });
     }
 
-    if (!artist || typeof artist !== "string" || !artist.trim()) {
+    if (!trimmedArtist) {
       return res.status(400).json({ message: "Song artist is required" });
     }
-
-    const trimmedTitle = title.trim();
-    const trimmedArtist = artist.trim();
-    const effectiveUrl =
-      (typeof url === "string" ? url.trim() : "") ||
-      (source && typeof source.url === "string" ? source.url.trim() : "");
-    const parsedSource = source && source.provider ? source : parseMusicSource(effectiveUrl);
 
     // Duplicate detection (by title+artist, or provider externalId, or identical URL)
     const existingIndex = req.playlist.songs.findIndex((s) => {
@@ -165,7 +211,7 @@ const addSong = async (req, res, next) => {
       const matchExternalId = Boolean(sExtId && targetExtId && sExtId === targetExtId);
 
       const sUrl = s.url || s.source?.url;
-      const matchUrl = Boolean(sUrl && effectiveUrl && sUrl.toLowerCase() === effectiveUrl.toLowerCase());
+      const matchUrl = Boolean(sUrl && rawUrl && sUrl.toLowerCase() === rawUrl.toLowerCase());
 
       return matchTitleArtist || matchExternalId || matchUrl;
     });
@@ -186,9 +232,9 @@ const addSong = async (req, res, next) => {
         album,
         duration: typeof duration === "number" ? duration : 0,
         position: nextPosition,
-        url: effectiveUrl,
+        url: rawUrl,
         source: parsedSource,
-        coverImage,
+        coverImage: finalCoverImage,
       },
       nextPosition
     );
@@ -232,17 +278,12 @@ const updateSong = async (req, res, next) => {
 
     if (typeof url === "string" || (source && typeof source === "object")) {
       const newUrl = typeof url === "string" ? url.trim() : source?.url?.trim() || song.url;
-      song.url = newUrl;
-      if (source && source.provider) {
-        song.source = {
-          provider: ["direct", "youtube", "spotify", "external"].includes(source.provider)
-            ? source.provider
-            : "direct",
-          externalId: typeof source.externalId === "string" ? source.externalId.trim() : null,
-          url: newUrl,
-        };
-      } else {
+      if (newUrl) {
         const parsed = parseMusicSource(newUrl);
+        if (!parsed.isValid && parsed.error) {
+          return res.status(400).json({ message: parsed.error });
+        }
+        song.url = newUrl;
         song.source = {
           provider: parsed.provider,
           externalId: parsed.externalId,
@@ -343,4 +384,5 @@ module.exports = {
   updateSong,
   deleteSong,
   reorderSongs,
+  resolveTrack,
 };

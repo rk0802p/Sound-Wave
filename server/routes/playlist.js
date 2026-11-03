@@ -15,7 +15,11 @@ const {
   updateSong,
   deleteSong,
   reorderSongs,
+  resolveTrack,
 } = require("../controllers/playlistController");
+
+// Track metadata resolution (must be before /:id)
+router.get("/resolve/track", verifyToken, resolveTrack);
 
 // Playlist CRUD routes
 router.get("/", verifyToken, getPlaylists);
