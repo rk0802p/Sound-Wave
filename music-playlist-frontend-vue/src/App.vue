@@ -11,11 +11,23 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import AppLayout from './components/layout/AppLayout.vue';
 
+import { useAuthStore } from './stores/auth';
+import { useSpotifyStore } from './stores/spotify';
+
 const route = useRoute();
+const authStore = useAuthStore();
+const spotifyStore = useSpotifyStore();
+
+onMounted(async () => {
+  if (authStore.isAuthenticated) {
+    await spotifyStore.checkStatus();
+  }
+  spotifyStore.handleCallbackParams();
+});
 
 const isAuthRoute = computed(() => {
   return route.path === '/login' || route.path === '/signup';

@@ -106,6 +106,49 @@
 
               <div class="popover-strip"></div>
 
+              <!-- Spotify Account Link Section -->
+              <div class="popover-spotify-section" style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.72rem;">
+                  <span class="font-mono" style="opacity: 0.7; font-weight: 700;">SPOTIFY</span>
+                  <span
+                    class="font-mono"
+                    style="font-size: 0.68rem; padding: 2px 6px; border-radius: 4px; font-weight: 700;"
+                    :style="spotifyStore.isConnected ? 'background: #1DB954; color: #000;' : 'background: rgba(255,255,255,0.1); color: inherit;'"
+                  >
+                    {{ spotifyStore.statusDescription }}
+                  </span>
+                </div>
+
+                <button
+                  v-if="!spotifyStore.isConnected"
+                  class="popover-action-btn font-mono"
+                  style="background: #1DB954; color: #000; border-color: #1DB954;"
+                  :disabled="spotifyStore.isLoading"
+                  @click="spotifyStore.connect"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.477 2 2 6.477 2 12c0 5.524 4.477 10 10 10s10-4.476 10-10c0-5.523-4.477-10-10-10zm4.586 14.424c-.18.295-.563.387-.857.207-2.35-1.434-5.308-1.758-8.793-.963-.335.077-.67-.133-.746-.468-.077-.334.132-.67.467-.746 3.808-.87 7.076-.51 9.721 1.113.294.18.388.563.208.857zm1.224-2.719c-.226.367-.708.482-1.075.257-2.69-1.653-6.79-2.131-9.97-1.165-.413.125-.849-.107-.975-.521-.125-.413.108-.849.52-.975 3.633-1.102 8.147-.568 11.243 1.328.367.226.482.708.257 1.076zm.105-2.835C14.692 8.95 9.375 8.775 6.297 9.71c-.494.15-1.018-.129-1.167-.622-.15-.494.129-1.018.622-1.167 3.533-1.073 9.404-.866 13.115 1.337.445.264.59.838.327 1.282-.264.443-.838.59-1.279.327z"/>
+                  </svg>
+                  <span>Connect Spotify</span>
+                </button>
+
+                <button
+                  v-else
+                  class="popover-action-btn font-mono"
+                  style="opacity: 0.85;"
+                  :disabled="spotifyStore.isLoading"
+                  @click="spotifyStore.disconnect"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                  <span>Disconnect Spotify</span>
+                </button>
+              </div>
+
+              <div class="popover-strip"></div>
+
               <button class="popover-action-btn logout font-mono" @click="handleLogout">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
@@ -154,6 +197,7 @@ import { useRouter } from 'vue-router';
 import { useAuthStore } from '../../stores/auth';
 import { usePlaylistStore } from '../../stores/playlist';
 import { usePlayerStore } from '../../stores/player';
+import { useSpotifyStore } from '../../stores/spotify';
 
 defineEmits(['open-create-modal']);
 
@@ -161,6 +205,7 @@ const router = useRouter();
 const authStore = useAuthStore();
 const playlistStore = usePlaylistStore();
 const playerStore = usePlayerStore();
+const spotifyStore = useSpotifyStore();
 
 const dropdownOpen = ref(false);
 const dropdownRef = ref(null);
