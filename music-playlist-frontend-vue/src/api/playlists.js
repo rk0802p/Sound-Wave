@@ -45,4 +45,9 @@ export const playlistApi = {
     const res = await api.put(`/api/playlists/${playlistId}/songs/reorder`, { songIds });
     return res.data;
   },
+
+  resolveTrack: async (url) => {
+    const res = await api.get('/api/playlists/resolve/track', { params: { url } });
+    return res.data;
+  },
 };

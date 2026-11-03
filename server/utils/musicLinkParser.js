@@ -143,6 +143,22 @@ const parseMusicSource = (rawUrl) => {
 
   const clean = url.toLowerCase();
 
+  // Reject dangerous or unsupported protocols
+  if (
+    clean.startsWith("javascript:") ||
+    clean.startsWith("vbscript:") ||
+    clean.startsWith("file:") ||
+    clean.startsWith("ftp:")
+  ) {
+    return {
+      provider: MUSIC_PROVIDERS.EXTERNAL,
+      externalId: null,
+      url,
+      isValid: false,
+      error: "Unsupported or insecure URL protocol",
+    };
+  }
+
   // 1. YouTube Domain Detection
   if (clean.includes("youtube.com") || clean.includes("youtu.be")) {
     const ytId = extractYouTubeId(url);

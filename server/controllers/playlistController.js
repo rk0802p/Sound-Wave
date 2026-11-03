@@ -277,7 +277,7 @@ const updateSong = async (req, res, next) => {
     if (typeof position === "number" && position >= 0) song.position = position;
 
     if (typeof url === "string" || (source && typeof source === "object")) {
-      const newUrl = typeof url === "string" ? url.trim() : source?.url?.trim() || song.url;
+      const newUrl = typeof url === "string" ? url.trim() : source?.url?.trim() ?? song.url;
       if (newUrl) {
         const parsed = parseMusicSource(newUrl);
         if (!parsed.isValid && parsed.error) {
@@ -288,6 +288,13 @@ const updateSong = async (req, res, next) => {
           provider: parsed.provider,
           externalId: parsed.externalId,
           url: newUrl,
+        };
+      } else {
+        song.url = "";
+        song.source = {
+          provider: "direct",
+          externalId: null,
+          url: "",
         };
       }
     }
@@ -344,6 +351,20 @@ const reorderSongs = async (req, res, next) => {
     req.playlist.songs.forEach((song) => {
       songMap.set(song._id.toString(), song);
     });
+
+    // Validate no duplicates in songIds and all IDs belong to playlist
+    const seenIds = new Set();
+    for (const rawId of songIds) {
+      const idStr = String(rawId);
+      if (seenIds.has(idStr)) {
+        return res.status(400).json({ message: "Duplicate song ID in reorder request" });
+      }
+      seenIds.add(idStr);
+
+      if (!songMap.has(idStr)) {
+        return res.status(400).json({ message: `Song ID '${idStr}' does not belong to this playlist` });
+      }
+    }
 
     const reordered = [];
     for (let i = 0; i < songIds.length; i++) {

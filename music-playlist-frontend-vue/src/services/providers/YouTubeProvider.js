@@ -1,5 +1,41 @@
 import { extractYouTubeVideoId } from './detector';
 
+let ytApiPromise = null;
+
+/**
+ * Shared singleton loader for the YouTube IFrame API script
+ */
+export const loadYouTubeIframeAPI = () => {
+  if (typeof window === 'undefined') return Promise.reject(new Error('Window is unavailable'));
+  if (window.YT && window.YT.Player) return Promise.resolve(window.YT);
+
+  if (!ytApiPromise) {
+    ytApiPromise = new Promise((resolve, reject) => {
+      const existingScript = document.getElementById('yt-iframe-api-script');
+      if (!existingScript) {
+        const tag = document.createElement('script');
+        tag.id = 'yt-iframe-api-script';
+        tag.src = 'https://www.youtube.com/iframe_api';
+        tag.onerror = () => reject(new Error('Failed to load YouTube IFrame API script'));
+        const firstScript = document.getElementsByTagName('script')[0];
+        if (firstScript && firstScript.parentNode) {
+          firstScript.parentNode.insertBefore(tag, firstScript);
+        } else {
+          document.head.appendChild(tag);
+        }
+      }
+
+      const prevCallback = window.onYouTubeIframeAPIReady;
+      window.onYouTubeIframeAPIReady = () => {
+        if (typeof prevCallback === 'function') prevCallback();
+        resolve(window.YT);
+      };
+    });
+  }
+
+  return ytApiPromise;
+};
+
 export class YouTubeProvider {
   constructor() {
     this.player = null;
@@ -9,6 +45,7 @@ export class YouTubeProvider {
     this.isReady = false;
     this.pendingVideoId = null;
     this.pendingPlay = false;
+    this.currentVideoId = null;
     this._volume = 80;
     this._muted = false;
   }
@@ -30,26 +67,9 @@ export class YouTubeProvider {
   }
 
   ensureIFrameAPI() {
-    if (typeof window === 'undefined') return;
-
-    if (window.YT && window.YT.Player) {
-      this.initPlayer();
-      return;
-    }
-
-    if (!document.getElementById('yt-iframe-api-script')) {
-      const tag = document.createElement('script');
-      tag.id = 'yt-iframe-api-script';
-      tag.src = 'https://www.youtube.com/iframe_api';
-      const firstScriptTag = document.getElementsByTagName('script')[0];
-      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-    }
-
-    const prevOnReady = window.onYouTubeIframeAPIReady;
-    window.onYouTubeIframeAPIReady = () => {
-      if (typeof prevOnReady === 'function') prevOnReady();
-      this.initPlayer();
-    };
+    loadYouTubeIframeAPI()
+      .then(() => this.initPlayer())
+      .catch((err) => this.callbacks.onError?.(err));
   }
 
   initPlayer() {
@@ -84,27 +104,42 @@ export class YouTubeProvider {
           disablekb: 1,
           fs: 0,
           rel: 0,
-          origin: window.location.origin,
+          origin: typeof window !== 'undefined' ? window.location.origin : '',
         },
         events: {
           onReady: () => {
             this.isReady = true;
             this.setVolume(this._volume / 100);
+            if (this._muted) this.setMuted(true);
+
             if (this.pendingVideoId) {
               const vid = this.pendingVideoId;
+              const shouldPlay = this.pendingPlay;
               this.pendingVideoId = null;
-              this.load({ url: `https://www.youtube.com/watch?v=${vid}` });
+              this.pendingPlay = false;
+
+              if (shouldPlay) {
+                this.player.loadVideoById(vid);
+              } else {
+                this.player.cueVideoById(vid);
+              }
             }
           },
           onStateChange: (event) => this.handleStateChange(event),
-          onError: (err) => {
-            this.callbacks.onError?.(err);
-          },
+          onError: (event) => this.handleError(event),
         },
       });
     } catch (e) {
       console.warn('YouTube player creation error:', e);
+      this.callbacks.onError?.(e);
     }
+  }
+
+  getVideoId(track) {
+    if (track?.source?.externalId) {
+      return track.source.externalId;
+    }
+    return extractYouTubeVideoId(track?.url || track?.source?.url);
   }
 
   handleStateChange(event) {
@@ -133,6 +168,24 @@ export class YouTubeProvider {
     }
   }
 
+  handleError(event) {
+    const code = event?.data;
+    let message = 'YouTube player encountered an error';
+
+    if (code === 2) {
+      message = 'Invalid YouTube video ID parameter';
+    } else if (code === 5) {
+      message = 'HTML5 player error on YouTube stream';
+    } else if (code === 100) {
+      message = 'YouTube video not found, private, or removed';
+    } else if (code === 101 || code === 150) {
+      message = 'Content owner does not allow embedded YouTube playback';
+    }
+
+    this.stopTimeTracking();
+    this.callbacks.onError?.(new Error(message));
+  }
+
   startTimeTracking() {
     this.stopTimeTracking();
     this.timeUpdateTimer = setInterval(() => {
@@ -155,13 +208,16 @@ export class YouTubeProvider {
   }
 
   async load(track) {
-    const videoId = extractYouTubeVideoId(track?.url);
+    const videoId = this.getVideoId(track);
     if (!videoId) {
-      throw new Error('Invalid YouTube video link');
+      throw new Error('Invalid YouTube video link or missing video identifier');
     }
+
+    this.currentVideoId = videoId;
 
     if (!this.isReady || !this.player || typeof this.player.loadVideoById !== 'function') {
       this.pendingVideoId = videoId;
+      this.pendingPlay = true;
       return;
     }
 
@@ -176,6 +232,8 @@ export class YouTubeProvider {
   play() {
     if (this.player && typeof this.player.playVideo === 'function') {
       this.player.playVideo();
+    } else {
+      this.pendingPlay = true;
     }
   }
 
@@ -213,14 +271,19 @@ export class YouTubeProvider {
 
   destroy() {
     this.stopTimeTracking();
+    this.pendingVideoId = null;
+    this.pendingPlay = false;
+    this.currentVideoId = null;
+
     if (this.player && typeof this.player.destroy === 'function') {
       try {
         this.player.destroy();
       } catch {
-        // Safe destroy ignore
+        // Safe ignore
       }
       this.player = null;
     }
+
     const container = document.getElementById(this.containerId);
     if (container) {
       container.remove();

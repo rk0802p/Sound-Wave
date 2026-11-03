@@ -40,8 +40,15 @@ export class UnifiedSoundController {
   }
 
   detectType(track) {
-    if (!track?.url) return 'direct';
-    const type = detectProviderType(track.url);
+    if (track?.source?.provider) {
+      const p = String(track.source.provider).toLowerCase();
+      if (p === 'youtube' || p === 'spotify' || p === 'direct') {
+        return p;
+      }
+    }
+    const rawUrl = track?.url || track?.source?.url || '';
+    if (!rawUrl) return 'direct';
+    const type = detectProviderType(rawUrl);
     if (type === 'youtube') return 'youtube';
     if (type === 'spotify') return 'spotify';
     return 'direct';
@@ -50,10 +57,13 @@ export class UnifiedSoundController {
   async loadAndPlay(track) {
     const targetType = this.detectType(track);
 
-    // Switch providers if necessary
+    // Cleanly switch providers if target provider changes
     if (targetType !== this.activeType) {
       if (this.activeProvider) {
         this.activeProvider.pause();
+        if (typeof this.activeProvider.destroy === 'function' && this.activeType === 'spotify') {
+          this.activeProvider.destroy();
+        }
       }
       this.activeType = targetType;
       this.activeProvider = this.providers[targetType];
@@ -100,14 +110,16 @@ export class UnifiedSoundController {
   }
 
   getCapabilities() {
-    return this.activeProvider?.getCapabilities() || {
-      canSeek: true,
-      canVolume: true,
-      hasTimeEvents: true,
-      isEmbedded: false,
-      providerName: 'Direct Audio',
-      badge: 'FLAC/MP3',
-    };
+    return (
+      this.activeProvider?.getCapabilities() || {
+        canSeek: true,
+        canVolume: true,
+        hasTimeEvents: true,
+        isEmbedded: false,
+        providerName: 'Direct Audio',
+        badge: 'FLAC/MP3',
+      }
+    );
   }
 
   destroy() {

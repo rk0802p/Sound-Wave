@@ -46,12 +46,18 @@ export const usePlayerStore = defineStore('player', {
       return Math.min(100, Math.max(0, (state.currentTime / state.duration) * 100));
     },
     isCurrentTrackPlayable: (state) => {
-      if (!state.currentTrack?.url) return false;
-      const type = detectProviderType(state.currentTrack.url);
+      if (!state.currentTrack) return false;
+      const type =
+        state.currentTrack.source?.provider ||
+        (state.currentTrack.url ? detectProviderType(state.currentTrack.url) : null);
       return type === 'direct' || type === 'youtube' || type === 'spotify';
     },
     currentProviderType: (state) => {
-      if (!state.currentTrack?.url) return 'direct';
+      if (!state.currentTrack) return 'direct';
+      if (state.currentTrack.source?.provider) {
+        return state.currentTrack.source.provider;
+      }
+      if (!state.currentTrack.url) return 'direct';
       return detectProviderType(state.currentTrack.url);
     },
     hasNext: (state) => {
@@ -100,7 +106,7 @@ export const usePlayerStore = defineStore('player', {
           console.warn('SoundController error:', err);
           this.isPlaying = false;
           this.isLoading = false;
-          this.error = 'Audio source could not be played.';
+          this.error = typeof err === 'string' ? err : (err?.message || 'Audio source could not be played.');
         },
         onCapabilities: (caps) => {
           this.providerCapabilities = { ...this.providerCapabilities, ...caps };
@@ -112,27 +118,54 @@ export const usePlayerStore = defineStore('player', {
       this.isEngineReady = true;
     },
 
-    async playTrack(track, queue = null, index = null, playlistId = null) {
+    async playTrack(track, queueOrPlaylist = null, indexOrQueue = null, playlistId = null) {
       this.init();
       if (!track) return;
 
       this.error = null;
 
+      let queue = null;
+      let targetIndex = null;
+      let targetPlaylistId = playlistId;
+
+      if (Array.isArray(queueOrPlaylist)) {
+        queue = queueOrPlaylist;
+        targetIndex = typeof indexOrQueue === 'number' ? indexOrQueue : null;
+      } else if (queueOrPlaylist && typeof queueOrPlaylist === 'object') {
+        targetPlaylistId = queueOrPlaylist._id || targetPlaylistId;
+        if (Array.isArray(indexOrQueue)) {
+          queue = indexOrQueue;
+        } else if (Array.isArray(queueOrPlaylist.songs)) {
+          queue = queueOrPlaylist.songs;
+        }
+      }
+
       if (Array.isArray(queue) && queue.length > 0) {
         this.queue = [...queue];
-        this.queueIndex = index !== null ? index : queue.findIndex((t) => t._id === track._id);
-      } else if (!this.queue.some((t) => t._id === track._id)) {
+        const foundIndex = this.queue.findIndex(
+          (t) => (t._id && track._id ? t._id === track._id : t === track)
+        );
+        this.queueIndex =
+          typeof targetIndex === 'number' && targetIndex >= 0
+            ? targetIndex
+            : (foundIndex !== -1 ? foundIndex : 0);
+      } else if (!this.queue.some((t) => (t._id && track._id ? t._id === track._id : t === track))) {
         this.queue = [track];
         this.queueIndex = 0;
       }
 
       this.currentTrack = track;
       this.currentTrackId = track._id;
-      if (playlistId) this.currentPlaylistId = playlistId;
+      if (targetPlaylistId) this.currentPlaylistId = targetPlaylistId;
 
-      const providerType = detectProviderType(track.url);
+      const providerType =
+        track.source?.provider ||
+        (track.url ? detectProviderType(track.url) : 'direct');
+
       if (providerType === 'spotify') {
-        const embedUrl = extractSpotifyEmbedUrl(track.url);
+        const embedUrl = track.source?.externalId
+          ? `https://open.spotify.com/embed/track/${track.source.externalId}?utm_source=generator&theme=0`
+          : extractSpotifyEmbedUrl(track.url);
         this.providerCapabilities = {
           canSeek: false,
           canVolume: false,
@@ -177,9 +210,28 @@ export const usePlayerStore = defineStore('player', {
         if (providerType === 'external') {
           this.error = 'External track link. Click "Open Link" to view in original player.';
         } else {
-          this.error = 'Playback was prevented. Click play to resume.';
+          this.error = typeof err === 'string' ? err : (err?.message || 'Playback was prevented. Click play to resume.');
         }
       }
+    },
+
+    async playPlaylist(playlist, startIndex = 0) {
+      if (!playlist || !Array.isArray(playlist.songs) || playlist.songs.length === 0) return;
+      const validIndex = Math.max(0, Math.min(startIndex, playlist.songs.length - 1));
+      const track = playlist.songs[validIndex];
+      await this.playTrack(track, playlist.songs, validIndex, playlist._id);
+    },
+
+    nextTrack() {
+      return this.next();
+    },
+
+    prevTrack() {
+      return this.previous();
+    },
+
+    previousTrack() {
+      return this.previous();
     },
 
     async togglePlay() {

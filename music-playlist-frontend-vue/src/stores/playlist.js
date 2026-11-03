@@ -66,6 +66,7 @@ export const usePlaylistStore = defineStore('playlist', {
   state: () => ({
     playlists: getInitialOfflinePlaylists(),
     currentPlaylist: null,
+    requestedPlaylistId: null,
     isLoading: false,
     isMutating: false,
     error: null,
@@ -110,19 +111,28 @@ export const usePlaylistStore = defineStore('playlist', {
     },
 
     async fetchPlaylist(id) {
-      const match = this.playlists.find((p) => p._id === id);
-      if (match) {
-        this.currentPlaylist = match;
+      this.requestedPlaylistId = id;
+      // Only retain currentPlaylist if it already matches the requested ID
+      if (this.currentPlaylist && this.currentPlaylist._id !== id) {
+        const cachedMatch = this.playlists.find((p) => p._id === id);
+        this.currentPlaylist = cachedMatch || null;
       }
       this.isLoading = !this.currentPlaylist;
       this.error = null;
+
       try {
         const data = await playlistApi.getPlaylistById(id);
-        this.currentPlaylist = data;
+        if (this.requestedPlaylistId === id) {
+          this.currentPlaylist = data;
+          const idx = this.playlists.findIndex((p) => p._id === id);
+          if (idx !== -1) {
+            this.playlists[idx] = data;
+          }
+        }
         return data;
       } catch (err) {
         if (!err.response || err.code === 'ERR_NETWORK') {
-          if (this.currentPlaylist) return this.currentPlaylist;
+          if (this.currentPlaylist && this.currentPlaylist._id === id) return this.currentPlaylist;
           const offlineList = getInitialOfflinePlaylists();
           const fallback = offlineList.find((p) => p._id === id);
           if (fallback) {
@@ -130,14 +140,20 @@ export const usePlaylistStore = defineStore('playlist', {
             return fallback;
           }
         }
-        if (!this.currentPlaylist) {
-          this.error = err.response?.data?.message || 'Failed to fetch playlist';
-          throw err;
-        }
-        return this.currentPlaylist;
+        this.error = err.response?.data?.message || 'Failed to fetch playlist';
+        throw err;
       } finally {
-        this.isLoading = false;
+        if (this.requestedPlaylistId === id) {
+          this.isLoading = false;
+        }
       }
+    },
+
+    async resolveTrack(url) {
+      if (!url || typeof url !== 'string' || !url.trim()) {
+        throw new Error('URL is required to resolve track metadata');
+      }
+      return await playlistApi.resolveTrack(url.trim());
     },
 
     async createPlaylist(payload) {
@@ -325,6 +341,8 @@ export const usePlaylistStore = defineStore('playlist', {
     },
 
     async reorderSongs(playlistId, songIds) {
+      this.isMutating = true;
+      this.error = null;
       if (this.currentPlaylist && this.currentPlaylist._id === playlistId) {
         const songMap = new Map((this.currentPlaylist.songs || []).map((s) => [s._id, s]));
         const reordered = songIds
@@ -338,6 +356,13 @@ export const usePlaylistStore = defineStore('playlist', {
 
       try {
         const res = await playlistApi.reorderSongs(playlistId, songIds);
+        if (res.playlist) {
+          this.currentPlaylist = res.playlist;
+          const idx = this.playlists.findIndex((p) => p._id === playlistId);
+          if (idx !== -1) {
+            this.playlists[idx] = res.playlist;
+          }
+        }
         saveOfflinePlaylists(this.playlists);
         return res;
       } catch (err) {
@@ -350,7 +375,15 @@ export const usePlaylistStore = defineStore('playlist', {
           }
         }
         this.error = err.response?.data?.message || 'Failed to reorder songs';
+        // Rollback by fetching fresh state
+        if (this.currentPlaylist && this.currentPlaylist._id === playlistId) {
+          try {
+            await this.fetchPlaylist(playlistId);
+          } catch {}
+        }
         throw err;
+      } finally {
+        this.isMutating = false;
       }
     },
   },

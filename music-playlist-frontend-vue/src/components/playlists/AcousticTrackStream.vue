@@ -109,9 +109,9 @@
             <span class="strip-title font-display">{{ song.title }}</span>
             <span
               class="strip-provider-pill font-mono"
-              :class="getProviderPillClass(song.url)"
+              :class="getProviderPillClass(song)"
             >
-              {{ getProviderLabel(song.url) }}
+              {{ getProviderLabel(song) }}
             </span>
           </div>
           <div class="strip-secondary-row font-mono">
@@ -262,17 +262,21 @@ const isCurrentTrack = (song) => {
   );
 };
 
-const getProviderLabel = (url) => {
-  if (!url) return 'MP3';
-  const type = detectProviderType(url);
+const getProviderLabel = (input) => {
+  if (!input) return 'MP3';
+  const type = typeof input === 'object'
+    ? (input.source?.provider || (input.url ? detectProviderType(input.url) : 'direct'))
+    : detectProviderType(input);
   if (type === 'youtube') return 'YOUTUBE';
   if (type === 'spotify') return 'SPOTIFY';
   return 'LOSSLESS';
 };
 
-const getProviderPillClass = (url) => {
-  if (!url) return 'prov-direct';
-  const type = detectProviderType(url);
+const getProviderPillClass = (input) => {
+  if (!input) return 'prov-direct';
+  const type = typeof input === 'object'
+    ? (input.source?.provider || (input.url ? detectProviderType(input.url) : 'direct'))
+    : detectProviderType(input);
   return `prov-${type}`;
 };
 

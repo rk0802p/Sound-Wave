@@ -146,7 +146,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue';
+import { ref, reactive, computed, watch } from 'vue';
 import { usePlaylistStore } from '../../stores/playlist';
 import { useToastStore } from '../../stores/toast';
 import { CURATED_DEMO_TRACKS, formatDuration } from '../../data/demoTracks';
@@ -182,7 +182,11 @@ const previewProviderType = computed(() => {
   return detectProviderType(form.url);
 });
 
+let resolveDebounceTimer = null;
+const isResolving = ref(false);
+
 const previewProviderName = computed(() => {
+  if (isResolving.value) return 'RESOLVING LINK...';
   const t = previewProviderType.value;
   if (t === 'youtube') return 'YOUTUBE STREAM';
   if (t === 'spotify') return 'SPOTIFY EMBED';
@@ -196,6 +200,43 @@ const previewProviderClass = computed(() => {
   if (t === 'spotify') return 'prov-sp';
   return 'prov-flac';
 });
+
+watch(
+  () => form.url,
+  (newVal) => {
+    if (resolveDebounceTimer) clearTimeout(resolveDebounceTimer);
+    const trimmed = (newVal || '').trim();
+    if (!trimmed) return;
+
+    const prov = detectProviderType(trimmed);
+    if (prov === 'youtube' || prov === 'spotify') {
+      resolveDebounceTimer = setTimeout(async () => {
+        isResolving.value = true;
+        try {
+          const resolved = await playlistStore.resolveTrack(trimmed);
+          if (resolved) {
+            if (resolved.title && (!form.title.trim() || form.title === 'Untitled Track')) {
+              form.title = resolved.title;
+            }
+            if (resolved.artist && (!form.artist.trim() || form.artist === 'Unknown Artist')) {
+              form.artist = resolved.artist;
+            }
+            if (resolved.coverImage && !form.coverImage) {
+              form.coverImage = resolved.coverImage;
+            }
+            if (resolved.duration && (!form.duration || form.duration === 0)) {
+              form.duration = resolved.duration;
+            }
+          }
+        } catch (e) {
+          // Fallback: user retains manual entry
+        } finally {
+          isResolving.value = false;
+        }
+      }, 450);
+    }
+  }
+);
 
 const submitSong = async (allowDuplicate = false) => {
   if (!form.title.trim() || !form.artist.trim()) {
