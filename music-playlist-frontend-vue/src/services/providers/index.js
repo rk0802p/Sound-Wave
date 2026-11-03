@@ -42,15 +42,15 @@ export class UnifiedSoundController {
   detectType(track) {
     if (track?.source?.provider) {
       const p = String(track.source.provider).toLowerCase();
-      if (p === 'youtube' || p === 'spotify' || p === 'direct') {
+      if (p === 'youtube' || p === 'spotify') {
         return p;
       }
+      return 'direct';
     }
     const rawUrl = track?.url || track?.source?.url || '';
     if (!rawUrl) return 'direct';
     const type = detectProviderType(rawUrl);
-    if (type === 'youtube') return 'youtube';
-    if (type === 'spotify') return 'spotify';
+    if (type === 'youtube' || type === 'spotify') return type;
     return 'direct';
   }
 
@@ -71,7 +71,7 @@ export class UnifiedSoundController {
       this.activeProvider.setMuted(this._muted);
     }
 
-    const caps = this.activeProvider.getCapabilities();
+    const caps = this.activeProvider.getCapabilities(track);
     this.callbacks.onCapabilities?.(caps);
 
     return this.activeProvider.load(track);

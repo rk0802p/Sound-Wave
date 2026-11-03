@@ -5,7 +5,7 @@ const sourceSchema = new mongoose.Schema(
   {
     provider: {
       type: String,
-      enum: ["direct", "youtube", "spotify", "external"],
+      enum: ["direct", "youtube", "spotify", "archive", "jamendo", "audius", "external"],
       default: "direct",
     },
     externalId: {
@@ -58,6 +58,21 @@ const songSchema = new mongoose.Schema(
       default: () => ({ provider: "direct", externalId: null, url: "" }),
     },
     coverImage: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    license: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    licenseUrl: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    attribution: {
       type: String,
       trim: true,
       default: "",

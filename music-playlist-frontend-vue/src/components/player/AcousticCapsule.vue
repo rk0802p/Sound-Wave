@@ -272,7 +272,9 @@ const isEmbeddedProvider = computed(() => playerStore.providerCapabilities.isEmb
 const providerLabel = computed(() => {
   const prov = playerStore.currentProviderType;
   if (prov === 'youtube') return 'YOUTUBE';
-  if (prov === 'spotify') return 'SPOTIFY';
+  if (prov === 'spotify') {
+    return playerStore.providerCapabilities.isEmbedded ? 'SPOTIFY EMBED' : 'SPOTIFY PREMIUM';
+  }
   return 'LOSSLESS MP3';
 });
 

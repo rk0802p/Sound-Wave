@@ -1,3 +1,4 @@
+const path = require("path");
 const mongoose = require("mongoose");
 const { MongoMemoryServer } = require("mongodb-memory-server");
 
@@ -6,6 +7,7 @@ let mongoServer;
 process.env.NODE_ENV = "test";
 process.env.JWT_SECRET = "super_secret_test_jwt_key_2026";
 process.env.JWT_EXPIRES_IN = "7d";
+process.env.MONGOMS_DOWNLOAD_DIR = path.join(__dirname, "../node_modules/.cache/mongodb-memory-server");
 
 const connectTestDB = async () => {
   mongoServer = await MongoMemoryServer.create();

@@ -163,7 +163,7 @@ const resolveTrack = async (req, res, next) => {
 // POST /api/playlists/:id/songs
 const addSong = async (req, res, next) => {
   try {
-    const { title, artist, album, duration, url, source, coverImage, allowDuplicate } = req.body;
+    const { title, artist, album, duration, url, source, coverImage, allowDuplicate, license, licenseUrl, attribution } = req.body;
 
     const rawUrl =
       (typeof url === "string" ? url.trim() : "") ||
@@ -182,7 +182,8 @@ const addSong = async (req, res, next) => {
           message: `Provider mismatch: URL belongs to '${canonical.provider}' but source.provider was specified as '${source.provider}'`,
         });
       }
-      if (source && source.externalId && canonical.externalId && source.externalId !== canonical.externalId) {
+      const clientExtId = source && source.externalId ? source.externalId.replace(new RegExp('^' + canonical.provider + ':'), '') : null;
+      if (source && clientExtId && canonical.externalId && clientExtId !== canonical.externalId) {
         return res.status(400).json({
           message: `External ID mismatch for ${canonical.provider} URL: expected '${canonical.externalId}', received '${source.externalId}'`,
         });
@@ -251,6 +252,9 @@ const addSong = async (req, res, next) => {
         url: rawUrl,
         source: parsedSource,
         coverImage: finalCoverImage,
+        license,
+        licenseUrl,
+        attribution,
       },
       nextPosition
     );
@@ -323,6 +327,9 @@ const updateSong = async (req, res, next) => {
     if (typeof duration === "number" && duration >= 0) song.duration = duration;
     if (typeof coverImage === "string") song.coverImage = coverImage.trim();
     if (typeof position === "number" && position >= 0) song.position = position;
+    if (typeof req.body.license === "string") song.license = req.body.license.trim();
+    if (typeof req.body.licenseUrl === "string") song.licenseUrl = req.body.licenseUrl.trim();
+    if (typeof req.body.attribution === "string") song.attribution = req.body.attribution.trim();
 
     if (typeof url === "string" || (source && typeof source === "object")) {
       const newUrl = typeof url === "string" ? url.trim() : (source?.url?.trim() ?? song.url);

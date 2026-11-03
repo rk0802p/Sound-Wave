@@ -62,7 +62,7 @@ const sanitizeSongInput = (song, fallbackPosition = 0) => {
   let parsedSource;
   if (song.source && typeof song.source === "object" && song.source.provider) {
     parsedSource = {
-      provider: ["direct", "youtube", "spotify", "external"].includes(song.source.provider)
+      provider: ["direct", "youtube", "spotify", "archive", "jamendo", "audius", "external"].includes(song.source.provider)
         ? song.source.provider
         : "direct",
       externalId: typeof song.source.externalId === "string" ? song.source.externalId.trim() : null,
@@ -82,6 +82,9 @@ const sanitizeSongInput = (song, fallbackPosition = 0) => {
     url: effectiveUrl,
     source: parsedSource,
     coverImage: typeof song.coverImage === "string" ? song.coverImage.trim() : "",
+    license: typeof song.license === "string" ? song.license.trim() : "",
+    licenseUrl: typeof song.licenseUrl === "string" ? song.licenseUrl.trim() : "",
+    attribution: typeof song.attribution === "string" ? song.attribution.trim() : "",
     addedAt: song.addedAt ? new Date(song.addedAt) : new Date(),
   };
 };

@@ -14,6 +14,9 @@ const MUSIC_PROVIDERS = {
   DIRECT: "direct",
   YOUTUBE: "youtube",
   SPOTIFY: "spotify",
+  ARCHIVE: "archive",
+  JAMENDO: "jamendo",
+  AUDIUS: "audius",
   EXTERNAL: "external",
 };
 
@@ -219,7 +222,44 @@ const parseMusicSource = (rawUrl) => {
     };
   }
 
-  // 3. Direct audio file
+  // 3. Internet Archive Detection
+  if (clean.includes("archive.org")) {
+    const match = url.match(/archive\.org\/(?:details|download)\/([a-zA-Z0-9_\-\.]+)/i);
+    const id = match ? match[1] : null;
+    return {
+      provider: MUSIC_PROVIDERS.ARCHIVE,
+      externalId: id,
+      url,
+      isValid: Boolean(id),
+      error: id ? null : "Invalid Internet Archive URL: missing item identifier",
+    };
+  }
+
+  // 4. Jamendo Detection
+  if (clean.includes("jamendo.com")) {
+    const match = url.match(/jamendo\.com\/(?:track\/)?([0-9]+)/i);
+    const id = match ? match[1] : null;
+    return {
+      provider: MUSIC_PROVIDERS.JAMENDO,
+      externalId: id,
+      url,
+      isValid: Boolean(id),
+      error: id ? null : "Invalid Jamendo URL: missing track ID",
+    };
+  }
+
+  // 5. Audius Detection
+  if (clean.includes("audius.co")) {
+    return {
+      provider: MUSIC_PROVIDERS.AUDIUS,
+      externalId: null,
+      url,
+      isValid: true,
+      error: null,
+    };
+  }
+
+  // 6. Direct audio file
   if (isDirectAudioUrl(url)) {
     return {
       provider: MUSIC_PROVIDERS.DIRECT,
@@ -474,6 +514,22 @@ const resolveTrackMetadata = async (url, timeoutMs = 3500) => {
       duration: 0,
       isAvailable: meta.isAvailable,
       error: meta.error,
+    };
+  }
+
+  // Archive.org Resolution
+  if (parsed.provider === MUSIC_PROVIDERS.ARCHIVE) {
+    const rawId = parsed.externalId || "archive-track";
+    return {
+      provider: parsed.provider,
+      externalId: parsed.externalId,
+      url: parsed.url,
+      title: decodeURIComponent(rawId).replace(/[-_]/g, " "),
+      artist: "Internet Archive",
+      coverImage: `https://archive.org/services/img/${encodeURIComponent(rawId)}`,
+      duration: 0,
+      isAvailable: true,
+      error: null,
     };
   }
 

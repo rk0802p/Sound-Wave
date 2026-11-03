@@ -4,20 +4,38 @@ export class DirectAudioProvider {
     this.handlers = new Map();
     this.callbacks = {};
     this.isInitialized = false;
+    this.currentTrack = null;
 
     if (this.audio) {
       this.audio.preload = 'metadata';
+      if (typeof window !== 'undefined') {
+        window._soundwaveAudio = this.audio;
+      }
     }
   }
 
-  getCapabilities() {
+  getCapabilities(track = this.currentTrack) {
+    let badge = 'FLAC/MP3';
+    let providerName = 'Direct Audio';
+    const p = track?.source?.provider || track?.provider;
+    if (p === 'archive') {
+      badge = 'ARCHIVE';
+      providerName = 'Internet Archive Stream';
+    } else if (p === 'jamendo') {
+      badge = 'JAMENDO';
+      providerName = 'Jamendo CC Stream';
+    } else if (p === 'audius') {
+      badge = 'AUDIUS';
+      providerName = 'Audius Stream';
+    }
+
     return {
       canSeek: true,
       canVolume: true,
       hasTimeEvents: true,
       isEmbedded: false,
-      providerName: 'Direct Audio',
-      badge: 'FLAC/MP3',
+      providerName,
+      badge,
       embedUrl: null,
     };
   }
@@ -46,13 +64,15 @@ export class DirectAudioProvider {
 
   async load(track) {
     if (!this.audio) return;
-    const url = track?.url;
+    this.currentTrack = track;
+    const url = track?.url || track?.streamUrl || track?.source?.url;
     if (!url) throw new Error('No audio URL provided');
 
     if (this.audio.src !== url) {
       this.audio.src = url;
       this.audio.load();
     }
+    this.callbacks.onCapabilities?.(this.getCapabilities(track));
     return this.play();
   }
 
@@ -107,6 +127,7 @@ export class DirectAudioProvider {
     });
     this.handlers.clear();
     this.audio.src = '';
+    this.currentTrack = null;
     this.isInitialized = false;
   }
 }

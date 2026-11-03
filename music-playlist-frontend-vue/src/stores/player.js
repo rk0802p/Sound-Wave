@@ -50,7 +50,7 @@ export const usePlayerStore = defineStore('player', {
       const type =
         state.currentTrack.source?.provider ||
         (state.currentTrack.url ? detectProviderType(state.currentTrack.url) : null);
-      return type === 'direct' || type === 'youtube' || type === 'spotify';
+      return ['direct', 'youtube', 'spotify', 'archive', 'jamendo', 'audius'].includes(type);
     },
     currentProviderType: (state) => {
       if (!state.currentTrack) return 'direct';
@@ -185,6 +185,36 @@ export const usePlayerStore = defineStore('player', {
           badge: 'YouTube',
           embedUrl: null,
         };
+      } else if (providerType === 'archive') {
+        this.providerCapabilities = {
+          canSeek: true,
+          canVolume: true,
+          hasTimeEvents: true,
+          isEmbedded: false,
+          providerName: 'Internet Archive',
+          badge: 'ARCHIVE',
+          embedUrl: null,
+        };
+      } else if (providerType === 'jamendo') {
+        this.providerCapabilities = {
+          canSeek: true,
+          canVolume: true,
+          hasTimeEvents: true,
+          isEmbedded: false,
+          providerName: 'Jamendo CC',
+          badge: 'JAMENDO',
+          embedUrl: null,
+        };
+      } else if (providerType === 'audius') {
+        this.providerCapabilities = {
+          canSeek: true,
+          canVolume: true,
+          hasTimeEvents: true,
+          isEmbedded: false,
+          providerName: 'Audius Stream',
+          badge: 'AUDIUS',
+          embedUrl: null,
+        };
       } else {
         this.providerCapabilities = {
           canSeek: true,
@@ -203,7 +233,7 @@ export const usePlayerStore = defineStore('player', {
       try {
         this.isLoading = true;
         await soundController.loadAndPlay(track);
-        if (providerType === 'spotify') {
+        if (providerType === 'spotify' && this.providerCapabilities.isEmbedded) {
           this.isPlaying = false;
           this.isLoading = false;
         }
@@ -244,6 +274,11 @@ export const usePlayerStore = defineStore('player', {
         if (this.queue.length > 0) {
           await this.playTrack(this.queue[0], this.queue, 0);
         }
+        return;
+      }
+
+      if (this.currentProviderType === 'spotify' && this.providerCapabilities.isEmbedded) {
+        this.error = 'Spotify playback must be controlled directly inside the Spotify embed player.';
         return;
       }
 

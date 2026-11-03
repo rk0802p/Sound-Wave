@@ -9,8 +9,23 @@ export const detectProviderType = (url) => {
   }
 
   // Spotify detection
-  if (clean.includes('spotify.com')) {
+  if (clean.includes('spotify.com') || clean.startsWith('spotify:')) {
     return 'spotify';
+  }
+
+  // Internet Archive detection
+  if (clean.includes('archive.org')) {
+    return 'archive';
+  }
+
+  // Jamendo detection
+  if (clean.includes('jamendo.com')) {
+    return 'jamendo';
+  }
+
+  // Audius detection
+  if (clean.includes('audius.co')) {
+    return 'audius';
   }
 
   // Direct playable media extensions

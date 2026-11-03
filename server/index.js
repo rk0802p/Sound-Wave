@@ -8,6 +8,8 @@ const cors = require("cors");
 const authRoutes = require("./routes/auth");
 const protectedRoutes = require("./routes/protected");
 const playlistRoutes = require("./routes/playlist");
+const spotifyRoutes = require("./routes/spotify");
+const searchRoutes = require("./routes/search");
 
 const app = express();
 
@@ -167,6 +169,8 @@ app.use(async (req, res, next) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/protected", protectedRoutes);
 app.use("/api/playlists", playlistRoutes);
+app.use("/api/spotify", spotifyRoutes);
+app.use("/api/search", searchRoutes);
 
 // 404 Handler
 app.use((req, res) => {

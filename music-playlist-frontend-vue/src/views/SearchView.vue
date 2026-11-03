@@ -3,8 +3,8 @@
     <!-- 1. Editorial Search Header Stage -->
     <header class="pg-search-header">
       <div class="search-kicker-strip font-mono">
-        <span class="search-kicker-tag">EXPLORATION</span>
-        <span class="search-kicker-sub">DISCOVER MIXTAPES, TRACKS & SONIC GENRES</span>
+        <span class="search-kicker-tag">MULTI-SOURCE DISCOVERY</span>
+        <span class="search-kicker-sub">INTERNET ARCHIVE • OPEN AUDIO NETWORKS • MIXTAPES</span>
       </div>
 
       <!-- Massive Editorial Search Bar -->
@@ -41,17 +41,24 @@
         </button>
         <button
           class="category-tab-btn"
+          :class="{ 'is-active': activeCategory === 'online' }"
+          @click="activeCategory === 'online'"
+        >
+          Online Discoveries ({{ onlineTracks.length }})
+        </button>
+        <button
+          class="category-tab-btn"
           :class="{ 'is-active': activeCategory === 'playlists' }"
-          @click="activeCategory = 'playlists'"
+          @click="activeCategory === 'playlists'"
         >
           Mixtapes ({{ matchedPlaylists.length }})
         </button>
         <button
           class="category-tab-btn"
           :class="{ 'is-active': activeCategory === 'tracks' }"
-          @click="activeCategory = 'tracks'"
+          @click="activeCategory === 'tracks'"
         >
-          Tracks ({{ matchedTracks.length }})
+          Saved Tracks ({{ matchedTracks.length }})
         </button>
       </div>
     </header>
@@ -95,7 +102,10 @@
     </div>
 
     <!-- 3. Zero Results State -->
-    <div v-else-if="matchedPlaylists.length === 0 && matchedTracks.length === 0" class="pg-empty-search">
+    <div
+      v-else-if="!isSearchingOnline && matchedPlaylists.length === 0 && matchedTracks.length === 0 && onlineTracks.length === 0"
+      class="pg-empty-search"
+    >
       <div class="empty-glyph font-display">00</div>
       <h3 class="empty-title font-display">No Results for "{{ query }}"</h3>
       <p class="empty-text">Check your spelling or explore one of the curated sound portals below.</p>
@@ -104,8 +114,119 @@
 
     <!-- 4. Active Results State -->
     <div v-else class="pg-results-stage">
-      <!-- Matched Mixtapes Section -->
-      <section v-if="(activeCategory === 'all' || activeCategory === 'playlists') && matchedPlaylists.length" class="results-section">
+      <!-- Section A: Online Multi-Source Music Discoveries -->
+      <section
+        v-if="(activeCategory === 'all' || activeCategory === 'online')"
+        class="results-section"
+      >
+        <div class="results-header">
+          <div class="header-with-status">
+            <h4 class="results-title font-display">Online Music Discoveries</h4>
+            <!-- Provider Status Badges -->
+            <div class="provider-status-strip font-mono">
+              <span
+                class="status-indicator"
+                :class="getProviderStatusClass('archive')"
+                title="Internet Archive Audio Network"
+              >
+                ARCHIVE: {{ getProviderStatusLabel('archive') }}
+              </span>
+              <span
+                class="status-indicator"
+                :class="getProviderStatusClass('jamendo')"
+                title="Jamendo Creative Commons Catalog"
+              >
+                JAMENDO: {{ getProviderStatusLabel('jamendo') }}
+              </span>
+              <span
+                class="status-indicator"
+                :class="getProviderStatusClass('audius')"
+                title="Audius Decentralized Music Network"
+              >
+                AUDIUS: {{ getProviderStatusLabel('audius') }}
+              </span>
+            </div>
+          </div>
+
+          <span class="results-count font-mono">
+            <span v-if="isSearchingOnline" class="searching-pulse">SEARCHING NETWORK...</span>
+            <span v-else>{{ onlineTracks.length }} DISCOVERED</span>
+          </span>
+        </div>
+
+        <!-- Searching Spinner State -->
+        <div v-if="isSearchingOnline && !onlineTracks.length" class="online-searching-indicator font-mono">
+          <div class="spinner-dot"></div> Aggregating legal streams from Internet Archive & Open Music Networks...
+        </div>
+
+        <!-- Online Track Results -->
+        <div v-else-if="onlineTracks.length" class="tracks-results-list">
+          <div
+            v-for="(track, idx) in onlineTracks"
+            :key="track.id || track._id || idx"
+            class="result-track-row online-track-row"
+            :class="{ 'is-active': isTrackPlaying(track) }"
+            @click="handlePlayOnlineTrack(track)"
+          >
+            <button class="result-play-icon font-mono" @click.stop="handlePlayOnlineTrack(track)">
+              {{ isTrackPlaying(track) && playerStore.isPlaying ? '❚❚' : '▶' }}
+            </button>
+
+            <div class="result-track-details">
+              <div class="result-track-top">
+                <span class="track-title-text font-display">{{ track.title }}</span>
+                <span class="track-source-pill font-mono" :class="getProviderPillClass(track)">
+                  {{ getProviderLabel(track) }}
+                </span>
+                <span v-if="track.license" class="track-license-pill font-mono">
+                  <a
+                    v-if="track.licenseUrl"
+                    :href="track.licenseUrl"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    @click.stop
+                  >{{ track.license }}</a>
+                  <span v-else>{{ track.license }}</span>
+                </span>
+                <button
+                  v-if="track.alternatives && track.alternatives.length > 0"
+                  class="alt-sources-pill font-mono"
+                  @click.stop="switchAlternativeSource(track, 0)"
+                  title="Click to toggle alternate source stream"
+                >
+                  +{{ track.alternatives.length }} ALT SOURCE
+                </button>
+              </div>
+
+              <div class="result-track-sub font-mono">
+                <span>{{ track.artist || 'Unknown Artist' }}</span>
+                <span v-if="track.album">/ {{ track.album }}</span>
+                <span v-if="track.attribution" class="track-attribution">• {{ track.attribution }}</span>
+              </div>
+            </div>
+
+            <div class="result-actions" @click.stop>
+              <button
+                class="add-to-mixtape-btn font-mono"
+                @click="openAddModal(track)"
+                title="Add to Mixtape"
+              >
+                + ADD TO MIXTAPE
+              </button>
+            </div>
+
+            <span class="result-track-time font-mono">
+              {{ formatDuration(track.duration) }}
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section B: Matched Mixtapes Section -->
+      <section
+        v-if="(activeCategory === 'all' || activeCategory === 'playlists') && matchedPlaylists.length"
+        class="results-section"
+      >
         <div class="results-header">
           <h4 class="results-title font-display">Archived Mixtapes</h4>
           <span class="results-count font-mono">{{ matchedPlaylists.length }} FOUND</span>
@@ -116,7 +237,7 @@
             v-for="playlist in matchedPlaylists"
             :key="playlist._id"
             class="result-mixtape-card"
-            @click="router.push(`/playlists/${playlist._id}`)"
+            @click="router.push('/playlists/' + playlist._id)"
           >
             <div class="result-cover-box">
               <img
@@ -138,10 +259,13 @@
         </div>
       </section>
 
-      <!-- Matched Tracks Section -->
-      <section v-if="(activeCategory === 'all' || activeCategory === 'tracks') && matchedTracks.length" class="results-section">
+      <!-- Section C: Matched Saved Tracks Section -->
+      <section
+        v-if="(activeCategory === 'all' || activeCategory === 'tracks') && matchedTracks.length"
+        class="results-section"
+      >
         <div class="results-header">
-          <h4 class="results-title font-display">Audio Tracks</h4>
+          <h4 class="results-title font-display">Saved Mixtape Tracks</h4>
           <span class="results-count font-mono">{{ matchedTracks.length }} FOUND</span>
         </div>
 
@@ -178,16 +302,54 @@
         </div>
       </section>
     </div>
+
+    <!-- Quick Add to Mixtape Picker Modal -->
+    <div v-if="showAddModal" class="mixtape-picker-overlay" @click.self="showAddModal = false">
+      <div class="mixtape-picker-card">
+        <div class="picker-header">
+          <span class="picker-kicker font-mono">TRACK ACQUISITION</span>
+          <h4 class="picker-title font-display">{{ targetTrackForAdd?.title }}</h4>
+          <span class="picker-artist font-mono">
+            {{ targetTrackForAdd?.artist }} • {{ getProviderLabel(targetTrackForAdd) }}
+          </span>
+        </div>
+
+        <div v-if="playlistStore.playlists.length === 0" class="no-playlists-hint">
+          <p>No mixtapes available. Create a mixtape to save this track.</p>
+        </div>
+
+        <div v-else class="mixtapes-picker-list">
+          <button
+            v-for="pl in playlistStore.playlists"
+            :key="pl._id"
+            class="picker-playlist-item"
+            :disabled="isAddingToPlaylist"
+            @click="addTrackToSelectedPlaylist(pl)"
+          >
+            <div class="picker-item-info">
+              <span class="picker-item-name font-display">{{ pl.name }}</span>
+              <span class="picker-item-count font-mono">{{ pl.songs?.length || 0 }} tracks</span>
+            </div>
+            <span class="picker-item-add font-mono">ADD →</span>
+          </button>
+        </div>
+
+        <button class="picker-close-btn font-mono" @click="showAddModal = false">
+          CANCEL
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { usePlaylistStore } from '../stores/playlist';
 import { usePlayerStore } from '../stores/player';
 import { useToastStore } from '../stores/toast';
 import { detectProviderType } from '../services/providers/detector';
+import { searchApi } from '../api/search';
 
 const router = useRouter();
 const playlistStore = usePlaylistStore();
@@ -195,7 +357,16 @@ const playerStore = usePlayerStore();
 const toastStore = useToastStore();
 
 const query = ref('');
-const activeCategory = ref('all'); // 'all' | 'playlists' | 'tracks'
+const activeCategory = ref('all'); // 'all' | 'online' | 'playlists' | 'tracks'
+
+// Online Multi-Source Search State
+const onlineTracks = ref([]);
+const isSearchingOnline = ref(false);
+const providerStatuses = ref({});
+const showAddModal = ref(false);
+const targetTrackForAdd = ref(null);
+const isAddingToPlaylist = ref(false);
+let searchDebounceTimer = null;
 
 const genreVibes = [
   { name: 'Late Night Lo-Fi', desc: 'Analog tape warmth, dust & cracked vinyl', code: 'FREQ // 01', query: 'Lo-Fi', tint: '#FFEFE7' },
@@ -244,7 +415,7 @@ const matchedTracks = computed(() => {
 });
 
 const totalResultCount = computed(() => {
-  return matchedPlaylists.value.length + matchedTracks.value.length;
+  return matchedPlaylists.value.length + matchedTracks.value.length + onlineTracks.value.length;
 });
 
 const suggestedKeywords = computed(() => {
@@ -267,31 +438,111 @@ const formatDuration = (sec) => {
 };
 
 const isTrackPlaying = (song) => {
-  if (!playerStore.currentTrack) return false;
+  if (!playerStore.currentTrack || !song) return false;
   return (
-    playerStore.currentTrack._id === song._id ||
-    (playerStore.currentTrack.title === song.title &&
-      playerStore.currentTrack.artist === song.artist)
+    (song._id && playerStore.currentTrack._id === song._id) ||
+    (playerStore.currentTrack.title?.toLowerCase() === song.title?.toLowerCase() &&
+      playerStore.currentTrack.artist?.toLowerCase() === song.artist?.toLowerCase()) ||
+    (song.streamUrl &&
+      (playerStore.currentTrack.url === song.streamUrl ||
+        playerStore.currentTrack.streamUrl === song.streamUrl))
   );
 };
 
 const getProviderLabel = (input) => {
   if (!input) return 'MP3';
-  const type = typeof input === 'object'
-    ? (input.source?.provider || (input.url ? detectProviderType(input.url) : 'direct'))
-    : detectProviderType(input);
+  const type =
+    typeof input === 'object'
+      ? input.provider ||
+        input.source?.provider ||
+        (input.url ? detectProviderType(input.url) : 'direct')
+      : detectProviderType(input);
+
   if (type === 'youtube') return 'YOUTUBE';
   if (type === 'spotify') return 'SPOTIFY';
+  if (type === 'archive') return 'ARCHIVE';
+  if (type === 'jamendo') return 'JAMENDO';
+  if (type === 'audius') return 'AUDIUS';
   return 'LOSSLESS';
 };
 
 const getProviderPillClass = (input) => {
   if (!input) return 'prov-direct';
-  const type = typeof input === 'object'
-    ? (input.source?.provider || (input.url ? detectProviderType(input.url) : 'direct'))
-    : detectProviderType(input);
+  const type =
+    typeof input === 'object'
+      ? input.provider ||
+        input.source?.provider ||
+        (input.url ? detectProviderType(input.url) : 'direct')
+      : detectProviderType(input);
+
   return `prov-${type}`;
 };
+
+const getProviderStatusLabel = (name) => {
+  const prov = providerStatuses.value[name];
+  if (!prov) return 'ACTIVE';
+  if (prov.status === 'unconfigured') return 'OFF';
+  if (prov.status === 'rate_limited') return 'LIMIT';
+  if (prov.status === 'unavailable') return 'DOWN';
+  return 'ACTIVE';
+};
+
+const getProviderStatusClass = (name) => {
+  const prov = providerStatuses.value[name];
+  if (!prov || prov.status === 'available') return 'status-online';
+  if (prov.status === 'unconfigured') return 'status-unconfigured';
+  if (prov.status === 'rate_limited') return 'status-limited';
+  return 'status-down';
+};
+
+const fetchOnlineTracks = async (q) => {
+  if (!q || q.trim().length < 2) {
+    onlineTracks.value = [];
+    isSearchingOnline.value = false;
+    return;
+  }
+
+  isSearchingOnline.value = true;
+  try {
+    const res = await searchApi.search(q.trim());
+    const data = res?.results ? res : res?.data;
+    if (data) {
+      onlineTracks.value = data.results || data.tracks || [];
+      if (data.providers) {
+        providerStatuses.value = data.providers;
+      }
+    }
+  } catch (err) {
+    console.warn('Online search error:', err);
+    onlineTracks.value = [];
+  } finally {
+    isSearchingOnline.value = false;
+  }
+};
+
+watch(query, (newVal) => {
+  if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+  if (!newVal || newVal.trim().length < 2) {
+    onlineTracks.value = [];
+    isSearchingOnline.value = false;
+    return;
+  }
+  searchDebounceTimer = setTimeout(() => {
+    fetchOnlineTracks(newVal);
+  }, 350);
+});
+
+onMounted(async () => {
+  try {
+    const res = await searchApi.getProviders();
+    const data = res?.providers ? res : res?.data;
+    if (data && data.providers) {
+      providerStatuses.value = data.providers;
+    }
+  } catch (err) {
+    // Non-blocking provider check
+  }
+});
 
 const handlePlayResultTrack = (item) => {
   if (isTrackPlaying(item.song)) {
@@ -299,6 +550,93 @@ const handlePlayResultTrack = (item) => {
   } else {
     playerStore.playTrack(item.song, item.playlist, item.playlist.songs);
     toastStore.info(`Playing ${item.song.title}`);
+  }
+};
+
+const handlePlayOnlineTrack = (track) => {
+  if (isTrackPlaying(track)) {
+    playerStore.togglePlay();
+  } else {
+    const playableTrack = {
+      _id: track.id || track._id || `online-${track.provider}-${Date.now()}`,
+      title: track.title,
+      artist: track.artist || 'Unknown Artist',
+      album: track.album || '',
+      duration: track.duration || 0,
+      url: track.streamUrl || track.url,
+      streamUrl: track.streamUrl || track.url,
+      coverImage: track.coverImage || '',
+      source: {
+        provider: track.provider || 'direct',
+        url: track.url || track.streamUrl,
+        externalId: track.externalId || track.id || '',
+      },
+      license: track.license,
+      licenseUrl: track.licenseUrl,
+      attribution: track.attribution,
+    };
+    playerStore.playTrack(playableTrack, onlineTracks.value);
+    toastStore.info(`Playing ${track.title} via ${getProviderLabel(track)}`);
+  }
+};
+
+const switchAlternativeSource = (track, altIndex) => {
+  if (!track.alternatives || !track.alternatives[altIndex]) return;
+  const alt = track.alternatives[altIndex];
+
+  const currentPrimary = {
+    provider: track.provider,
+    url: track.url,
+    streamUrl: track.streamUrl,
+    license: track.license,
+    licenseUrl: track.licenseUrl,
+    attribution: track.attribution,
+  };
+
+  track.provider = alt.provider;
+  track.url = alt.url;
+  track.streamUrl = alt.streamUrl;
+  track.license = alt.license;
+  track.licenseUrl = alt.licenseUrl;
+  track.attribution = alt.attribution;
+  track.alternatives[altIndex] = currentPrimary;
+
+  toastStore.info(`Switched stream to ${getProviderLabel(track)}`);
+};
+
+const openAddModal = (track) => {
+  targetTrackForAdd.value = track;
+  showAddModal.value = true;
+};
+
+const addTrackToSelectedPlaylist = async (playlist) => {
+  if (!targetTrackForAdd.value || !playlist) return;
+  isAddingToPlaylist.value = true;
+  try {
+    const songPayload = {
+      title: targetTrackForAdd.value.title,
+      artist: targetTrackForAdd.value.artist || 'Unknown Artist',
+      album: targetTrackForAdd.value.album || '',
+      duration: targetTrackForAdd.value.duration || 0,
+      url: targetTrackForAdd.value.streamUrl || targetTrackForAdd.value.url,
+      coverImage: targetTrackForAdd.value.coverImage || '',
+      source: {
+        provider: targetTrackForAdd.value.provider || 'direct',
+        url: targetTrackForAdd.value.url || targetTrackForAdd.value.streamUrl,
+        externalId: targetTrackForAdd.value.providerTrackId || targetTrackForAdd.value.externalId || (targetTrackForAdd.value.id ? targetTrackForAdd.value.id.replace(/^(archive|jamendo|audius):/, '') : ''),
+      },
+      license: targetTrackForAdd.value.license,
+      licenseUrl: targetTrackForAdd.value.licenseUrl,
+      attribution: targetTrackForAdd.value.attribution,
+    };
+
+    await playlistStore.addSong(playlist._id, songPayload);
+    toastStore.success(`Added "${targetTrackForAdd.value.title}" to ${playlist.name}`);
+    showAddModal.value = false;
+  } catch (err) {
+    toastStore.error(err.response?.data?.message || 'Failed to add track to mixtape');
+  } finally {
+    isAddingToPlaylist.value = false;
   }
 };
 </script>
@@ -614,6 +952,54 @@ const handlePlayResultTrack = (item) => {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.header-with-status {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.provider-status-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.status-indicator {
+  font-size: 0.62rem;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: var(--pg-radius-full);
+  border: 1px solid var(--pg-border);
+  letter-spacing: 0.04em;
+}
+
+.status-indicator.status-online {
+  background: rgba(46, 204, 113, 0.15);
+  color: #27ae60;
+  border-color: #2ecc71;
+}
+
+.status-indicator.status-unconfigured {
+  background: rgba(189, 195, 199, 0.2);
+  color: var(--pg-ink-muted);
+  border-color: var(--pg-border);
+}
+
+.status-indicator.status-limited {
+  background: rgba(243, 156, 18, 0.15);
+  color: #d35400;
+  border-color: #f39c12;
+}
+
+.status-indicator.status-down {
+  background: rgba(231, 76, 60, 0.15);
+  color: #c0392b;
+  border-color: #e74c3c;
 }
 
 .results-title {
@@ -626,6 +1012,36 @@ const handlePlayResultTrack = (item) => {
   font-size: 0.72rem;
   font-weight: 800;
   color: var(--pg-cobalt);
+}
+
+.searching-pulse {
+  animation: pulse-op 1.2s infinite ease-in-out;
+}
+
+@keyframes pulse-op {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+.online-searching-indicator {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px;
+  background: var(--pg-surface-soft);
+  border: 1.5px dashed var(--pg-border);
+  border-radius: var(--pg-radius-md);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--pg-ink-secondary);
+}
+
+.spinner-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--pg-cobalt);
+  animation: pulse-op 0.8s infinite ease-in-out;
 }
 
 .mixtapes-results-grid {
@@ -766,6 +1182,7 @@ const handlePlayResultTrack = (item) => {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
 }
 
 .track-title-text {
@@ -783,6 +1200,7 @@ const handlePlayResultTrack = (item) => {
   padding: 1px 6px;
   border-radius: var(--pg-radius-full);
   border: 1px solid var(--pg-border);
+  letter-spacing: 0.03em;
 }
 
 .track-source-pill.prov-direct {
@@ -800,6 +1218,56 @@ const handlePlayResultTrack = (item) => {
   color: var(--pg-ink);
 }
 
+.track-source-pill.prov-archive {
+  background: #d4edda;
+  color: #155724;
+  border-color: #c3e6cb;
+}
+
+.track-source-pill.prov-jamendo {
+  background: #f8d7da;
+  color: #721c24;
+  border-color: #f5c6cb;
+}
+
+.track-source-pill.prov-audius {
+  background: #e2d9f3;
+  color: #4a154b;
+  border-color: #d1c2ea;
+}
+
+.track-license-pill {
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: var(--pg-radius-sm);
+  background: var(--pg-surface-soft);
+  color: var(--pg-ink-secondary);
+  border: 1px solid var(--pg-border);
+}
+
+.track-license-pill a {
+  color: inherit;
+  text-decoration: underline;
+}
+
+.alt-sources-pill {
+  font-size: 0.6rem;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: var(--pg-radius-full);
+  background: var(--pg-surface-peach);
+  color: var(--pg-coral);
+  border: 1px solid var(--pg-border);
+  cursor: pointer;
+  transition: all var(--pg-transition-spring);
+}
+
+.alt-sources-pill:hover {
+  background: var(--pg-coral);
+  color: #fff;
+}
+
 .result-track-sub {
   font-size: 0.76rem;
   color: var(--pg-ink-secondary);
@@ -808,13 +1276,161 @@ const handlePlayResultTrack = (item) => {
   text-overflow: ellipsis;
 }
 
+.track-attribution {
+  color: var(--pg-ink-muted);
+}
+
 .from-mixtape {
   color: var(--pg-ink-muted);
+}
+
+.result-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.add-to-mixtape-btn {
+  padding: 4px 10px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  background: var(--pg-canvas);
+  border: 1.5px solid var(--pg-border);
+  border-radius: var(--pg-radius-full);
+  color: var(--pg-ink);
+  cursor: pointer;
+  transition: all var(--pg-transition-spring);
+  box-shadow: 1px 1px 0px var(--pg-border);
+}
+
+.add-to-mixtape-btn:hover {
+  background: var(--pg-citron);
+  transform: translateY(-1px);
+  box-shadow: 2px 2px 0px var(--pg-border);
 }
 
 .result-track-time {
   font-size: 0.76rem;
   font-weight: 700;
+  color: var(--pg-ink-secondary);
+}
+
+/* Mixtape Quick Picker Modal */
+.mixtape-picker-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.mixtape-picker-card {
+  width: 100%;
+  max-width: 440px;
+  background: var(--pg-canvas);
+  border: 2px solid var(--pg-border);
+  border-radius: var(--pg-radius-lg);
+  box-shadow: 8px 8px 0px var(--pg-border);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.picker-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.picker-kicker {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--pg-cobalt);
+}
+
+.picker-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--pg-ink);
+}
+
+.picker-artist {
+  font-size: 0.76rem;
+  color: var(--pg-ink-secondary);
+}
+
+.mixtapes-picker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.picker-playlist-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--pg-surface-soft);
+  border: 1.5px solid var(--pg-border);
+  border-radius: var(--pg-radius-md);
+  cursor: pointer;
+  text-align: left;
+  transition: all var(--pg-transition-spring);
+}
+
+.picker-playlist-item:hover {
+  background: var(--pg-surface-butter);
+  transform: translateX(3px);
+  border-color: var(--pg-cobalt);
+}
+
+.picker-item-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.picker-item-name {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--pg-ink);
+}
+
+.picker-item-count {
+  font-size: 0.68rem;
+  color: var(--pg-ink-muted);
+}
+
+.picker-item-add {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--pg-cobalt);
+}
+
+.picker-close-btn {
+  align-self: flex-end;
+  padding: 6px 14px;
+  background: var(--pg-surface-soft);
+  border: 1.5px solid var(--pg-border);
+  border-radius: var(--pg-radius-full);
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--pg-ink);
+  cursor: pointer;
+}
+
+.no-playlists-hint {
+  padding: 14px;
+  background: var(--pg-surface-soft);
+  border: 1px dashed var(--pg-border);
+  border-radius: var(--pg-radius-md);
+  font-size: 0.8rem;
   color: var(--pg-ink-secondary);
 }
 </style>
