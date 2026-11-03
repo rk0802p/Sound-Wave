@@ -1,120 +1,126 @@
 <template>
-  <div class="search-view-wrapper">
-    <!-- Big Search Input Header -->
-    <header class="search-header">
-      <div class="search-bar-prominent">
-        <svg class="search-icon-big" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+  <div class="sw-search-view">
+    <!-- Prominent Search Bar Header -->
+    <header class="search-hero-box">
+      <div class="prominent-search-wrapper">
+        <svg class="search-icon-lg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="11" cy="11" r="8"></circle>
           <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
         </svg>
         <input
           v-model="query"
           type="text"
-          placeholder="Search by track title, artist, album, or playlist..."
+          placeholder="Search by track title, artist, album, or playlist... (Esc to clear)"
           class="prominent-search-input"
           autofocus
+          @keydown.esc="query = ''"
         />
-        <button v-if="query" class="prominent-clear-btn" @click="query = ''">✕</button>
+        <button v-if="query" class="clear-query-btn" @click="query = ''" title="Clear search">✕</button>
       </div>
 
-      <div class="filter-pills" v-if="query">
+      <!-- Filter Category Pills (When searching) -->
+      <div v-if="query.trim()" class="search-filter-pills">
         <button
-          class="filter-pill"
-          :class="{ active: activeFilter === 'all' }"
-          @click="activeFilter = 'all'"
+          class="pill-btn"
+          :class="{ active: activeCategory === 'all' }"
+          @click="activeCategory = 'all'"
         >
-          All ({{ matchedPlaylists.length + matchedTracks.length }})
+          All Results ({{ totalResultCount }})
         </button>
         <button
-          class="filter-pill"
-          :class="{ active: activeFilter === 'playlists' }"
-          @click="activeFilter = 'playlists'"
+          class="pill-btn"
+          :class="{ active: activeCategory === 'playlists' }"
+          @click="activeCategory = 'playlists'"
         >
           Playlists ({{ matchedPlaylists.length }})
         </button>
         <button
-          class="filter-pill"
-          :class="{ active: activeFilter === 'tracks' }"
-          @click="activeFilter = 'tracks'"
+          class="pill-btn"
+          :class="{ active: activeCategory === 'tracks' }"
+          @click="activeCategory = 'tracks'"
         >
           Tracks ({{ matchedTracks.length }})
         </button>
       </div>
     </header>
 
-    <!-- Initial Search Prompt (When query is empty) -->
-    <div v-if="!query.trim()" class="search-idle-state">
-      <div class="idle-icon">🔍</div>
-      <h2>Search Your Collection</h2>
-      <p>Find playlists, tracks, albums, and artists in your personal library workstation.</p>
+    <!-- Initial Idle State: Music Exploration & Tags -->
+    <div v-if="!query.trim()" class="search-discovery-area">
+      <div class="discovery-header">
+        <h2 class="discovery-title">Explore Your Soundscape</h2>
+        <p class="discovery-sub">Instant search across playlists, track titles, albums, and artists in your personal library workstation.</p>
+      </div>
 
-      <!-- Quick Suggested Tags from existing playlists -->
-      <div v-if="suggestedQueries.length" class="suggestions-box">
-        <span class="suggest-label">Suggestions:</span>
-        <div class="suggest-tags">
+      <!-- Genre & Atmosphere Tags -->
+      <div class="vibes-section">
+        <span class="vibes-label">Atmosphere & Moods</span>
+        <div class="vibes-tags-grid">
           <button
-            v-for="s in suggestedQueries"
-            :key="s"
-            class="suggest-tag-btn"
-            @click="query = s"
+            v-for="vibe in genreVibes"
+            :key="vibe.name"
+            class="vibe-card"
+            @click="query = vibe.query"
           >
-            {{ s }}
+            <span class="vibe-emoji">{{ vibe.icon }}</span>
+            <div class="vibe-text">
+              <span class="vibe-name">{{ vibe.name }}</span>
+              <span class="vibe-sub">{{ vibe.desc }}</span>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Suggested Searches from Collection -->
+      <div v-if="suggestedKeywords.length" class="quick-keywords-box">
+        <span class="keywords-label">Quick Suggestions:</span>
+        <div class="keywords-row">
+          <button
+            v-for="kw in suggestedKeywords"
+            :key="kw"
+            class="keyword-chip"
+            @click="query = kw"
+          >
+            {{ kw }}
           </button>
         </div>
       </div>
     </div>
 
     <!-- No Results State -->
-    <div v-else-if="matchedPlaylists.length === 0 && matchedTracks.length === 0" class="no-results-state">
+    <div v-else-if="matchedPlaylists.length === 0 && matchedTracks.length === 0" class="no-results-box">
       <div class="no-results-icon">📻</div>
-      <h2>No matches for "{{ query }}"</h2>
+      <h2>No matches found for "{{ query }}"</h2>
       <p>Try searching for a different keyword, artist name, or track title.</p>
-      <button class="ghost-btn" @click="query = ''">Clear Search</button>
+      <AppButton variant="secondary" size="sm" @click="query = ''">
+        Clear Search
+      </AppButton>
     </div>
 
-    <!-- Search Results Section -->
-    <div v-else class="results-container">
-      <!-- 1. Playlists Results -->
-      <section v-if="(activeFilter === 'all' || activeFilter === 'playlists') && matchedPlaylists.length" class="result-section">
-        <div class="section-title-row">
-          <h3>Playlists ({{ matchedPlaylists.length }})</h3>
+    <!-- Results Section -->
+    <div v-else class="search-results-layout">
+      <!-- 1. Playlists Group -->
+      <section v-if="(activeCategory === 'all' || activeCategory === 'playlists') && matchedPlaylists.length" class="results-group">
+        <div class="group-header">
+          <h3 class="group-title">Playlists ({{ matchedPlaylists.length }})</h3>
         </div>
 
-        <div class="playlist-grid">
-          <div
-            v-for="pl in matchedPlaylists"
+        <div class="playlists-grid">
+          <PlaylistCard
+            v-for="(pl, idx) in matchedPlaylists"
             :key="pl._id"
-            class="playlist-card"
-            @click="goToPlaylist(pl._id)"
-          >
-            <div class="card-art-box">
-              <img :src="pl.coverImage || defaultCover" :alt="pl.name" class="card-art" @error="onImgError" />
-              <button
-                class="hover-play-btn"
-                :disabled="!pl.songs?.length"
-                @click.stop="quickPlayPlaylist(pl)"
-                title="Play Playlist"
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M8 5v14l11-7z"/>
-                </svg>
-              </button>
-            </div>
-            <div class="card-info">
-              <span class="card-title">{{ pl.name }}</span>
-              <span class="card-sub">{{ pl.songs?.length || 0 }} tracks</span>
-            </div>
-          </div>
+            :playlist="pl"
+            :index="idx"
+          />
         </div>
       </section>
 
-      <!-- 2. Tracks Results -->
-      <section v-if="(activeFilter === 'all' || activeFilter === 'tracks') && matchedTracks.length" class="result-section">
-        <div class="section-title-row">
-          <h3>Tracks ({{ matchedTracks.length }})</h3>
+      <!-- 2. Tracks Group -->
+      <section v-if="(activeCategory === 'all' || activeCategory === 'tracks') && matchedTracks.length" class="results-group">
+        <div class="group-header">
+          <h3 class="group-title">Tracks ({{ matchedTracks.length }})</h3>
         </div>
 
-        <div class="track-list-card">
+        <div class="tracks-card">
           <table class="tracks-table">
             <thead>
               <tr>
@@ -136,13 +142,13 @@
               >
                 <td class="td-num">
                   <div class="num-wrapper">
-                    <span v-if="!isCurrentTrack(item.song)" class="num-idx">{{ idx + 1 }}</span>
+                    <span v-if="!isCurrentTrack(item.song)" class="num-text tabular-nums">{{ idx + 1 }}</span>
                     <span v-else-if="playerStore.isPlaying" class="playing-bars">
                       <span></span><span></span><span></span>
                     </span>
                     <span v-else class="pause-icon">⏸</span>
 
-                    <button class="row-play-btn">
+                    <button class="row-play-btn" title="Play">
                       <svg v-if="isCurrentTrack(item.song) && playerStore.isPlaying" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
                       </svg>
@@ -154,9 +160,9 @@
                 </td>
 
                 <td class="td-title">
-                  <div class="track-title-cell">
-                    <img :src="item.song.coverImage || defaultCover" :alt="item.song.title" class="track-thumb" @error="onImgError" />
-                    <span class="track-name" :class="{ highlight: isCurrentTrack(item.song) }">{{ item.song.title }}</span>
+                  <div class="track-cell">
+                    <img :src="getTrackArt(item.song, idx)" :alt="item.song.title" class="track-thumb" @error="onImgError" />
+                    <span class="track-title-label" :class="{ highlight: isCurrentTrack(item.song) }">{{ item.song.title }}</span>
                   </div>
                 </td>
 
@@ -169,7 +175,7 @@
                 </td>
 
                 <td class="td-from">
-                  <router-link :to="`/playlists/${item.playlistId}`" class="playlist-pill-link" @click.stop>
+                  <router-link :to="`/playlists/${item.playlistId}`" class="playlist-chip-link" @click.stop>
                     {{ item.playlistName }}
                   </router-link>
                 </td>
@@ -187,31 +193,45 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, computed, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
 import { usePlaylistStore } from '../stores/playlist';
 import { usePlayerStore } from '../stores/player';
-import { formatDuration } from '../data/demoTracks';
+import { formatDuration, getDistinctArtwork } from '../data/demoTracks';
+import PlaylistCard from '../components/dashboard/PlaylistCard.vue';
+import AppButton from '../components/common/AppButton.vue';
 
-const router = useRouter();
+const route = useRoute();
 const playlistStore = usePlaylistStore();
 const playerStore = usePlayerStore();
 
 const query = ref('');
-const activeFilter = ref('all'); // 'all' | 'playlists' | 'tracks'
-const defaultCover = 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=200&auto=format&fit=crop';
+const activeCategory = ref('all'); // 'all' | 'playlists' | 'tracks'
 
-const suggestedQueries = computed(() => {
-  const suggestions = new Set();
+onMounted(() => {
+  if (route.query.q) {
+    query.value = route.query.q;
+  }
+});
+
+const genreVibes = [
+  { name: 'Classical & Ambient', desc: 'Debussy, Satie, Piano', query: 'Debussy', icon: '🎹' },
+  { name: 'Lo-Fi & Study', desc: 'Chill beats, Focus flow', query: 'Lo-Fi', icon: '☕' },
+  { name: 'Synthwave & Retro', desc: 'Neon, Analog Bass', query: 'Synthwave', icon: '🌆' },
+  { name: 'Cosmic & Electronic', desc: 'Soundscapes & Waves', query: 'Focus', icon: '🌌' },
+];
+
+const suggestedKeywords = computed(() => {
+  const set = new Set();
   playlistStore.playlists.slice(0, 5).forEach((p) => {
-    suggestions.add(p.name);
+    set.add(p.name);
     if (p.songs && p.songs.length) {
       p.songs.slice(0, 2).forEach((s) => {
-        if (s.artist) suggestions.add(s.artist);
+        if (s.artist) set.add(s.artist);
       });
     }
   });
-  return Array.from(suggestions).slice(0, 6);
+  return Array.from(set).slice(0, 6);
 });
 
 const matchedPlaylists = computed(() => {
@@ -227,7 +247,7 @@ const matchedPlaylists = computed(() => {
 const matchedTracks = computed(() => {
   if (!query.value.trim()) return [];
   const q = query.value.toLowerCase().trim();
-  const results = [];
+  const list = [];
 
   playlistStore.playlists.forEach((playlist) => {
     if (!playlist.songs) return;
@@ -238,7 +258,7 @@ const matchedTracks = computed(() => {
         (song.album && song.album.toLowerCase().includes(q));
 
       if (match) {
-        results.push({
+        list.push({
           song,
           playlistId: playlist._id,
           playlistName: playlist.name,
@@ -248,21 +268,19 @@ const matchedTracks = computed(() => {
     });
   });
 
-  return results;
+  return list;
+});
+
+const totalResultCount = computed(() => {
+  return matchedPlaylists.value.length + matchedTracks.value.length;
 });
 
 const isCurrentTrack = (song) => {
   return playerStore.currentTrack && playerStore.currentTrack._id === song._id;
 };
 
-const goToPlaylist = (id) => {
-  router.push(`/playlists/${id}`);
-};
-
-const quickPlayPlaylist = (playlist) => {
-  if (playlist.songs && playlist.songs.length) {
-    playerStore.playTrack(playlist.songs[0], playlist.songs, 0);
-  }
+const getTrackArt = (song, idx) => {
+  return getDistinctArtwork(song, idx);
 };
 
 const playFoundTrack = (item) => {
@@ -271,284 +289,284 @@ const playFoundTrack = (item) => {
 };
 
 const onImgError = (e) => {
-  e.target.src = defaultCover;
+  e.target.src = getDistinctArtwork(null, 1);
 };
 </script>
 
 <style scoped>
-.search-view-wrapper {
+.sw-search-view {
   max-width: 1400px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 32px;
 }
 
-/* Header & Prominent Search */
-.search-header {
+.search-hero-box {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-.search-bar-prominent {
+.prominent-search-wrapper {
   position: relative;
   width: 100%;
 }
 
-.search-icon-big {
+.search-icon-lg {
   position: absolute;
   left: 18px;
   top: 50%;
   transform: translateY(-50%);
-  color: var(--text-muted, #71717A);
+  color: var(--sw-text-muted);
   pointer-events: none;
 }
 
 .prominent-search-input {
   width: 100%;
-  padding: 16px 48px 16px 52px;
-  background: var(--bg-surface, #101117);
-  border: 1px solid var(--border-default, #25252F);
-  border-radius: 14px;
-  color: var(--text-primary, #F4F3FA);
-  font-size: 1.1rem;
+  height: 54px;
+  padding: 0 48px 0 52px;
+  background: var(--sw-surface);
+  border: 1px solid var(--sw-border);
+  border-radius: var(--sw-radius-md);
+  color: var(--sw-text-primary);
+  font-size: 1.05rem;
   outline: none;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  transition: all var(--sw-transition-fast);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
 }
 
 .prominent-search-input:focus {
-  border-color: var(--accent-primary, #766BFF);
-  box-shadow: 0 4px 24px rgba(118, 107, 255, 0.15);
+  border-color: var(--sw-accent);
+  background: var(--sw-surface-hover);
+  box-shadow: 0 0 0 1px var(--sw-accent);
 }
 
-.prominent-clear-btn {
+.prominent-search-input::placeholder {
+  color: var(--sw-text-muted);
+}
+
+.clear-query-btn {
   position: absolute;
   right: 18px;
   top: 50%;
   transform: translateY(-50%);
   background: transparent;
   border: none;
-  color: var(--text-muted, #71717A);
+  color: var(--sw-text-muted);
   font-size: 1.1rem;
   cursor: pointer;
 }
 
-.filter-pills {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
+.clear-query-btn:hover {
+  color: var(--sw-text-primary);
 }
 
-.filter-pill {
-  padding: 6px 16px;
-  background: var(--bg-surface, #101117);
-  border: 1px solid var(--border-default, #25252F);
-  border-radius: 20px;
-  color: var(--text-secondary, #A1A1AA);
-  font-size: 0.85rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.filter-pill:hover {
-  background: var(--bg-hover, #24242F);
-  color: var(--text-primary, #F4F3FA);
-}
-
-.filter-pill.active {
-  background: var(--accent-soft, #24213F);
-  border-color: var(--accent-primary, #766BFF);
-  color: var(--accent-primary, #766BFF);
-}
-
-/* States */
-.search-idle-state,
-.no-results-state {
-  text-align: center;
-  padding: 80px 24px;
-  background: var(--bg-surface, #101117);
-  border: 1px dashed var(--border-default, #25252F);
-  border-radius: 16px;
-}
-
-.idle-icon,
-.no-results-icon {
-  font-size: 3rem;
-  margin-bottom: 14px;
-}
-
-.search-idle-state h2,
-.no-results-state h2 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--text-primary, #F4F3FA);
-  margin-bottom: 8px;
-}
-
-.search-idle-state p,
-.no-results-state p {
-  color: var(--text-secondary, #A1A1AA);
-  font-size: 0.95rem;
-  max-width: 500px;
-  margin: 0 auto 24px auto;
-}
-
-.suggestions-box {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-top: 10px;
-}
-
-.suggest-label {
-  font-size: 0.85rem;
-  color: var(--text-muted, #71717A);
-}
-
-.suggest-tags {
+.search-filter-pills {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
 }
 
-.suggest-tag-btn {
-  padding: 5px 12px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--border-default, #25252F);
-  border-radius: 14px;
-  color: var(--text-secondary, #A1A1AA);
+.pill-btn {
+  padding: 6px 16px;
+  background: var(--sw-surface);
+  border: 1px solid var(--sw-border);
+  border-radius: 20px;
+  color: var(--sw-text-secondary);
   font-size: 0.82rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--sw-transition-fast);
 }
 
-.suggest-tag-btn:hover {
-  background: var(--bg-hover, #24242F);
-  color: var(--text-primary, #F4F3FA);
-  border-color: var(--accent-primary, #766BFF);
+.pill-btn:hover {
+  background: var(--sw-surface-hover);
+  color: var(--sw-text-primary);
 }
 
-.ghost-btn {
-  padding: 8px 18px;
-  background: transparent;
-  border: 1px solid var(--border-default, #25252F);
-  color: var(--text-primary, #F4F3FA);
-  border-radius: 8px;
+.pill-btn.active {
+  background: var(--sw-accent-soft);
+  border-color: var(--sw-accent);
+  color: var(--sw-accent-muted);
+}
+
+/* Discovery Area */
+.search-discovery-area {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.discovery-header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.discovery-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--sw-text-primary);
+}
+
+.discovery-sub {
+  font-size: 0.9rem;
+  color: var(--sw-text-secondary);
+  max-width: 600px;
+}
+
+.vibes-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.vibes-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--sw-text-muted);
+}
+
+.vibes-tags-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.vibe-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  background: var(--sw-surface);
+  border: 1px solid var(--sw-border);
+  border-radius: var(--sw-radius-md);
   cursor: pointer;
+  transition: all var(--sw-transition-fast);
+  text-align: left;
 }
 
-/* Results */
-.results-container {
+.vibe-card:hover {
+  background: var(--sw-surface-hover);
+  border-color: var(--sw-accent);
+  transform: translateY(-2px);
+}
+
+.vibe-emoji {
+  font-size: 1.8rem;
+}
+
+.vibe-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.vibe-name {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--sw-text-primary);
+}
+
+.vibe-sub {
+  font-size: 0.78rem;
+  color: var(--sw-text-muted);
+}
+
+.quick-keywords-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.keywords-label {
+  font-size: 0.82rem;
+  color: var(--sw-text-muted);
+}
+
+.keywords-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.keyword-chip {
+  padding: 5px 12px;
+  background: var(--sw-surface);
+  border: 1px solid var(--sw-border);
+  border-radius: 14px;
+  color: var(--sw-text-secondary);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all var(--sw-transition-fast);
+}
+
+.keyword-chip:hover {
+  background: var(--sw-surface-hover);
+  color: var(--sw-text-primary);
+  border-color: var(--sw-accent);
+}
+
+/* No Results */
+.no-results-box {
+  text-align: center;
+  padding: 70px 24px;
+  background: var(--sw-surface);
+  border: 1px dashed var(--sw-border);
+  border-radius: var(--sw-radius-lg);
+}
+
+.no-results-icon {
+  font-size: 3rem;
+  margin-bottom: 12px;
+}
+
+.no-results-box h2 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--sw-text-primary);
+  margin-bottom: 8px;
+}
+
+.no-results-box p {
+  color: var(--sw-text-secondary);
+  font-size: 0.9rem;
+  margin-bottom: 20px;
+}
+
+/* Results Layout */
+.search-results-layout {
   display: flex;
   flex-direction: column;
   gap: 36px;
 }
 
-.result-section {
+.results-group {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-.section-title-row h3 {
+.group-title {
   font-size: 1.25rem;
   font-weight: 700;
-  color: var(--text-primary, #F4F3FA);
+  color: var(--sw-text-primary);
 }
 
-/* Playlists Grid */
-.playlist-grid {
+.playlists-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 20px;
 }
 
-.playlist-card {
-  background: var(--bg-surface, #101117);
-  border: 1px solid var(--border-default, #25252F);
-  border-radius: 12px;
-  padding: 14px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.playlist-card:hover {
-  transform: translateY(-3px);
-  border-color: rgba(118, 107, 255, 0.4);
-  background: var(--bg-elevated, #191922);
-}
-
-.card-art-box {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 1;
-  border-radius: 8px;
-  overflow: hidden;
-  margin-bottom: 12px;
-  background: #000;
-}
-
-.card-art {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.hover-play-btn {
-  position: absolute;
-  right: 10px;
-  bottom: 10px;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: var(--accent-primary, #766BFF);
-  color: #fff;
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  opacity: 0;
-  transform: translateY(6px);
-  transition: all 0.2s;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-}
-
-.playlist-card:hover .hover-play-btn {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.card-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.card-title {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--text-primary, #F4F3FA);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.card-sub {
-  font-size: 0.8rem;
-  color: var(--text-muted, #71717A);
-}
-
-/* Track List Table */
-.track-list-card {
-  background: var(--bg-surface, #101117);
-  border: 1px solid var(--border-default, #25252F);
-  border-radius: 14px;
+.tracks-card {
+  background: var(--sw-surface);
+  border: 1px solid var(--sw-border);
+  border-radius: var(--sw-radius-md);
   overflow-x: auto;
 }
 
@@ -563,8 +581,8 @@ const onImgError = (e) => {
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 1px;
-  color: var(--text-muted, #71717A);
-  border-bottom: 1px solid var(--border-default, #25252F);
+  color: var(--sw-text-muted);
+  border-bottom: 1px solid var(--sw-border-subtle);
 }
 
 .th-num { width: 44px; text-align: center; }
@@ -576,15 +594,15 @@ const onImgError = (e) => {
 
 .track-row {
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background var(--sw-transition-fast);
 }
 
 .track-row:hover {
-  background: var(--bg-hover, #24242F);
+  background: var(--sw-surface-hover);
 }
 
 .track-row.is-active {
-  background: rgba(118, 107, 255, 0.1);
+  background: var(--sw-accent-soft);
 }
 
 .track-row td {
@@ -604,21 +622,21 @@ const onImgError = (e) => {
   margin: 0 auto;
 }
 
-.num-idx {
-  color: var(--text-muted, #71717A);
-  font-size: 0.85rem;
+.num-text {
+  color: var(--sw-text-muted);
+  font-size: 0.82rem;
 }
 
 .row-play-btn {
   display: none;
   background: transparent;
   border: none;
-  color: #fff;
+  color: var(--sw-text-primary);
   cursor: pointer;
   padding: 0;
 }
 
-.track-row:hover .num-idx,
+.track-row:hover .num-text,
 .track-row:hover .playing-bars,
 .track-row:hover .pause-icon {
   display: none;
@@ -630,7 +648,7 @@ const onImgError = (e) => {
   justify-content: center;
 }
 
-.track-title-cell {
+.track-cell {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -641,41 +659,43 @@ const onImgError = (e) => {
   height: 36px;
   border-radius: 6px;
   object-fit: cover;
+  flex-shrink: 0;
 }
 
-.track-name {
+.track-title-label {
   font-weight: 500;
-  color: var(--text-primary, #F4F3FA);
+  color: var(--sw-text-primary);
 }
 
-.track-name.highlight {
-  color: var(--accent-primary, #766BFF);
+.track-title-label.highlight {
+  color: var(--sw-accent-muted);
   font-weight: 600;
 }
 
 .cell-text {
-  color: var(--text-secondary, #A1A1AA);
+  color: var(--sw-text-secondary);
   font-size: 0.85rem;
 }
 
 .cell-text.dim {
-  color: var(--text-muted, #71717A);
+  color: var(--sw-text-muted);
 }
 
-.playlist-pill-link {
+.playlist-chip-link {
   display: inline-block;
-  padding: 4px 10px;
-  background: rgba(255, 255, 255, 0.05);
+  padding: 3px 8px;
+  background: var(--sw-surface-hover);
+  border: 1px solid var(--sw-border-subtle);
   border-radius: 12px;
-  color: var(--text-secondary, #A1A1AA);
+  color: var(--sw-text-secondary);
   font-size: 0.78rem;
   text-decoration: none;
-  transition: all 0.15s;
+  transition: all var(--sw-transition-fast);
 }
 
-.playlist-pill-link:hover {
-  background: var(--accent-soft, #24213F);
-  color: var(--accent-primary, #766BFF);
+.playlist-chip-link:hover {
+  background: var(--sw-accent-soft);
+  color: var(--sw-accent-muted);
 }
 
 .playing-bars {
@@ -687,16 +707,16 @@ const onImgError = (e) => {
 
 .playing-bars span {
   width: 2px;
-  background: var(--accent-primary, #766BFF);
+  background: var(--sw-accent);
   border-radius: 1px;
-  animation: barAnim 0.7s infinite alternate;
+  animation: barEqualizer 0.7s infinite alternate;
 }
 
 .playing-bars span:nth-child(1) { height: 40%; }
 .playing-bars span:nth-child(2) { height: 100%; animation-delay: 0.2s; }
 .playing-bars span:nth-child(3) { height: 60%; animation-delay: 0.1s; }
 
-@keyframes barAnim {
+@keyframes barEqualizer {
   0% { height: 20%; }
   100% { height: 100%; }
 }
