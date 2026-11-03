@@ -1,10 +1,15 @@
 const ArchiveProvider = require('./ArchiveProvider');
 const JamendoProvider = require('./JamendoProvider');
 const AudiusProvider = require('./AudiusProvider');
+const CircuitBreaker = require('./CircuitBreaker');
 
 class ProviderRegistry {
   constructor() {
     this.providers = new Map();
+    this.circuitBreakers = new Map();
+    this.metadataCache = new Map(); // Simple in-memory LRU metadata cache
+    this.cacheMax = 150;
+    this.cacheTtlMs = 1000 * 60 * 3; // 3 minutes TTL for search metadata
 
     // Register active provider adapters
     this.register(new ArchiveProvider());
@@ -20,7 +25,11 @@ class ProviderRegistry {
     if (!provider || !provider.name) {
       throw new Error('Invalid provider: missing name');
     }
-    this.providers.set(provider.name.toLowerCase(), provider);
+    const key = provider.name.toLowerCase();
+    this.providers.set(key, provider);
+    if (!this.circuitBreakers.has(key)) {
+      this.circuitBreakers.set(key, new CircuitBreaker(key, { failureThreshold: 3, cooldownPeriodMs: 30000 }));
+    }
   }
 
   /**
@@ -34,12 +43,37 @@ class ProviderRegistry {
   }
 
   /**
-   * Return list of all registered providers and their current status
+   * Retrieve circuit breaker for provider
+   * @param {string} name
+   * @returns {CircuitBreaker|null}
+   */
+  getBreaker(name) {
+    if (!name || typeof name !== 'string') return null;
+    return this.circuitBreakers.get(name.toLowerCase()) || null;
+  }
+
+  /**
+   * Reset all circuit breakers (primarily for test suite tear-down)
+   */
+  resetCircuitBreakers() {
+    for (const breaker of this.circuitBreakers.values()) {
+      breaker.reset();
+    }
+    this.metadataCache.clear();
+  }
+
+  /**
+   * Return list of all registered providers, their current health, and circuit breaker state
    */
   getAllStatus() {
     const list = [];
-    for (const provider of this.providers.values()) {
-      list.push(provider.getHealth());
+    for (const [key, provider] of this.providers.entries()) {
+      const health = provider.getHealth();
+      const breaker = this.circuitBreakers.get(key);
+      list.push({
+        ...health,
+        circuitBreaker: breaker ? breaker.getStatus() : null,
+      });
     }
     return list;
   }
@@ -59,8 +93,7 @@ class ProviderRegistry {
 
   /**
    * Conservative deduplication of aggregated tracks
-   * Only merges when normalized title AND artist match with similar duration.
-   * Preserves remixes, covers, live versions, and alternatives.
+   * Merges identical tracks from different providers into alternatives
    * @param {Array} tracks
    * @returns {Array}
    */
@@ -71,10 +104,12 @@ class ProviderRegistry {
     const seenMap = new Map();
 
     for (const track of tracks) {
+      if (!track || !track.title) continue;
+
       const normTitle = this.normalizeText(track.title);
       const normArtist = this.normalizeText(track.artist);
 
-      // Distinguish distinct variations (remix, live, cover, acoustic, instrumental)
+      // Distinguish explicit variants (remix, live, cover, acoustic, instrumental, mix)
       const hasVariantModifier = /(remix|live|cover|acoustic|instrumental|edit|dub|mix)/i.test(track.title);
 
       const key = `${normArtist}:::${normTitle}`;
@@ -82,7 +117,6 @@ class ProviderRegistry {
       if (seenMap.has(key)) {
         const existingTrack = seenMap.get(key);
 
-        // Check duration similarity (within 6 seconds) and ensure neither is an unshared variant
         const durDiff = Math.abs((track.duration || 0) - (existingTrack.duration || 0));
         const canMerge = !hasVariantModifier && durDiff <= 6 && normArtist.length > 2 && normTitle.length > 2;
 
@@ -91,7 +125,6 @@ class ProviderRegistry {
             existingTrack.alternatives = [];
           }
 
-          // Add as alternate source without duplicating in the primary list
           existingTrack.alternatives.push({
             provider: track.provider,
             providerTrackId: track.providerTrackId,
@@ -105,12 +138,68 @@ class ProviderRegistry {
       }
 
       // Track is distinct
-      const trackCopy = { ...track, alternatives: [] };
+      const trackCopy = { ...track, alternatives: track.alternatives || [] };
       seenMap.set(key, trackCopy);
       merged.push(trackCopy);
     }
 
     return merged;
+  }
+
+  /**
+   * Rank tracks by search relevance and playability
+   * @param {Array} tracks
+   * @param {string} rawQuery
+   * @returns {Array}
+   */
+  rankTracks(tracks, rawQuery) {
+    const q = this.normalizeText(rawQuery);
+    if (!q) return tracks;
+
+    const queryTokens = q.split(' ').filter(Boolean);
+
+    return [...tracks].sort((a, b) => {
+      const aTitle = this.normalizeText(a.title);
+      const bTitle = this.normalizeText(b.title);
+      const aArtist = this.normalizeText(a.artist);
+      const bArtist = this.normalizeText(b.artist);
+
+      // Score calculation
+      let scoreA = 0;
+      let scoreB = 0;
+
+      // 1. Exact artist match
+      if (aArtist === q) scoreA += 100;
+      else if (aArtist.includes(q)) scoreA += 50;
+
+      if (bArtist === q) scoreB += 100;
+      else if (bArtist.includes(q)) scoreB += 50;
+
+      // 2. Exact title match
+      if (aTitle === q) scoreA += 90;
+      else if (aTitle.includes(q)) scoreA += 45;
+
+      if (bTitle === q) scoreB += 90;
+      else if (bTitle.includes(q)) scoreB += 45;
+
+      // 3. Token overlap
+      for (const token of queryTokens) {
+        if (aTitle.includes(token)) scoreA += 20;
+        if (aArtist.includes(token)) scoreA += 20;
+        if (bTitle.includes(token)) scoreB += 20;
+        if (bArtist.includes(token)) scoreB += 20;
+      }
+
+      // 4. Playability bonus
+      if (a.isPlayable) scoreA += 25;
+      if (b.isPlayable) scoreB += 25;
+
+      // 5. Short clip penalty (duration under 15s is often a sound effect, unless user searched for that)
+      if (a.duration && a.duration > 0 && a.duration < 15) scoreA -= 40;
+      if (b.duration && b.duration > 0 && b.duration < 15) scoreB -= 40;
+
+      return scoreB - scoreA;
+    });
   }
 
   /**
@@ -136,12 +225,22 @@ class ProviderRegistry {
 
     const limitPerProvider = Math.min(25, Math.max(1, parseInt(options.limit) || 10));
 
+    // Check in-memory metadata cache
+    const cacheKey = `search:${rawQuery.toLowerCase()}:${requestedProviders.sort().join(',')}:${limitPerProvider}`;
+    const cached = this.metadataCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < this.cacheTtlMs) {
+      return { ...cached.data, fromCache: true };
+    }
+
     const providerTasks = [];
     const providerMeta = {};
 
     for (const name of requestedProviders) {
       const provider = this.providers.get(name);
       if (!provider) continue;
+
+      const breaker = this.circuitBreakers.get(name) || new CircuitBreaker(name);
+      this.circuitBreakers.set(name, breaker);
 
       providerMeta[name] = {
         name: provider.displayName,
@@ -155,10 +254,34 @@ class ProviderRegistry {
         continue;
       }
 
+      // Check circuit breaker state: if OPEN, fast-fail without calling upstream
+      if (!breaker.canExecute()) {
+        providerMeta[name].status = 'circuit_broken';
+        providerMeta[name].error = `Circuit breaker is OPEN for ${provider.displayName} (cooldown active)`;
+        continue;
+      }
+
       providerTasks.push(
         (async () => {
+          const controller = new AbortController();
+          const timeoutMs = 4500; // 4.5s bounded budget
+          const timer = setTimeout(() => controller.abort(), timeoutMs);
+
           try {
-            const result = await provider.search(rawQuery, { limit: limitPerProvider });
+            const result = await provider.search(rawQuery, {
+              limit: limitPerProvider,
+              signal: controller.signal,
+            });
+
+            clearTimeout(timer);
+
+            // Record success on circuit breaker if no error returned
+            if (!result.error && result.status !== 'unavailable' && result.status !== 'rate_limited') {
+              breaker.recordSuccess();
+            } else if (result.error) {
+              breaker.recordFailure(result.error);
+            }
+
             return {
               providerName: name,
               results: result.results || [],
@@ -166,18 +289,24 @@ class ProviderRegistry {
               status: result.status || provider.status,
             };
           } catch (err) {
+            clearTimeout(timer);
+            breaker.recordFailure(err);
+
+            const isTimeout = err.name === 'AbortError' || err.message.toLowerCase().includes('timeout');
+            const status = isTimeout ? 'timeout' : 'unavailable';
+
             return {
               providerName: name,
               results: [],
-              error: err.message,
-              status: 'unavailable',
+              error: isTimeout ? `${provider.displayName} search timed out` : err.message,
+              status,
             };
           }
         })()
       );
     }
 
-    // Execute all providers in parallel using Promise.allSettled to guarantee complete fault isolation
+    // Execute all providers in parallel using Promise.allSettled for fault isolation
     const settled = await Promise.allSettled(providerTasks);
 
     const aggregatedTracks = [];
@@ -190,20 +319,40 @@ class ProviderRegistry {
         providerMeta[providerName].error = error;
 
         if (Array.isArray(results) && results.length > 0) {
-          aggregatedTracks.push(...results);
+          for (const track of results) {
+            if (track && track.title && track.provider) {
+              aggregatedTracks.push({
+                ...track,
+                isPlayable: track.isPlayable !== false && Boolean(track.streamUrl || track.url),
+              });
+            }
+          }
         }
       }
     }
 
-    // Apply conservative deduplication to the aggregated results
+    // Deduplicate and rank
     const deduplicatedResults = this.deduplicateTracks(aggregatedTracks);
+    const rankedResults = this.rankTracks(deduplicatedResults, rawQuery);
 
-    return {
+    const finalResponse = {
       query: rawQuery,
-      results: deduplicatedResults,
+      results: rankedResults,
       providers: providerMeta,
-      totalResults: deduplicatedResults.length,
+      totalResults: rankedResults.length,
     };
+
+    // Cache metadata in memory
+    if (this.metadataCache.size >= this.cacheMax) {
+      const oldestKey = this.metadataCache.keys().next().value;
+      this.metadataCache.delete(oldestKey);
+    }
+    this.metadataCache.set(cacheKey, {
+      data: finalResponse,
+      timestamp: Date.now(),
+    });
+
+    return finalResponse;
   }
 
   /**

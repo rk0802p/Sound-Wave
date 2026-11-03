@@ -50,7 +50,8 @@ const getProviders = async (req, res, next) => {
  */
 const resolve = async (req, res, next) => {
   try {
-    const { provider, trackId } = req.query;
+    const provider = req.query.provider;
+    const trackId = req.query.trackId || req.query.id;
 
     if (!provider || !trackId) {
       return res.status(400).json({
@@ -67,9 +68,17 @@ const resolve = async (req, res, next) => {
     }
 
     res.status(200).json({
+      trackId: `${provider}:${trackId}`,
       provider,
-      trackId,
+      providerTrackId: trackId,
       streamUrl: result.streamUrl,
+      playback: {
+        available: true,
+        kind: 'direct',
+        url: result.streamUrl,
+        mimeType: result.mimeType || 'audio/mpeg',
+        expiresAt: result.expiresAt || null,
+      },
       metadata: result.metadata,
     });
   } catch (err) {
