@@ -104,11 +104,17 @@ export const useAuthStore = defineStore('auth', {
     },
 
     logout() {
+      const prevUserId = this.user?.id || this.user?._id;
       this.token = '';
       this.user = null;
       this.error = null;
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      try {
+        if (prevUserId) {
+          localStorage.removeItem(`soundwave_bubble_playlists_v6_${prevUserId}`);
+        }
+      } catch {}
     },
   },
 });

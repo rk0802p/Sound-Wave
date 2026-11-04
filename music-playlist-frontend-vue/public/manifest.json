@@ -1,0 +1,41 @@
+{
+  "name": "SOUNDWAVE — Multi-Source Music Platform",
+  "short_name": "SOUNDWAVE",
+  "description": "Curate, discover, visualize, and share music playlists across open networks and streaming services.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0b0c10",
+  "theme_color": "#0b0c10",
+  "categories": ["music", "entertainment", "social"],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.ico",
+      "sizes": "48x48 32x32 16x16",
+      "type": "image/x-icon"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Search Catalog",
+      "short_name": "Search",
+      "description": "Search open music networks and streaming sources",
+      "url": "/search",
+      "icons": [{ "src": "/icon.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "Explore Mixtapes",
+      "short_name": "Explore",
+      "description": "Browse community curated public mixtapes",
+      "url": "/explore",
+      "icons": [{ "src": "/icon.svg", "sizes": "192x192" }]
+    }
+  ]
+}

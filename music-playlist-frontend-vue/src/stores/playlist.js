@@ -2,15 +2,28 @@ import { defineStore } from 'pinia';
 import { playlistApi } from '../api/playlists';
 import { MOOD_PLAYLISTS } from '../data/moodPlaylists';
 
-const LOCAL_STORAGE_KEY = 'soundwave_bubble_playlists_v3';
+const getCurrentUserId = () => {
+  try {
+    const rawUser = localStorage.getItem('user');
+    if (rawUser) {
+      const user = JSON.parse(rawUser);
+      return user.id || user._id || 'guest';
+    }
+  } catch {}
+  return 'guest';
+};
+
+const getStorageKey = (userId = getCurrentUserId()) => {
+  return `soundwave_bubble_playlists_v6_${userId}`;
+};
 
 const getInitialOfflinePlaylists = () => {
   try {
-    const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+    const key = getStorageKey();
+    const raw = localStorage.getItem(key);
     if (raw) {
       const parsed = JSON.parse(raw);
-      const isModern = Array.isArray(parsed) && parsed.length > 0 && parsed[0].songs?.some(s => s.id?.startsWith('song-') || s.artist === 'Ruth B.');
-      if (isModern) {
+      if (Array.isArray(parsed) && parsed.length > 0) {
         return parsed;
       }
     }
@@ -18,16 +31,13 @@ const getInitialOfflinePlaylists = () => {
     console.warn('Failed to parse offline playlists:', e);
   }
 
-  try {
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(MOOD_PLAYLISTS));
-  } catch {}
-
   return [...MOOD_PLAYLISTS];
 };
 
-const saveOfflinePlaylists = (playlists) => {
+const saveOfflinePlaylists = (playlists, userId = getCurrentUserId()) => {
   try {
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(playlists));
+    const key = getStorageKey(userId);
+    localStorage.setItem(key, JSON.stringify(playlists));
   } catch {}
 };
 
@@ -154,6 +164,16 @@ export const usePlaylistStore = defineStore('playlist', {
       } finally {
         this.isMutating = false;
       }
+    },
+
+    clearUserCache(userId) {
+      try {
+        const key = getStorageKey(userId || getCurrentUserId());
+        localStorage.removeItem(key);
+      } catch {}
+      this.playlists = [...MOOD_PLAYLISTS];
+      this.currentPlaylist = MOOD_PLAYLISTS[0];
+      this.selectedPlaylistIndex = 0;
     },
   },
 });

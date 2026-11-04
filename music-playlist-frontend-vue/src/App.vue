@@ -1,5 +1,6 @@
 <template>
   <div class="app-root">
+    <OfflineBanner />
     <component :is="layout">
       <router-view v-slot="{ Component }">
         <component :is="Component" />
@@ -12,6 +13,7 @@
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import AppLayout from './components/layout/AppLayout.vue';
+import OfflineBanner from './components/common/OfflineBanner.vue';
 
 const route = useRoute();
 
