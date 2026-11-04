@@ -709,7 +709,7 @@ const scrollCarousel = (delta) => {
   }
 };
 
-// Drawer controls & background scroll lock
+// Drawer controls & root/background scroll lock
 const openDrawer = () => {
   isDrawerOpen.value = true;
 };
@@ -718,15 +718,49 @@ const closeDrawer = () => {
   isDrawerOpen.value = false;
 };
 
+// Style preservation for root and body
+let savedHtmlOverflow = null;
+let savedBodyOverflow = null;
+let savedBodyTouchAction = null;
+
+const applyScrollLock = () => {
+  if (typeof document === 'undefined') return;
+  const html = document.documentElement;
+  const body = document.body;
+
+  if (savedHtmlOverflow === null) savedHtmlOverflow = html.style.overflow;
+  if (savedBodyOverflow === null) savedBodyOverflow = body.style.overflow;
+  if (savedBodyTouchAction === null) savedBodyTouchAction = body.style.touchAction;
+
+  html.style.overflow = 'hidden';
+  body.style.overflow = 'hidden';
+  body.style.touchAction = 'none';
+};
+
+const releaseScrollLock = () => {
+  if (typeof document === 'undefined') return;
+  const html = document.documentElement;
+  const body = document.body;
+
+  if (savedHtmlOverflow !== null) {
+    html.style.overflow = savedHtmlOverflow;
+    savedHtmlOverflow = null;
+  }
+  if (savedBodyOverflow !== null) {
+    body.style.overflow = savedBodyOverflow;
+    savedBodyOverflow = null;
+  }
+  if (savedBodyTouchAction !== null) {
+    body.style.touchAction = savedBodyTouchAction;
+    savedBodyTouchAction = null;
+  }
+};
+
 watch(isDrawerOpen, (isOpen) => {
-  if (typeof document !== 'undefined') {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      document.body.style.touchAction = 'none';
-    } else {
-      document.body.style.overflow = '';
-      document.body.style.touchAction = '';
-    }
+  if (isOpen) {
+    applyScrollLock();
+  } else {
+    releaseScrollLock();
   }
 });
 
@@ -884,10 +918,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyDown);
-  if (typeof document !== 'undefined') {
-    document.body.style.overflow = '';
-    document.body.style.touchAction = '';
-  }
+  releaseScrollLock();
 });
 </script>
 
