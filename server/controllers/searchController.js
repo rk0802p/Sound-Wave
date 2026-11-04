@@ -6,7 +6,7 @@ const registry = require('../providers/ProviderRegistry');
  */
 const search = async (req, res, next) => {
   try {
-    const { q, providers, limit } = req.query;
+    const { q, providers, provider, limit } = req.query;
 
     if (!q || !String(q).trim()) {
       return res.status(400).json({
@@ -14,8 +14,9 @@ const search = async (req, res, next) => {
       });
     }
 
-    const providerList = providers
-      ? String(providers).split(',').map((p) => p.trim()).filter(Boolean)
+    const providerParam = providers || provider;
+    const providerList = providerParam
+      ? String(providerParam).split(',').map((p) => p.trim()).filter(Boolean)
       : null;
 
     const data = await registry.aggregateSearch(q, {

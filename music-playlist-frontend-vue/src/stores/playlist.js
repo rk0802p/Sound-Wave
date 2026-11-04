@@ -87,7 +87,7 @@ export const usePlaylistStore = defineStore('playlist', {
             return {
               ...fallbackMood,
               ...p,
-              songs: (p.songs && p.songs.length > 0) ? p.songs : fallbackMood.songs,
+              songs: Array.isArray(p.songs) ? p.songs : [],
               emoji: p.emoji || fallbackMood.emoji,
               e: p.emoji || fallbackMood.e,
               o1: p.o1 || fallbackMood.o1,
@@ -114,27 +114,7 @@ export const usePlaylistStore = defineStore('playlist', {
       this.isMutating = true;
       this.error = null;
       try {
-        let created;
-        try {
-          created = await playlistApi.createPlaylist(playlistData);
-        } catch {
-          // Fallback offline creation
-          const moodIdx = this.playlists.length % MOOD_PLAYLISTS.length;
-          const template = MOOD_PLAYLISTS[moodIdx];
-          created = {
-            _id: `custom-${Date.now()}`,
-            name: playlistData.name || 'New Bubble',
-            description: playlistData.description || 'Curated personal bubble',
-            emoji: playlistData.emoji || template.emoji,
-            e: playlistData.emoji || template.e,
-            o1: playlistData.o1 || template.o1,
-            o2: playlistData.o2 || template.o2,
-            tint: playlistData.tint || template.tint,
-            songs: [],
-            isPublic: true,
-            createdAt: new Date().toISOString(),
-          };
-        }
+        const created = await playlistApi.createPlaylist(playlistData);
 
         const fallbackMood = MOOD_PLAYLISTS[this.playlists.length % MOOD_PLAYLISTS.length];
         const enriched = {
@@ -162,19 +142,7 @@ export const usePlaylistStore = defineStore('playlist', {
     async addSong(playlistId, songData, allowDuplicate = false) {
       this.isMutating = true;
       try {
-        let added;
-        try {
-          added = await playlistApi.addSong(playlistId, songData, allowDuplicate);
-        } catch {
-          added = {
-            _id: `song-${Date.now()}`,
-            title: songData.title,
-            artist: songData.artist,
-            duration: Number(songData.duration) || 200,
-            url: songData.url || '',
-            coverImage: songData.coverImage || '',
-          };
-        }
+        const added = await playlistApi.addSong(playlistId, songData, allowDuplicate);
 
         const p = this.playlists.find((x) => x._id === playlistId || x.id === playlistId);
         if (p) {

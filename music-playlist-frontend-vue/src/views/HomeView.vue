@@ -407,6 +407,13 @@
           </div>
         </div>
 
+        <div v-if="displayedCuratedTracks.length === 0 && activeFilter === 'playlist'" class="empty-curated-search glass">
+          <p>This playlist bubble has no tracks yet.</p>
+          <router-link to="/search" class="btn p font-mono">
+            Discover & Add Tracks →
+          </router-link>
+        </div>
+
         <div v-if="displayedCuratedTracks.length === 0 && searchQuery.trim()" class="empty-curated-search glass">
           <p>No homepage tracks match "{{ searchQuery.trim() }}".</p>
           <router-link :to="{ path: '/search', query: { q: searchQuery.trim() } }" class="btn p font-mono">
@@ -716,9 +723,11 @@ const applyFilters = (tracks) => {
     const plSongIds = plSongs.map((s) => s._id || s.id || s.title);
     const matched = result.filter((t) => plSongIds.includes(t._id || t.id || t.title));
     if (matched.length > 0) {
-      result = matched;
+      return matched;
     } else if (plSongs.length > 0) {
       return plSongs;
+    } else {
+      return [];
     }
   }
 
@@ -1029,7 +1038,9 @@ watch(
 
 onMounted(() => {
   loadFavorites();
-  playlistStore.fetchPlaylists().catch(() => {});
+  if (authStore.isAuthenticated) {
+    playlistStore.fetchPlaylists().catch(() => {});
+  }
   window.addEventListener('keydown', handleKeyDown);
 
   // Set initial default track in player to the first song from Spotify collection if not actively playing

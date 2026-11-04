@@ -1,9 +1,7 @@
 const CACHE_NAME = 'music-playlist-v1';
 const urlsToCache = [
   '/',
-  '/index.html',
-  '/src/main.js',
-  '/src/assets/styles/global.css'
+  '/index.html'
 ];
 
 // Install event - cache resources
