@@ -10,6 +10,8 @@ const protectedRoutes = require("./routes/protected");
 const playlistRoutes = require("./routes/playlist");
 const spotifyRoutes = require("./routes/spotify");
 const searchRoutes = require("./routes/search");
+const logger = require("./utils/logger");
+const registry = require("./providers/ProviderRegistry");
 
 const app = express();
 
@@ -50,9 +52,12 @@ app.use(
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-request-id"],
+    exposedHeaders: ["x-request-id"],
   })
 );
+
+app.use(logger.requestCorrelationMiddleware);
 
 app.use(express.json({ limit: "5mb" }));
 app.use(express.urlencoded({ extended: true, limit: "5mb" }));
@@ -130,9 +135,32 @@ app.get("/api/test", async (req, res) => {
     dbStatus = "missing_mongo_uri";
   }
 
+  // Provider health summary
+  const providerSummary = { total: 0, available: 0, degraded: 0, circuit_broken: 0, unconfigured: 0 };
+  try {
+    const provList = registry.getAllStatus();
+    providerSummary.total = provList.length;
+    for (const p of provList) {
+      if (!p.isConfigured || p.status === "unconfigured") {
+        providerSummary.unconfigured += 1;
+      } else if (p.circuitBreaker?.isOpen) {
+        providerSummary.circuit_broken += 1;
+      } else if (p.status === "degraded" || p.status === "timeout" || p.status === "rate_limited") {
+        providerSummary.degraded += 1;
+      } else {
+        providerSummary.available += 1;
+      }
+    }
+  } catch (e) {}
+
   res.json({
     status: dbStatus === "connected" ? "ok" : "degraded",
     message: "Music Playlist API is operational",
+    process: {
+      uptime: Math.round(process.uptime()),
+      pid: process.pid,
+      environment: process.env.NODE_ENV || "development",
+    },
     database: {
       status: dbStatus,
       readyState: mongoose.connection.readyState,
@@ -145,10 +173,13 @@ app.get("/api/test", async (req, res) => {
         ? "Ensure MongoDB Atlas Network Access has 0.0.0.0/0 allowed, and verify MONGO_URI in Vercel settings."
         : null,
     },
+    providers: providerSummary,
     configured: {
       hasMongoUri: Boolean(process.env.MONGO_URI),
       hasJwtSecret: Boolean(process.env.JWT_SECRET),
       frontendUrl: process.env.FRONTEND_URL || null,
+      hasJamendoClient: Boolean(process.env.JAMENDO_CLIENT_ID),
+      hasSpotifyClient: Boolean(process.env.SPOTIFY_CLIENT_ID),
     },
     timestamp: new Date().toISOString(),
   });

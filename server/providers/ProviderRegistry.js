@@ -88,6 +88,31 @@ class ProviderRegistry {
   }
 
   /**
+   * Return comprehensive non-sensitive telemetry across all providers
+   */
+  getTelemetry() {
+    const telemetry = {};
+    for (const [key, provider] of this.providers.entries()) {
+      const breaker = this.circuitBreakers.get(key);
+      const breakerStatus = breaker ? breaker.getStatus() : null;
+      telemetry[key] = {
+        name: provider.displayName,
+        status: !provider.isConfigured()
+          ? 'unconfigured'
+          : breakerStatus?.isOpen
+          ? 'circuit_broken'
+          : provider.status,
+        isConfigured: provider.isConfigured(),
+        circuitBreaker: breakerStatus,
+      };
+    }
+    return {
+      timestamp: new Date().toISOString(),
+      providers: telemetry,
+    };
+  }
+
+  /**
    * Normalize text for conservative matching (title / artist)
    * @param {string} str
    * @returns {string}
@@ -278,6 +303,7 @@ class ProviderRegistry {
           const controller = new AbortController();
           const timeoutMs = 4500; // 4.5s bounded budget
           const timer = setTimeout(() => controller.abort(), timeoutMs);
+          const t0 = Date.now();
 
           try {
             const result = await provider.search(rawQuery, {
@@ -286,10 +312,11 @@ class ProviderRegistry {
             });
 
             clearTimeout(timer);
+            const latencyMs = Date.now() - t0;
 
             // Record success on circuit breaker if no error returned
             if (!result.error && result.status !== 'unavailable' && result.status !== 'rate_limited') {
-              breaker.recordSuccess();
+              breaker.recordSuccess(latencyMs);
             } else if (result.error) {
               breaker.recordFailure(result.error);
             }
@@ -299,12 +326,13 @@ class ProviderRegistry {
               results: result.results || [],
               error: result.error || null,
               status: result.status || provider.status,
+              latencyMs,
             };
           } catch (err) {
             clearTimeout(timer);
-            breaker.recordFailure(err);
-
             const isTimeout = err.name === 'AbortError' || err.message.toLowerCase().includes('timeout');
+            breaker.recordFailure(err, isTimeout);
+
             const status = isTimeout ? 'timeout' : 'unavailable';
 
             return {
@@ -312,6 +340,7 @@ class ProviderRegistry {
               results: [],
               error: isTimeout ? `${provider.displayName} search timed out` : err.message,
               status,
+              latencyMs: Date.now() - t0,
             };
           }
         })()

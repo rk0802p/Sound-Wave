@@ -46,6 +46,19 @@ const getProviders = async (req, res, next) => {
 };
 
 /**
+ * GET /api/search/providers/health
+ * Returns normalized diagnostic telemetry across all registered music providers
+ */
+const getProvidersHealth = async (req, res, next) => {
+  try {
+    const telemetry = registry.getTelemetry();
+    res.status(200).json(telemetry);
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
  * GET /api/search/resolve
  * Resolves on-demand playback URL from original remote provider
  */
@@ -103,5 +116,6 @@ const resolve = async (req, res, next) => {
 module.exports = {
   search,
   getProviders,
+  getProvidersHealth,
   resolve,
 };
