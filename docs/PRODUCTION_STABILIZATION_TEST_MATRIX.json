@@ -1,0 +1,118 @@
+{
+  "matrixVersion": "1.0",
+  "testedAt": "2026-11-05T02:10:00Z",
+  "environment": "Simulation & Local Production Build with Edge E2E Automation",
+  "providers": [
+    {
+      "provider": "saavn",
+      "displayName": "JioSaavn (Dev Proof-of-Concept)",
+      "environmentConstraint": "Quarantined in production (NODE_ENV === 'production' -> false)",
+      "catalogDiscovery": "Excluded in production",
+      "resolutionEndpoint": "GET /api/search/resolve?provider=saavn&trackId=...",
+      "expectedStatusProduction": "403 PROVIDER_UNCONFIGURED",
+      "frontendHandling": "Pre-emptive capability sync fast-fails locally with 0 HTTP calls; player dock indicates '• Unavailable'",
+      "testResult": "PASS"
+    },
+    {
+      "provider": "jamendo",
+      "displayName": "Jamendo Music (Creative Commons)",
+      "environmentConstraint": "Requires active JAMENDO_CLIENT_ID",
+      "catalogDiscovery": "Upstream code 11 suspension detected; isolated cleanly by ProviderRegistry",
+      "resolutionEndpoint": "Direct MP3 URL on prod-1.storage.jamendo.com (requires resolution: false)",
+      "expectedStatusProduction": "HTTP 200 audio/mpeg on storage CDN; catalog queries isolated to 'unavailable'",
+      "frontendHandling": "Eliminated false playing toasts; fallback to Archive/Audius; CC license and attribution modal preserved",
+      "testResult": "PASS"
+    },
+    {
+      "provider": "archive",
+      "displayName": "Internet Archive (Open Audio)",
+      "environmentConstraint": "Unrestricted public access",
+      "catalogDiscovery": "Fully operational (advancedsearch.php)",
+      "resolutionEndpoint": "Direct archive.org/download/:id/:file.mp3",
+      "expectedStatusProduction": "HTTP 200 audio/mpeg with full range requests and seek support",
+      "frontendHandling": "Seamless streaming via DirectAudioProvider and Web Audio visualizer",
+      "testResult": "PASS"
+    },
+    {
+      "provider": "audius",
+      "displayName": "Audius Decentralized Network",
+      "environmentConstraint": "Unauthenticated public gateway read-only access",
+      "catalogDiscovery": "Fully operational (api.audius.co/v1/tracks/search)",
+      "resolutionEndpoint": "Direct streaming redirect from api.audius.co/v1/tracks/:id/stream",
+      "expectedStatusProduction": "HTTP 302 -> HTTP 200 audio stream",
+      "frontendHandling": "Integrated playback with volume and track progression",
+      "testResult": "PASS"
+    },
+    {
+      "provider": "spotify",
+      "displayName": "Spotify Web / Catalog",
+      "environmentConstraint": "Metadata-only via oEmbed",
+      "catalogDiscovery": "Format parsing and oEmbed metadata retrieval supported",
+      "resolutionEndpoint": "External redirect to open.spotify.com",
+      "expectedStatusProduction": "External link rendering without runtime streaming",
+      "frontendHandling": "Track 12 displayed with honest 'UNAVAILABLE' badge",
+      "testResult": "PASS"
+    },
+    {
+      "provider": "direct",
+      "displayName": "Direct Audio / Local Stream",
+      "environmentConstraint": "Standard HTML5 audio formats (MP3, AAC, FLAC)",
+      "catalogDiscovery": "Local library and user custom links",
+      "resolutionEndpoint": "Direct audio URL",
+      "expectedStatusProduction": "HTTP 200 direct playback",
+      "frontendHandling": "HTML5 audio element with singleton Web Audio graph",
+      "testResult": "PASS"
+    }
+  ],
+  "routingAndSocial": [
+    {
+      "testCase": "Public Explore Feed (/explore)",
+      "testedRoute": "/explore",
+      "backendEndpoint": "GET /api/playlists/public/explore",
+      "result": "PASS (Renders empty state honestly when count = 0; renders cards when playlists exist)"
+    },
+    {
+      "testCase": "Public Mixtape Anonymous Preview (/playlist/:id)",
+      "testedRoute": "/playlist/:id",
+      "backendEndpoint": "GET /api/playlists/:id",
+      "result": "PASS (Valid 24-char ObjectId loads tracklist, cover art, and metadata)"
+    },
+    {
+      "testCase": "Curated Mood Fallback Preview (/playlist/67c000000000000000000001)",
+      "testedRoute": "/playlist/67c000000000000000000001",
+      "backendEndpoint": "Local mood fallback interceptor",
+      "result": "PASS (Renders curated 'Acoustic mornings' mixtape gracefully)"
+    },
+    {
+      "testCase": "Invalid ID Format Preview (/playlist/invalid-id-xyz)",
+      "testedRoute": "/playlist/invalid-id-xyz",
+      "backendEndpoint": "GET /api/playlists/invalid-id-xyz",
+      "result": "PASS (Returns honest HTTP 400 'Invalid Mixtape Link' error page instead of false 403)"
+    }
+  ],
+  "visualAndTheme": [
+    {
+      "testCase": "SearchView Bubbly Wash & Pastel Blobs",
+      "result": "PASS (Present: #wash, .bgb with 3 animated orbs)"
+    },
+    {
+      "testCase": "SearchView Glowing Focus Portal",
+      "result": "PASS (Present: .pg-search-input-box with cyan glow and frosted glass)"
+    },
+    {
+      "testCase": "Responsive Viewport 1280px (Desktop)",
+      "screenshot": "screenshot_incident_search_1280.png",
+      "result": "PASS"
+    },
+    {
+      "testCase": "Responsive Viewport 768px (Tablet)",
+      "screenshot": "screenshot_incident_search_768.png",
+      "result": "PASS"
+    },
+    {
+      "testCase": "Responsive Viewport 390px (Mobile)",
+      "screenshot": "screenshot_incident_search_390.png",
+      "result": "PASS"
+    }
+  ]
+}

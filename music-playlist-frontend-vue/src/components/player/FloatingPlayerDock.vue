@@ -359,7 +359,7 @@ const toggleMute = () => {
 const isUnavailable = computed(() => {
   const t = playerStore.currentTrack;
   if (!t) return false;
-  if (t.isUnavailable) return true;
+  if (t.isUnavailable || playerStore.playbackState === "unavailable") return true;
   const audioUrl = resolvePlayableAudioUrl(t);
   const canResolve = Boolean(t.needsResolution && t.providerTrackId && t.provider && t.provider !== 'spotify');
   return !audioUrl && !canResolve;

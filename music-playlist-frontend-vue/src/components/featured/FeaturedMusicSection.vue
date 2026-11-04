@@ -279,6 +279,9 @@ const handlePlayTrack = async (track, index) => {
   } else {
     // Play with current displayed collection as queue
     await playerStore.playTrack(track, displayedTracks.value, index);
+    if (playerStore.playbackState === "unavailable") {
+      toastStore.info(`"${track.title}" is currently unavailable for playback in this environment.`);
+    }
   }
 };
 

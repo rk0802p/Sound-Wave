@@ -24,8 +24,8 @@
 
       <!-- Private or Error State -->
       <div v-else-if="error" class="preview-error font-mono">
-        <div class="error-glyph font-display">403</div>
-        <h2 class="error-title font-display">Mixtape Restricted or Not Found</h2>
+        <div class="error-glyph font-display">{{ errorCode }}</div>
+        <h2 class="error-title font-display">{{ errorCode === 400 ? "Invalid Mixtape Link" : errorCode === 404 ? "Mixtape Not Found" : "Mixtape Restricted" }}</h2>
         <p class="error-desc">{{ error }}</p>
         <div class="error-actions">
           <router-link to="/login" class="cta-pill-filled font-mono">
@@ -220,6 +220,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { playlistApi } from '../api/playlists';
 import { usePlayerStore } from '../stores/player';
 import { useToastStore } from '../stores/toast';
+import { MOOD_PLAYLISTS } from '../data/moodPlaylists';
 import FloatingPlayerDock from '../components/player/FloatingPlayerDock.vue';
 
 const route = useRoute();
@@ -230,6 +231,7 @@ const toastStore = useToastStore();
 const playlist = ref(null);
 const isLoading = ref(true);
 const error = ref(null);
+const errorCode = ref(404);
 const isForking = ref(false);
 
 const loadPlaylist = async () => {
@@ -248,11 +250,37 @@ const loadPlaylist = async () => {
     playlist.value = data;
   } catch (err) {
     console.error('Error fetching playlist preview:', err);
-    if (err.response?.status === 401 || err.response?.status === 403) {
+    errorCode.value = err.response?.status || 404;
+
+    // Check if requested ID matches a curated mood playlist
+    const moodMatch = MOOD_PLAYLISTS.find(
+      (m) => m._id === id || m.id === id || `archive-${m._id}` === id || m._id === String(id).replace(/^archive-/, '')
+    );
+    if (moodMatch) {
+      playlist.value = {
+        ...moodMatch,
+        creator: { username: 'Soundwave Curator' },
+        isPublic: true,
+        forkCount: 0,
+      };
+      error.value = null;
+      return;
+    }
+
+    if (err.response?.status === 401) {
+      errorCode.value = 401;
+      error.value = 'Authentication required to view this private mixtape.';
+    } else if (err.response?.status === 403) {
+      errorCode.value = 403;
       error.value = 'This mixtape is private or requires authorization to view.';
     } else if (err.response?.status === 404) {
+      errorCode.value = 404;
       error.value = 'Mixtape not found or has been removed.';
+    } else if (err.response?.status === 400) {
+      errorCode.value = 400;
+      error.value = err.response?.data?.message || 'Invalid playlist ID format.';
     } else {
+      errorCode.value = err.response?.status || 500;
       error.value = err.response?.data?.message || 'Failed to load mixtape preview';
     }
   } finally {

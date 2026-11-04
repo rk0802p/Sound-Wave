@@ -3,6 +3,45 @@ import { soundController } from '../services/providers';
 import { MOOD_PLAYLISTS } from '../data/moodPlaylists';
 import { resolvePlayableAudioUrl } from '../services/providers/detector';
 import { searchApi } from '../api/search';
+// Module-scoped in-flight deduplication and provider environment status cache
+const activeResolutions = new Map();
+const blockedProviders = new Set();
+const loggedBlockedProviders = new Set();
+
+const resolveWithDedup = async (provider, providerTrackId) => {
+  if (blockedProviders.has(provider)) {
+    const err = new Error(`Provider '${provider}' is unconfigured or disabled in this environment`);
+    err.code = 'PROVIDER_UNCONFIGURED';
+    err.response = { status: 403, data: { code: 'PROVIDER_UNCONFIGURED', message: err.message } };
+    throw err;
+  }
+
+  const key = `${provider}:${providerTrackId}`;
+  if (activeResolutions.has(key)) {
+    return activeResolutions.get(key);
+  }
+
+  const p = (async () => {
+    try {
+      return await searchApi.resolve(provider, providerTrackId);
+    } catch (err) {
+      if (err.response?.status === 403 || err.response?.data?.code === 'PROVIDER_UNCONFIGURED') {
+        blockedProviders.add(provider);
+        if (!loggedBlockedProviders.has(provider)) {
+          loggedBlockedProviders.add(provider);
+          console.warn(`[SOUNDWAVE Player] Provider '${provider}' is disabled in this environment. Skipping future resolution calls.`);
+        }
+      }
+      throw err;
+    } finally {
+      activeResolutions.delete(key);
+    }
+  })();
+
+  activeResolutions.set(key, p);
+  return p;
+};
+
 
 export const usePlayerStore = defineStore('player', {
   state: () => {
@@ -53,6 +92,17 @@ export const usePlayerStore = defineStore('player', {
   },
 
   actions: {
+    async syncProviderCapabilities() {
+      try {
+        const res = await searchApi.getProviders();
+        const list = Array.isArray(res) ? res : res.providers || [];
+        for (const p of list) {
+          if (p.isConfigured === false || p.status === 'unconfigured') {
+            blockedProviders.add(p.name);
+          }
+        }
+      } catch {}
+    },
     init() {
       if (this.isEngineReady) return;
 
@@ -124,6 +174,7 @@ export const usePlayerStore = defineStore('player', {
       soundController.setVolume(this.volume);
       soundController.setMuted(this.muted);
       this.isEngineReady = true;
+      this.syncProviderCapabilities();
     },
 
     setTheme(o1, o2, tint = null) {
@@ -198,7 +249,8 @@ export const usePlayerStore = defineStore('player', {
         let streamUrl = alt.streamUrl;
         if (!streamUrl && alt.needsResolution && alt.provider && alt.providerTrackId) {
           try {
-            const resolved = await searchApi.resolve(alt.provider, alt.providerTrackId);
+            if (blockedProviders.has(alt.provider)) continue;
+            const resolved = await resolveWithDedup(alt.provider, alt.providerTrackId);
             if (this.playRequestId !== reqId) return false;
             if (resolved?.streamUrl) {
               streamUrl = resolved.streamUrl;
@@ -265,12 +317,29 @@ export const usePlayerStore = defineStore('player', {
       const providerTrackId = track.providerTrackId || track.source?.externalId;
       let audioUrl = resolvePlayableAudioUrl(track);
 
+      // Check if provider is permanently blocked in this environment
+      if (provider && blockedProviders.has(provider)) {
+        const recovered = await this.tryAlternativeFallback(track, reqId);
+        if (recovered || this.playRequestId !== reqId) return;
+
+        soundController.pause();
+        this.isPlaying = false;
+        this.isLoading = false;
+        this.playbackState = 'unavailable';
+        this.currentTime = 0;
+        this.error = `Playback unavailable: ${provider.toUpperCase()} provider is disabled in production environment.`;
+        if (typeof document !== 'undefined') {
+          document.body.classList.remove('playing');
+        }
+        return;
+      }
+
       // On-demand playback resolution if URL is missing or marked for resolution
       if ((!audioUrl || track.needsResolution) && provider && provider !== 'spotify' && providerTrackId) {
         try {
           this.playbackState = 'resolving';
           this.isLoading = true;
-          const resolved = await searchApi.resolve(provider, providerTrackId);
+          const resolved = await resolveWithDedup(provider, providerTrackId);
 
           // Discard if user clicked another track during async resolution
           if (this.playRequestId !== reqId) return;
@@ -288,12 +357,29 @@ export const usePlayerStore = defineStore('player', {
             audioUrl = resolved.streamUrl;
           }
         } catch (resErr) {
-          console.warn('On-demand resolution notice:', resErr);
           if (this.playRequestId !== reqId) return;
+
+          const isBlocked = resErr.response?.status === 403 || resErr.response?.data?.code === 'PROVIDER_UNCONFIGURED';
+          if (!isBlocked) {
+            console.warn('On-demand resolution notice:', resErr.message || resErr);
+          }
 
           // Attempt alternative fallback if primary resolution failed
           const recovered = await this.tryAlternativeFallback(track, reqId);
           if (recovered || this.playRequestId !== reqId) return;
+
+          if (isBlocked) {
+            soundController.pause();
+            this.isPlaying = false;
+            this.isLoading = false;
+            this.playbackState = 'unavailable';
+            this.currentTime = 0;
+            this.error = resErr.response?.data?.message || `Playback unavailable: ${provider.toUpperCase()} provider is disabled in production.`;
+            if (typeof document !== 'undefined') {
+              document.body.classList.remove('playing');
+            }
+            return;
+          }
         }
       }
 
@@ -330,11 +416,11 @@ export const usePlayerStore = defineStore('player', {
         console.warn('Sound controller load warning:', err);
 
         // One-time auto re-resolution retry if stream URL expired or failed
-        if (provider && provider !== 'spotify' && providerTrackId && !track._retriedOnce) {
+        if (provider && provider !== 'spotify' && !blockedProviders.has(provider) && providerTrackId && !track._retriedOnce) {
           track._retriedOnce = true;
           try {
             this.playbackState = 'recovering';
-            const fresh = await searchApi.resolve(provider, providerTrackId);
+            const fresh = await resolveWithDedup(provider, providerTrackId);
             if (this.playRequestId !== reqId) return;
             if (fresh?.streamUrl) {
               track.streamUrl = fresh.streamUrl;

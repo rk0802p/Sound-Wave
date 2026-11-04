@@ -201,7 +201,8 @@ export const getSongById = (id) => {
 export const MOOD_PLAYLIST_DEFINITIONS = [
   {
     id: 'mood-acoustic-mornings',
-    _id: 'archive-67c000000000000000000001',
+    _id: '67c000000000000000000001',
+    isMood: true,
     name: 'Acoustic mornings',
     n: 'Acoustic mornings',
     emoji: '☀️',
@@ -220,7 +221,8 @@ export const MOOD_PLAYLIST_DEFINITIONS = [
   },
   {
     id: 'mood-late-night-drive',
-    _id: 'archive-67c000000000000000000002',
+    _id: '67c000000000000000000002',
+    isMood: true,
     name: 'Late night drive',
     n: 'Late night drive',
     emoji: '🌙',
@@ -240,7 +242,8 @@ export const MOOD_PLAYLIST_DEFINITIONS = [
   },
   {
     id: 'mood-study-loop',
-    _id: 'archive-67c000000000000000000003',
+    _id: '67c000000000000000000003',
+    isMood: true,
     name: 'Study loop',
     n: 'Study loop',
     emoji: '🌿',
@@ -259,7 +262,8 @@ export const MOOD_PLAYLIST_DEFINITIONS = [
   },
   {
     id: 'mood-gym-pump',
-    _id: 'archive-67c000000000000000000004',
+    _id: '67c000000000000000000004',
+    isMood: true,
     name: 'Gym pump',
     n: 'Gym pump',
     emoji: '🔥',
@@ -279,7 +283,8 @@ export const MOOD_PLAYLIST_DEFINITIONS = [
   },
   {
     id: 'mood-road-trip',
-    _id: 'archive-67c000000000000000000005',
+    _id: '67c000000000000000000005',
+    isMood: true,
     name: 'Road trip',
     n: 'Road trip',
     emoji: '🚗',

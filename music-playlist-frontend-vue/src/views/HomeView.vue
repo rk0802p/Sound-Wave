@@ -171,7 +171,7 @@
           <router-link
             v-for="(p, idx) in playlistStore.playlists"
             :key="p._id || idx"
-            :to="'/playlist/' + (p._id || p.id)"
+            :to="getPlaylistLink(p)"
             class="nav pl-item"
             @click="closeDrawer"
           >
@@ -861,6 +861,14 @@ const openDrawer = () => {
 
 const closeDrawer = () => {
   isDrawerOpen.value = false;
+};
+
+const getPlaylistLink = (p) => {
+  if (!p) return '/';
+  if (p.isMood || p.id?.startsWith('mood-') || p._id?.startsWith('mood-')) {
+    return { path: '/', query: { playlist: p._id || p.id } };
+  }
+  return `/playlist/${p._id || p.id}`;
 };
 
 // Style preservation for root and body
