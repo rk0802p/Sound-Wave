@@ -116,7 +116,9 @@ app.get("/api/test", async (req, res) => {
   let dbStatus = "disconnected";
   let dbError = null;
 
-  if (process.env.MONGO_URI) {
+  if (mongoose.connection.readyState === 1) {
+    dbStatus = "connected";
+  } else if (process.env.MONGO_URI) {
     try {
       await connectDB();
       dbStatus = "connected";
@@ -133,6 +135,11 @@ app.get("/api/test", async (req, res) => {
     message: "Music Playlist API is operational",
     database: {
       status: dbStatus,
+      readyState: mongoose.connection.readyState,
+      readyStateName:
+        ["disconnected", "connected", "connecting", "disconnecting"][
+          mongoose.connection.readyState
+        ] || "unknown",
       error: dbError,
       suggestion: dbError
         ? "Ensure MongoDB Atlas Network Access has 0.0.0.0/0 allowed, and verify MONGO_URI in Vercel settings."

@@ -33,6 +33,23 @@
           {{ currentTrackArtist }}
           <span v-if="isUnavailable" class="unavailable-tag"> • Unavailable</span>
         </small>
+        <div v-if="isJamendoTrack" class="dock-jamendo-meta">
+          <a
+            v-if="jamendoTrackUrl"
+            :href="jamendoTrackUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="dock-jamendo-link"
+            title="Open track on Jamendo"
+            @click.stop
+          >
+            ↗ JAMENDO
+          </a>
+          <span v-else class="dock-jamendo-link">JAMENDO</span>
+          <span class="dock-jamendo-license" :title="jamendoAttribution">
+            {{ jamendoLicenseText }}
+          </span>
+        </div>
       </div>
     </div>
 
@@ -185,6 +202,9 @@ const isVisible = ref(true);
 const favoritesSet = ref(new Set());
 
 onMounted(() => {
+  if (typeof window !== 'undefined') {
+    window._soundwavePlayerStore = playerStore;
+  }
   try {
     const saved = localStorage.getItem('soundwave_favorites');
     if (saved) {
@@ -229,6 +249,37 @@ const currentTrackArtwork = computed(() => {
 
 const currentTrackEmoji = computed(() => {
   return playerStore.currentTrack?.emoji || playerStore.currentTrack?.e || '🎵';
+});
+
+const isJamendoTrack = computed(() => {
+  const t = playerStore.currentTrack;
+  if (!t) return false;
+  return (
+    t.provider === 'jamendo' ||
+    t.source?.provider === 'jamendo' ||
+    Boolean(t.providerTrackUrl && t.providerTrackUrl.includes('jamendo.com'))
+  );
+});
+
+const jamendoTrackUrl = computed(() => {
+  const t = playerStore.currentTrack;
+  return t?.providerTrackUrl || t?.source?.trackUrl || null;
+});
+
+const jamendoLicenseText = computed(() => {
+  const t = playerStore.currentTrack;
+  if (!t) return 'Unknown License';
+  if (typeof t.license === 'string') return t.license;
+  if (t.license?.badge) return t.license.badge;
+  if (t.licenseMeta?.shortName) return t.licenseMeta.shortName;
+  if (t.source?.license) return t.source.license;
+  return 'CC (Jamendo)';
+});
+
+const jamendoAttribution = computed(() => {
+  const t = playerStore.currentTrack;
+  if (!t) return '';
+  return t.attribution || (t.artist ? `Music by ${t.artist} via Jamendo (Creative Commons)` : 'Jamendo Creative Commons');
 });
 
 // Real progress calculation
@@ -449,6 +500,47 @@ const ICONS = {
   font-size: 0.72rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+
+.dock-jamendo-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.15rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.dock-jamendo-link {
+  color: #ff3366;
+  text-decoration: none;
+  font-size: 0.65rem;
+  letter-spacing: 0.04em;
+  background: rgba(255, 51, 102, 0.1);
+  padding: 0.12rem 0.35rem;
+  border-radius: 4px;
+  transition: background 0.2s, color 0.2s;
+  display: inline-flex;
+  align-items: center;
+}
+
+.dock-jamendo-link:hover {
+  background: rgba(255, 51, 102, 0.22);
+  color: #ff1050;
+  text-decoration: underline;
+}
+
+.dock-jamendo-license {
+  color: var(--muted, #8b7bb0);
+  background: rgba(0, 0, 0, 0.05);
+  padding: 0.1rem 0.3rem;
+  border-radius: 4px;
+  font-size: 0.62rem;
+  max-width: 120px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Center: Controls & Slider */
@@ -673,6 +765,19 @@ svg {
   }
   .nm small {
     font-size: 0.72rem;
+  }
+  .dock-jamendo-meta {
+    font-size: 0.6rem;
+    gap: 0.25rem;
+    margin-top: 0.1rem;
+  }
+  .dock-jamendo-link {
+    font-size: 0.58rem;
+    padding: 0.1rem 0.25rem;
+  }
+  .dock-jamendo-license {
+    font-size: 0.55rem;
+    max-width: 80px;
   }
   .btns {
     gap: 0.1rem;

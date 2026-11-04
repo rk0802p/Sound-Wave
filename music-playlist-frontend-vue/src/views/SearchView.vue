@@ -422,7 +422,20 @@
               <span class="queue-track-sub font-mono">{{ t.artist || t[1] }}</span>
             </div>
             <span v-if="t.provider || t.source?.provider" class="queue-track-prov font-mono">
-              {{ (t.provider || t.source?.provider || '').toUpperCase() }}
+              <a
+                v-if="isJamendoTrack(t) && getTrackSourceUrl(t)"
+                :href="getTrackSourceUrl(t)"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="queue-track-jamendo-link font-mono"
+                title="Open track on Jamendo"
+                @click.stop
+              >
+                ↗ JAMENDO
+              </a>
+              <template v-else>
+                {{ (t.provider || t.source?.provider || '').toUpperCase() }}
+              </template>
             </span>
             <button
               class="queue-remove-btn font-mono"
@@ -582,6 +595,20 @@ const getProviderPillClass = (input) => {
       : detectProviderType(input);
 
   return `prov-${type}`;
+};
+
+const isJamendoTrack = (t) => {
+  if (!t) return false;
+  return (
+    t.provider === 'jamendo' ||
+    t.source?.provider === 'jamendo' ||
+    Boolean(t.providerTrackUrl && t.providerTrackUrl.includes('jamendo.com'))
+  );
+};
+
+const getTrackSourceUrl = (t) => {
+  if (!t) return null;
+  return t.providerTrackUrl || t.source?.trackUrl || null;
 };
 
 const getProviderStatusLabel = (name) => {
@@ -1882,6 +1909,25 @@ const addTrackToSelectedPlaylist = async (playlist) => {
   padding: 2px 6px;
   background: rgba(0, 0, 0, 0.06);
   border-radius: 4px;
+}
+
+.queue-track-jamendo-link {
+  color: #ff3366 !important;
+  text-decoration: none;
+  font-size: 0.6rem;
+  letter-spacing: 0.04em;
+  background: rgba(255, 51, 102, 0.12);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+}
+
+.queue-track-jamendo-link:hover {
+  background: rgba(255, 51, 102, 0.25);
+  color: #ff1050 !important;
+  text-decoration: underline;
 }
 
 .queue-remove-btn {

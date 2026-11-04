@@ -206,4 +206,20 @@ describe("Security & Ownership Isolation Integration Tests", () => {
       }).not.toThrow();
     });
   });
+
+  describe("Health & Diagnostics Endpoint Structure (/api/test)", () => {
+    it("should return operational status with explicit database readyState when connected", async () => {
+      const res = await request(app).get("/api/test");
+      expect(res.status).toBe(200);
+      expect(res.body.status).toBe("ok");
+      expect(res.body.message).toBe("Music Playlist API is operational");
+      expect(res.body.database).toBeDefined();
+      expect(res.body.database.status).toBe("connected");
+      expect(res.body.database.readyState).toBe(1);
+      expect(res.body.database.readyStateName).toBe("connected");
+      expect(res.body.configured).toBeDefined();
+      expect(typeof res.body.configured.hasMongoUri).toBe("boolean");
+      expect(res.body.configured.hasJwtSecret).toBe(true);
+    });
+  });
 });

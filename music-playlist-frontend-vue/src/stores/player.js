@@ -215,6 +215,10 @@ export const usePlayerStore = defineStore('player', {
             track.url = streamUrl;
             track.provider = alt.provider;
             track.activeAlternative = alt;
+            if (alt.providerTrackUrl) track.providerTrackUrl = alt.providerTrackUrl;
+            if (alt.license) track.license = alt.license;
+            if (alt.attribution) track.attribution = alt.attribution;
+            if (alt.licenseMeta) track.licenseMeta = alt.licenseMeta;
             this.recoveryNotice = `Switched to ${alt.provider.toUpperCase()} fallback stream`;
 
             await soundController.load(track);
@@ -275,6 +279,12 @@ export const usePlayerStore = defineStore('player', {
             track.streamUrl = resolved.streamUrl;
             track.url = resolved.streamUrl;
             track.duration = resolved.metadata?.duration || track.duration;
+            if (resolved.metadata) {
+              if (resolved.metadata.providerTrackUrl) track.providerTrackUrl = resolved.metadata.providerTrackUrl;
+              if (resolved.metadata.license) track.license = resolved.metadata.license;
+              if (resolved.metadata.licenseMeta) track.licenseMeta = resolved.metadata.licenseMeta;
+              if (resolved.metadata.attribution) track.attribution = resolved.metadata.attribution;
+            }
             audioUrl = resolved.streamUrl;
           }
         } catch (resErr) {
