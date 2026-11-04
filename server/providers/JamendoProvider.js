@@ -27,6 +27,102 @@ class JamendoProvider extends BaseProvider {
   }
 
   /**
+   * Parse Creative Commons license metadata from Jamendo license_ccurl
+   * e.g. "http://creativecommons.org/licenses/by-nc-sa/3.0/" -> "CC BY-NC-SA 3.0"
+   * @param {string} licenseCcUrl
+   * @returns {{
+   *   name: string,
+   *   code: string,
+   *   url: string,
+   *   attributionRequired: boolean,
+   *   hasCommercialRestriction: boolean,
+   *   hasDerivativeRestriction: boolean,
+   *   shareAlikeRequired: boolean,
+   *   isCommercialPermitted: boolean,
+   *   jamendoTermsNote: string
+   * }}
+   */
+  parseLicense(licenseCcUrl) {
+    const rawUrl = String(licenseCcUrl || '').trim();
+    if (!rawUrl) {
+      return {
+        licenseStatus: 'unknown',
+        name: null,
+        code: 'UNKNOWN',
+        url: null,
+        attributionRequired: true,
+        hasCommercialRestriction: true,
+        hasDerivativeRestriction: false,
+        shareAlikeRequired: false,
+        isCommercialPermitted: false,
+        jamendoTermsNote: 'License metadata not specified by provider. Defaulting to restricted personal listening.'
+      };
+    }
+
+    const urlMatch = rawUrl.match(/licenses\/([a-z0-9-]+)\/([0-9.]+)/i);
+    const zeroMatch = rawUrl.match(/publicdomain\/zero\/([0-9.]+)/i);
+
+    let code = null;
+    let version = '';
+
+    if (zeroMatch) {
+      code = 'CC0';
+      version = zeroMatch[1];
+    } else if (urlMatch) {
+      const parts = urlMatch[1].toUpperCase();
+      version = urlMatch[2];
+      code = `CC ${parts}`;
+    } else {
+      const lower = rawUrl.toLowerCase();
+      if (lower.includes('zero') || lower.includes('cc0')) code = 'CC0';
+      else if (lower.includes('by-nc-sa')) code = 'CC BY-NC-SA';
+      else if (lower.includes('by-nc-nd')) code = 'CC BY-NC-ND';
+      else if (lower.includes('by-nc')) code = 'CC BY-NC';
+      else if (lower.includes('by-sa')) code = 'CC BY-SA';
+      else if (lower.includes('by-nd')) code = 'CC BY-ND';
+      else if (lower.includes('by')) code = 'CC BY';
+      else {
+        return {
+          licenseStatus: 'unknown',
+          name: null,
+          code: 'UNKNOWN',
+          url: rawUrl,
+          attributionRequired: true,
+          hasCommercialRestriction: true,
+          hasDerivativeRestriction: false,
+          shareAlikeRequired: false,
+          isCommercialPermitted: false,
+          jamendoTermsNote: 'Unrecognized license URL. Commercial or derivative reuse not permitted without explicit license verification.'
+        };
+      }
+    }
+
+    const cleanCode = version ? `${code} ${version}` : code;
+    const lowerCode = cleanCode.toLowerCase();
+
+    const isZero = lowerCode.includes('cc0');
+    const hasCommercialRestriction = !isZero && lowerCode.includes('nc');
+    const hasDerivativeRestriction = !isZero && lowerCode.includes('nd');
+    const shareAlikeRequired = !isZero && lowerCode.includes('sa');
+    const attributionRequired = !isZero && (lowerCode.includes('by') || code.includes('BY'));
+
+    return {
+      licenseStatus: 'verified',
+      name: cleanCode,
+      code: cleanCode,
+      url: rawUrl,
+      attributionRequired,
+      hasCommercialRestriction,
+      hasDerivativeRestriction,
+      shareAlikeRequired,
+      isCommercialPermitted: !hasCommercialRestriction,
+      jamendoTermsNote: hasCommercialRestriction
+        ? 'Creator specified Non-Commercial (NC). Jamendo API terms permit private personal streaming in SOUNDWAVE. Commercial synchronization requires Jamendo PRO license.'
+        : 'Creator permits commercial reuse with attribution under CC terms. Jamendo platform stream remains non-exclusive.'
+    };
+  }
+
+  /**
    * Search Jamendo Creative Commons music catalog
    * @param {string} query
    * @param {object} options
@@ -42,7 +138,7 @@ class JamendoProvider extends BaseProvider {
       };
     }
 
-    const limit = Math.min(20, Math.max(1, parseInt(options.limit) || 10));
+    const limit = Math.min(30, Math.max(1, parseInt(options.limit) || 10));
     const cleanQuery = String(query || '').trim();
 
     if (!cleanQuery) {
@@ -52,7 +148,7 @@ class JamendoProvider extends BaseProvider {
     try {
       const searchUrl = `${this.baseUrl}/tracks/?` + new URLSearchParams({
         client_id: this.getClientId(),
-        format: 'jsonpretty',
+        format: 'json',
         limit: String(limit),
         search: cleanQuery,
         include: 'musicinfo+licenses',
@@ -91,30 +187,39 @@ class JamendoProvider extends BaseProvider {
       }
 
       const rawTracks = data.results || [];
-      const results = rawTracks.map((item) => ({
-        id: `jamendo:${item.id}`,
-        title: item.name || 'Untitled Jamendo Track',
-        artist: item.artist_name || 'Jamendo Artist',
-        album: item.album_name || '',
-        artwork: item.image || item.album_image || '',
-        duration: item.duration || 0,
-        provider: 'jamendo',
-        providerTrackId: String(item.id),
-        providerTrackUrl: item.shareurl || `https://www.jamendo.com/track/${item.id}`,
-        url: item.audio || '',
-        streamUrl: item.audio || '',
-        isPlayable: Boolean(item.audio),
-        license: item.license_ccurl ? 'Creative Commons' : 'Jamendo Free Listening (Non-Commercial)',
-        licenseUrl: item.license_ccurl || 'https://creativecommons.org/licenses/',
-        attribution: `${item.artist_name || 'Artist'} via Jamendo Music (Non-commercial use)`,
-        playbackCapabilities: {
-          canSeek: true,
-          canVolume: true,
-          hasTimeEvents: true,
-          isEmbedded: false,
-          playbackType: 'direct',
-        },
-      }));
+      const results = rawTracks.map((item) => {
+        const licenseMeta = this.parseLicense(item.license_ccurl);
+        const shareUrl = item.shareurl || `https://www.jamendo.com/track/${item.id}`;
+        return {
+          id: `jamendo:${item.id}`,
+          title: item.name || 'Untitled Jamendo Track',
+          artist: item.artist_name || 'Jamendo Artist',
+          album: item.album_name || '',
+          artwork: item.image || item.album_image || '',
+          duration: item.duration || 0,
+          provider: 'jamendo',
+          providerTrackId: String(item.id),
+          providerTrackUrl: shareUrl,
+          url: item.audio || '',
+          streamUrl: item.audio || '',
+          isPlayable: Boolean(item.audio),
+          needsResolution: false,
+          license: licenseMeta.name,
+          licenseCode: licenseMeta.code,
+          licenseUrl: licenseMeta.url,
+          licenseMeta: licenseMeta,
+          attribution: licenseMeta.name
+            ? `${item.artist_name || 'Artist'} via Jamendo Music (${licenseMeta.name})`
+            : `${item.artist_name || 'Artist'} via Jamendo Music`,
+          playbackCapabilities: {
+            canSeek: true,
+            canVolume: true,
+            hasTimeEvents: true,
+            isEmbedded: false,
+            playbackType: 'direct',
+          },
+        };
+      });
 
       this.status = 'available';
       this.lastError = null;
@@ -150,7 +255,7 @@ class JamendoProvider extends BaseProvider {
 
     try {
       const rawId = trackId.replace(/^jamendo:/, '');
-      const url = `${this.baseUrl}/tracks/?client_id=${this.getClientId()}&format=jsonpretty&id=${encodeURIComponent(rawId)}&include=musicinfo+licenses`;
+      const url = `${this.baseUrl}/tracks/?client_id=${this.getClientId()}&format=json&id=${encodeURIComponent(rawId)}&include=musicinfo+licenses&audioformat=mp32`;
       const res = await this.fetchWithTimeout(url, {}, 4000);
 
       if (!res.ok) {
@@ -163,22 +268,31 @@ class JamendoProvider extends BaseProvider {
         return { streamUrl: null, metadata: null, error: 'Track not found on Jamendo' };
       }
 
+      const licenseMeta = this.parseLicense(track.license_ccurl);
+      const shareUrl = track.shareurl || `https://www.jamendo.com/track/${track.id}`;
+
       return {
         streamUrl: track.audio || null,
         metadata: {
           id: `jamendo:${track.id}`,
-          title: track.name,
-          artist: track.artist_name,
-          album: track.album_name,
-          artwork: track.image,
-          duration: track.duration,
+          title: track.name || 'Untitled Jamendo Track',
+          artist: track.artist_name || 'Jamendo Artist',
+          album: track.album_name || '',
+          artwork: track.image || track.album_image || '',
+          duration: track.duration || 0,
           provider: 'jamendo',
           providerTrackId: String(track.id),
-          providerTrackUrl: track.shareurl || `https://www.jamendo.com/track/${track.id}`,
-          streamUrl: track.audio,
-          license: track.license_ccurl || 'Creative Commons',
-          licenseUrl: track.license_ccurl || 'https://creativecommons.org/licenses/',
-          attribution: `${track.artist_name} via Jamendo Music`,
+          providerTrackUrl: shareUrl,
+          streamUrl: track.audio || '',
+          isPlayable: Boolean(track.audio),
+          needsResolution: false,
+          license: licenseMeta.name,
+          licenseCode: licenseMeta.code,
+          licenseUrl: licenseMeta.url,
+          licenseMeta: licenseMeta,
+          attribution: licenseMeta.name
+            ? `${track.artist_name || 'Artist'} via Jamendo Music (${licenseMeta.name})`
+            : `${track.artist_name || 'Artist'} via Jamendo Music`,
         },
         error: null,
       };

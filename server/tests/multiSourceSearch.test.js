@@ -811,4 +811,194 @@ describe('SOUNDWAVE Multi-Source Music Aggregation & Resilience Tests', () => {
       expect(merged.length).toBe(3);
     });
   });
+
+  describe('Phase 5.1: Jamendo CC License Parsing, Attribution & Provider Activation', () => {
+    const jamendo = registry.get('jamendo');
+
+    it('should parse CC BY 4.0 license correctly', () => {
+      const parsed = jamendo.parseLicense('https://creativecommons.org/licenses/by/4.0/');
+      expect(parsed.licenseStatus).toBe('verified');
+      expect(parsed.code).toBe('CC BY 4.0');
+      expect(parsed.hasCommercialRestriction).toBe(false);
+      expect(parsed.hasDerivativeRestriction).toBe(false);
+      expect(parsed.attributionRequired).toBe(true);
+      expect(parsed.isCommercialPermitted).toBe(true);
+    });
+
+    it('should parse CC BY-SA 3.0 license correctly', () => {
+      const parsed = jamendo.parseLicense('http://creativecommons.org/licenses/by-sa/3.0/');
+      expect(parsed.licenseStatus).toBe('verified');
+      expect(parsed.code).toBe('CC BY-SA 3.0');
+      expect(parsed.shareAlikeRequired).toBe(true);
+      expect(parsed.hasCommercialRestriction).toBe(false);
+      expect(parsed.isCommercialPermitted).toBe(true);
+    });
+
+    it('should parse CC BY-NC 4.0 license with non-commercial restriction', () => {
+      const parsed = jamendo.parseLicense('https://creativecommons.org/licenses/by-nc/4.0/');
+      expect(parsed.licenseStatus).toBe('verified');
+      expect(parsed.code).toBe('CC BY-NC 4.0');
+      expect(parsed.hasCommercialRestriction).toBe(true);
+      expect(parsed.isCommercialPermitted).toBe(false);
+    });
+
+    it('should parse CC BY-NC-SA 3.0 license and extract rights restrictions', () => {
+      const parsed = jamendo.parseLicense('http://creativecommons.org/licenses/by-nc-sa/3.0/');
+      expect(parsed.licenseStatus).toBe('verified');
+      expect(parsed.code).toBe('CC BY-NC-SA 3.0');
+      expect(parsed.hasCommercialRestriction).toBe(true);
+      expect(parsed.hasDerivativeRestriction).toBe(false);
+      expect(parsed.shareAlikeRequired).toBe(true);
+      expect(parsed.attributionRequired).toBe(true);
+      expect(parsed.isCommercialPermitted).toBe(false);
+      expect(parsed.jamendoTermsNote).toMatch(/Non-Commercial/i);
+    });
+
+    it('should parse CC BY-ND 4.0 license with derivative restrictions', () => {
+      const parsed = jamendo.parseLicense('https://creativecommons.org/licenses/by-nd/4.0/');
+      expect(parsed.licenseStatus).toBe('verified');
+      expect(parsed.code).toBe('CC BY-ND 4.0');
+      expect(parsed.hasCommercialRestriction).toBe(false);
+      expect(parsed.hasDerivativeRestriction).toBe(true);
+      expect(parsed.attributionRequired).toBe(true);
+      expect(parsed.isCommercialPermitted).toBe(true);
+    });
+
+    it('should parse CC BY-NC-ND 4.0 license with commercial and derivative restrictions', () => {
+      const parsed = jamendo.parseLicense('https://creativecommons.org/licenses/by-nc-nd/4.0/');
+      expect(parsed.licenseStatus).toBe('verified');
+      expect(parsed.code).toBe('CC BY-NC-ND 4.0');
+      expect(parsed.hasCommercialRestriction).toBe(true);
+      expect(parsed.hasDerivativeRestriction).toBe(true);
+      expect(parsed.isCommercialPermitted).toBe(false);
+    });
+
+    it('should parse CC0 public domain without commercial restrictions', () => {
+      const parsed = jamendo.parseLicense('http://creativecommons.org/publicdomain/zero/1.0/');
+      expect(parsed.licenseStatus).toBe('verified');
+      expect(parsed.code).toBe('CC0 1.0');
+      expect(parsed.hasCommercialRestriction).toBe(false);
+      expect(parsed.hasDerivativeRestriction).toBe(false);
+      expect(parsed.attributionRequired).toBe(false);
+      expect(parsed.isCommercialPermitted).toBe(true);
+    });
+
+    it('should handle missing license_ccurl as unknown license status without inventing permissions', () => {
+      const parsed = jamendo.parseLicense(null);
+      expect(parsed.licenseStatus).toBe('unknown');
+      expect(parsed.code).toBe('UNKNOWN');
+      expect(parsed.name).toBeNull();
+      expect(parsed.isCommercialPermitted).toBe(false);
+      expect(parsed.hasCommercialRestriction).toBe(true);
+      expect(parsed.url).toBeNull();
+    });
+
+    it('should handle arbitrary or unparseable license URLs as unknown license status', () => {
+      const parsed = jamendo.parseLicense('https://example.com/arbitrary/custom/license');
+      expect(parsed.licenseStatus).toBe('unknown');
+      expect(parsed.code).toBe('UNKNOWN');
+      expect(parsed.name).toBeNull();
+      expect(parsed.isCommercialPermitted).toBe(false);
+      expect(parsed.url).toBe('https://example.com/arbitrary/custom/license');
+    });
+
+    it('should search Jamendo and return structured CC metadata, streaming audio, and backlink', async () => {
+      global.fetch = jest.fn(async (url) => {
+        const urlStr = String(url);
+        if (urlStr.includes('api.jamendo.com/v3.0/tracks/')) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              headers: { status: 'success', results_count: 1 },
+              results: [
+                {
+                  id: '123456',
+                  name: 'Acoustic Sunrise',
+                  artist_name: 'Solar Breeze',
+                  album_name: 'Morning Light',
+                  duration: 185,
+                  image: 'https://usercontent.jamendo.com?type=album&id=100&width=300',
+                  audio: 'https://prod-1.storage.jamendo.com/c/123456.mp3',
+                  audiodownload: 'https://prod-1.storage.jamendo.com/download/123456.mp3',
+                  shareurl: 'https://www.jamendo.com/track/123456/acoustic-sunrise',
+                  license_ccurl: 'http://creativecommons.org/licenses/by-sa/3.0/',
+                },
+              ],
+            }),
+          };
+        }
+        return { ok: false, status: 500, json: async () => ({}) };
+      });
+
+      const origConfig = jamendo.isConfigured;
+      jamendo.isConfigured = () => true;
+
+      try {
+        const searchResult = await jamendo.search('acoustic', { limit: 5 });
+        expect(searchResult.status).toBe('available');
+        expect(searchResult.results.length).toBe(1);
+
+        const track = searchResult.results[0];
+        expect(track.id).toBe('jamendo:123456');
+        expect(track.title).toBe('Acoustic Sunrise');
+        expect(track.artist).toBe('Solar Breeze');
+        // Must use streaming audio URL, NEVER audiodownload
+        expect(track.streamUrl).toBe('https://prod-1.storage.jamendo.com/c/123456.mp3');
+        expect(track.url).toBe('https://prod-1.storage.jamendo.com/c/123456.mp3');
+        expect(track.streamUrl).not.toContain('download');
+        // CC License and attribution
+        expect(track.license).toBe('CC BY-SA 3.0');
+        expect(track.licenseCode).toBe('CC BY-SA 3.0');
+        expect(track.licenseUrl).toBe('http://creativecommons.org/licenses/by-sa/3.0/');
+        expect(track.providerTrackUrl).toBe('https://www.jamendo.com/track/123456/acoustic-sunrise');
+        expect(track.attribution).toContain('Solar Breeze via Jamendo Music');
+        expect(track.attribution).toContain('CC BY-SA 3.0');
+      } finally {
+        jamendo.isConfigured = origConfig;
+      }
+    });
+
+    it('should resolve Jamendo track on demand via /api/search/resolve', async () => {
+      global.fetch = jest.fn(async (url) => {
+        const urlStr = String(url);
+        if (urlStr.includes('api.jamendo.com/v3.0/tracks/')) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              headers: { status: 'success', results_count: 1 },
+              results: [
+                {
+                  id: '987654',
+                  name: 'Electric Chill',
+                  artist_name: 'Neon Waves',
+                  album_name: 'Synth Horizon',
+                  duration: 210,
+                  image: 'https://usercontent.jamendo.com/987654.jpg',
+                  audio: 'https://prod-1.storage.jamendo.com/c/987654.mp3',
+                  shareurl: 'https://www.jamendo.com/track/987654/electric-chill',
+                  license_ccurl: 'http://creativecommons.org/licenses/by-nc-nd/4.0/',
+                },
+              ],
+            }),
+          };
+        }
+        return { ok: false, status: 500, json: async () => ({}) };
+      });
+
+      const origConfig = jamendo.isConfigured;
+      jamendo.isConfigured = () => true;
+
+      try {
+        const res = await request(app).get('/api/search/resolve?provider=jamendo&trackId=jamendo:987654');
+        expect(res.status).toBe(200);
+        expect(res.body.streamUrl).toBe('https://prod-1.storage.jamendo.com/c/987654.mp3');
+        expect(res.body.metadata.license).toBe('CC BY-NC-ND 4.0');
+        expect(res.body.metadata.providerTrackUrl).toBe('https://www.jamendo.com/track/987654/electric-chill');
+      } finally {
+        jamendo.isConfigured = origConfig;
+      }
+    });
+  });
 });

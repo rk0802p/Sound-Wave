@@ -237,7 +237,7 @@ const parseMusicSource = (rawUrl) => {
 
   // 4. Jamendo Detection
   if (clean.includes("jamendo.com")) {
-    const match = url.match(/jamendo\.com\/(?:track\/)?([0-9]+)/i);
+    const match = url.match(/(?:jamendo\.com\/(?:track\/|c\/)?|[?&]trackid=)([0-9]+)/i);
     const id = match ? match[1] : null;
     return {
       provider: MUSIC_PROVIDERS.JAMENDO,

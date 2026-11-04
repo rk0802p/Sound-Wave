@@ -241,6 +241,17 @@
               >
                 + ADD TO MIXTAPE
               </button>
+              <a
+                v-if="track.providerTrackUrl"
+                :href="track.providerTrackUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="view-on-source-btn font-mono"
+                :title="'Open original page on ' + (track.provider || 'Source')"
+                @click.stop
+              >
+                ↗ {{ (track.provider === 'jamendo' ? 'Jamendo' : (track.provider || 'Source')).toUpperCase() }}
+              </a>
             </div>
 
             <span class="result-track-time font-mono">
@@ -1558,6 +1569,30 @@ const addTrackToSelectedPlaylist = async (playlist) => {
 
 .add-to-mixtape-btn:hover {
   background: var(--pg-citron);
+  transform: translateY(-1px);
+  box-shadow: 2px 2px 0px var(--pg-border);
+}
+
+.view-on-source-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  background: var(--pg-canvas);
+  border: 1.5px solid var(--pg-border);
+  border-radius: var(--pg-radius-full);
+  color: var(--pg-ink);
+  text-decoration: none;
+  cursor: pointer;
+  transition: all var(--pg-transition-spring);
+  box-shadow: 1px 1px 0px var(--pg-border);
+}
+
+.view-on-source-btn:hover {
+  background: #c9b6ff;
+  color: #1a1a2e;
   transform: translateY(-1px);
   box-shadow: 2px 2px 0px var(--pg-border);
 }

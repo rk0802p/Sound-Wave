@@ -162,6 +162,21 @@ describe("Music Provider Integration & Backward Compatibility Tests", () => {
         expect(parsed.isValid).toBe(true);
       });
     });
+
+    it("should correctly classify Jamendo web, storage, and query track URLs", () => {
+      const jamendoUrls = [
+        { url: "https://www.jamendo.com/track/323717", id: "323717" },
+        { url: "https://jamendo.com/track/323717/acoustic-rock", id: "323717" },
+        { url: "https://prod-1.storage.jamendo.com/?trackid=323717&format=mp32", id: "323717" },
+        { url: "https://prod-1.storage.jamendo.com/c/323717.mp3", id: "323717" },
+      ];
+      jamendoUrls.forEach(({ url, id }) => {
+        const parsed = parseMusicSource(url);
+        expect(parsed.provider).toBe("jamendo");
+        expect(parsed.externalId).toBe(id);
+        expect(parsed.isValid).toBe(true);
+      });
+    });
   });
 
   describe("Metadata Retrieval & Error Resilience", () => {
