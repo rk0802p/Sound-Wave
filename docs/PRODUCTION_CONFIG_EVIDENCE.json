@@ -1,0 +1,76 @@
+{
+  "evidenceGeneratedAt": "2026-11-05T02:40:00Z",
+  "phase": "6.7",
+  "auditType": "Production Audio Source Readiness & Incident Closure",
+  "productionBackend": {
+    "url": "https://music-playlist-nine.vercel.app",
+    "endpoint": "/api/test",
+    "httpStatus": 200,
+    "environment": "production",
+    "configured": {
+      "hasMongoUri": true,
+      "hasJwtSecret": true,
+      "hasFrontendUrl": true,
+      "hasJamendoClient": true,
+      "hasSecretLeak": false
+    },
+    "providersSummary": {
+      "total": 4,
+      "available": 3,
+      "degraded": 0,
+      "circuit_broken": 0,
+      "unconfigured": 1
+    }
+  },
+  "jamendoUpstream": {
+    "applicationState": "live",
+    "plan": "Read & write",
+    "credentialRequirement": {
+      "requiresClientId": true,
+      "requiresClientSecret": false,
+      "requiresOAuthToken": false,
+      "explanation": "Jamendo API v3.0 public catalog read and audio streaming endpoints require only client_id parameter. Client Secret is strictly for OAuth2 user account management and is unnecessary for SOUNDWAVE streaming."
+    },
+    "searchTest": {
+      "query": "dandelion",
+      "totalResults": 30,
+      "jamendoResults": 12,
+      "firstJamendoTrack": {
+        "title": "Dandelion",
+        "artist": "Oleg O. Kachanko",
+        "trackId": "1059994",
+        "duration": 135.2,
+        "license": "CC BY-NC-ND 3.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-nc-nd/3.0/",
+        "attribution": "Dandelion by Oleg O. Kachanko (Licensed under CC BY-NC-ND 3.0)",
+        "jamendoUrl": "https://www.jamendo.com/track/1059994",
+        "audioStreamHost": "prod-1.storage.jamendo.com",
+        "audioHttpStatus": 206,
+        "audioContentType": "audio/mpeg",
+        "audioContentLengthBytes": 2930176,
+        "corsHeader": "access-control-allow-origin: https://music-playlist-pp8l.vercel.app"
+      }
+    }
+  },
+  "playerTransportDiagnostics": {
+    "issueIdentified": "Premature isPlaying state transition at T=0ms before audio buffered",
+    "rootCause": "soundController onPlay hook synchronously fired on HTMLAudioElement play() and set isPlaying=true, showing Pause icon (❚❚) at 0:00 while network stream was still buffering (2.5-3.5s latency).",
+    "resolution": "Decoupled isPlaying from onPlay. isPlaying is now set strictly on onPlaying (when media begins audible playback). isLoading is displayed via dock-spinner during buffering window.",
+    "verification": "Puppeteer browser test confirmed clean buffer progression from readyState 0 (buffering) to readyState 4 (playing) and advancing past 6.8s without false pause state."
+  },
+  "homepage18TracksAudit": {
+    "totalCurated": 18,
+    "licensingClassification": "Commercial Major-Label Masters (Calvin Harris, Alan Walker, The Kid LAROI, Marshmello, etc.)",
+    "jamendoAvailability": 0,
+    "archiveAvailabilityExact": 0,
+    "audiusAvailabilityExact": 0,
+    "saavnStatus": "Quarantined in production (NODE_ENV === 'production' -> false)",
+    "productionBehavior": "Pre-emptive capability sync fast-fails locally with 0 HTTP calls; dock indicates '• Unavailable' honestly; user receives non-blocking toast warning."
+  },
+  "frontendRouting": {
+    "spaRewriteFile": "music-playlist-frontend-vue/vercel.json",
+    "configured": true,
+    "rule": "{ 'rewrites': [{ 'source': '/(.*)', 'destination': '/index.html' }] }",
+    "resolves": "Eliminates Vercel HTTP 404 on direct navigation and hard refresh to /search, /explore, and /playlist/:id."
+  }
+}

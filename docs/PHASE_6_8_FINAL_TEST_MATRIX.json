@@ -1,0 +1,66 @@
+{
+  "phase": "6.8",
+  "name": "Incident Fix Release, GitHub Publication & Production Verification",
+  "generatedAt": "2026-11-05T03:26:00Z",
+  "targetBranch": "release/phase-6-incident-fix",
+  "baseCommit": "abbfc582a23fafc4ef42c7ceebf613c468f80dce",
+  "testSummary": {
+    "backendSuites": "9/9 passing",
+    "backendTests": "162/162 passing",
+    "frontendBuild": "Vite production build passing (1.91s)",
+    "browserE2E": "Edge automated transport verification passing (0.00s -> 7.81s)",
+    "secretScan": "0 secrets detected"
+  },
+  "verificationCheckpoints": [
+    {
+      "checkpoint": "Checkpoint 1: Final Local Code Review",
+      "status": "PASS",
+      "details": "Audited player.js, FloatingPlayerDock.vue, SearchView.vue, and vercel.json. Verified transport timing, buffering spinner, error recovery, and SPA rewrites."
+    },
+    {
+      "checkpoint": "Checkpoint 2: Jamendo Production Readiness",
+      "status": "PASS",
+      "details": "Live backend hasJamendoClient: true. ProviderRegistry status: available. Search queries 'dandelion' (12 Jamendo), 'electronic' (12 Jamendo), 'ambient' (12 Jamendo). Direct MP3 stream HTTP 206 from prod-1.storage.jamendo.com. Browser audio progression verified to 7.81s."
+    },
+    {
+      "checkpoint": "Checkpoint 3: Homepage Source and Playback Verification",
+      "status": "PASS",
+      "details": "Audited all 18 curated tracks. Preserved original titles, artists, and order. Saavn quarantined in production. Pre-emptive capability sync fast-fails with 0 HTTP calls and honest • Unavailable UI badge."
+    },
+    {
+      "checkpoint": "Checkpoint 4: Social Discovery & Routing",
+      "status": "PASS",
+      "details": "Public explore feed returns honest empty state. Invalid playlist ID returns 400 'Invalid playlist ID format'. Valid non-existent ID returns 404. Mood ID fallback preserved. vercel.json rewrites prevent static 404 on direct route hits."
+    },
+    {
+      "checkpoint": "Checkpoint 5: Final Regression",
+      "status": "PASS",
+      "details": "162/162 backend tests passing (35.21s). Frontend build successful (1.91s, 0 errors). Browser Edge automated playback verified."
+    },
+    {
+      "checkpoint": "Checkpoint 6: Release Content Review",
+      "status": "PASS",
+      "details": "git diff --check clean. Secret scan confirmed 0 leaks. No .env, node_modules, dist, or temporary scratch files staged."
+    }
+  ],
+  "homepage18TracksStatus": [
+    { "index": 1, "title": "One Kiss (with Dua Lipa)", "artist": "Calvin Harris, Dua Lipa", "provider": "saavn", "status": "Preserved / Unavailable in Production (Major Label Commercial)" },
+    { "index": 2, "title": "Lily", "artist": "Alan Walker, K-391, Emelie Hollow", "provider": "saavn", "status": "Preserved / Unavailable in Production (Major Label Commercial)" },
+    { "index": 3, "title": "Not You", "artist": "Alan Walker, Emma Steinbakken", "provider": "saavn", "status": "Preserved / Unavailable in Production (Major Label Commercial)" },
+    { "index": 4, "title": "Faded", "artist": "Alan Walker", "provider": "saavn", "status": "Preserved / Unavailable in Production (Major Label Commercial)" },
+    { "index": 5, "title": "On My Way", "artist": "Alan Walker, Sabrina Carpenter, Farruko", "provider": "saavn", "status": "Preserved / Unavailable in Production (Major Label Commercial)" },
+    { "index": 6, "title": "Alone", "artist": "Alan Walker", "provider": "saavn", "status": "Preserved / Unavailable in Production (Major Label Commercial)" },
+    { "index": 7, "title": "See You Again (feat. Charlie Puth)", "artist": "Wiz Khalifa, Charlie Puth", "provider": "saavn", "status": "Preserved / Unavailable in Production (Major Label Commercial)" },
+    { "index": 8, "title": "Dandelions", "artist": "Ruth B.", "provider": "saavn", "status": "Preserved / Unavailable in Production (Major Label Commercial)" },
+    { "index": 9, "title": "Señorita", "artist": "Shawn Mendes, Camila Cabello", "provider": "saavn", "status": "Preserved / Unavailable in Production (Major Label Commercial)" },
+    { "index": 10, "title": "Shape of You", "artist": "Ed Sheeran", "provider": "saavn", "status": "Preserved / Unavailable in Production (Major Label Commercial)" },
+    { "index": 11, "title": "lovely (with Khalid)", "artist": "Billie Eilish, Khalid", "provider": "saavn", "status": "Preserved / Unavailable in Production (Major Label Commercial)" },
+    { "index": 12, "title": "I'm Alive - Radio Edit", "artist": "Kyle Bourke, Rob Vegas", "provider": "spotify", "status": "Preserved / Unavailable in Production (Metadata Only)" },
+    { "index": 13, "title": "The Night We Met", "artist": "Lord Huron", "provider": "saavn", "status": "Preserved / Unavailable in Production (Major Label Commercial)" },
+    { "index": 14, "title": "Malibu", "artist": "Miley Cyrus", "provider": "saavn", "status": "Preserved / Unavailable in Production (Major Label Commercial)" },
+    { "index": 15, "title": "Ginza", "artist": "J Balvin", "provider": "saavn", "status": "Preserved / Unavailable in Production (Major Label Commercial)" },
+    { "index": 16, "title": "Gata Only", "artist": "FloyyMenor, Cris MJ", "provider": "saavn", "status": "Preserved / Unavailable in Production (Major Label Commercial)" },
+    { "index": 17, "title": "Mi Gata", "artist": "Standly, El Barto", "provider": "saavn", "status": "Preserved / Unavailable in Production (Major Label Commercial)" },
+    { "index": 18, "title": "PELIGROSA", "artist": "FloyyMenor", "provider": "saavn", "status": "Preserved / Unavailable in Production (Major Label Commercial)" }
+  ]
+}

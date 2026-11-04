@@ -198,7 +198,7 @@
             @click="handlePlayOnlineTrack(track)"
           >
             <button class="result-play-icon font-mono" @click.stop="handlePlayOnlineTrack(track)">
-              {{ isTrackPlaying(track) && playerStore.isPlaying ? '❚❚' : '▶' }}
+              {{ isTrackPlaying(track) && playerStore.isLoading ? '⏳' : (isTrackPlaying(track) && playerStore.isPlaying ? '❚❚' : '▶') }}
             </button>
 
             <div class="result-track-details">
@@ -325,7 +325,7 @@
             @click="handlePlayResultTrack(item)"
           >
             <button class="result-play-icon font-mono">
-              {{ isTrackPlaying(item.song) && playerStore.isPlaying ? '❚❚' : '▶' }}
+              {{ isTrackPlaying(item.song) && playerStore.isLoading ? '⏳' : (isTrackPlaying(item.song) && playerStore.isPlaying ? '❚❚' : '▶') }}
             </button>
 
             <div class="result-track-details">
@@ -789,7 +789,7 @@ const handlePlayOnlineTrack = async (track) => {
   };
 
   await playerStore.playTrack(playableTrack, onlineTracks.value);
-  if (playerStore.isPlaying || playerStore.playbackState === 'playing') {
+  if (playerStore.isPlaying || playerStore.playbackState === 'playing' || playerStore.playbackState === 'loading') {
     toastStore.info(`Playing ${track.title} via ${getProviderLabel(track)}`);
   } else if (playerStore.playbackState === 'unavailable') {
     toastStore.warn(`"${track.title}" is currently unavailable for playback in this environment.`);

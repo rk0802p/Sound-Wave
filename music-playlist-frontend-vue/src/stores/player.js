@@ -108,15 +108,14 @@ export const usePlayerStore = defineStore('player', {
 
       soundController.init({
         onPlay: () => {
-          this.isPlaying = true;
-          this.isLoading = false;
-          this.playbackState = 'playing';
-          if (typeof document !== 'undefined') {
-            document.body.classList.add('playing');
-          }
+          // Do not mark isPlaying = true prematurely on initial play request.
+          // Wait for onPlaying event when audio data is actually buffering/rendering.
+          this.isLoading = true;
+          this.playbackState = 'loading';
         },
         onPause: () => {
           this.isPlaying = false;
+          this.isLoading = false;
           if (this.playbackState !== 'failed' && this.playbackState !== 'ended') {
             this.playbackState = 'paused';
           }
@@ -409,8 +408,12 @@ export const usePlayerStore = defineStore('player', {
         this.isLoading = true;
         await soundController.load(track);
         if (this.playRequestId !== reqId) return;
-        this.playbackState = 'playing';
-        this.isPlaying = true;
+        // Keep isLoading true until onPlaying confirms actual media progression
+        if (this.currentTime > 0) {
+          this.playbackState = 'playing';
+          this.isPlaying = true;
+          this.isLoading = false;
+        }
       } catch (err) {
         if (this.playRequestId !== reqId) return;
         console.warn('Sound controller load warning:', err);
@@ -459,7 +462,9 @@ export const usePlayerStore = defineStore('player', {
         }
       } finally {
         if (this.playRequestId === reqId) {
-          this.isLoading = false;
+          if (this.playbackState !== 'loading') {
+            this.isLoading = false;
+          }
         }
       }
     },
@@ -470,9 +475,10 @@ export const usePlayerStore = defineStore('player', {
         return this.playTrack(this.queue[0], this.queue, 0);
       }
 
-      if (this.isPlaying) {
+      if (this.isPlaying || this.isLoading) {
         soundController.pause();
         this.isPlaying = false;
+        this.isLoading = false;
         this.playbackState = 'paused';
         if (typeof document !== 'undefined') {
           document.body.classList.remove('playing');

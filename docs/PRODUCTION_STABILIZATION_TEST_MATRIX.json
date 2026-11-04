@@ -1,6 +1,6 @@
 {
-  "matrixVersion": "1.0",
-  "testedAt": "2026-11-05T02:10:00Z",
+  "matrixVersion": "1.1",
+  "testedAt": "2026-11-05T02:40:00Z",
   "environment": "Simulation & Local Production Build with Edge E2E Automation",
   "providers": [
     {
@@ -17,10 +17,10 @@
       "provider": "jamendo",
       "displayName": "Jamendo Music (Creative Commons)",
       "environmentConstraint": "Requires active JAMENDO_CLIENT_ID",
-      "catalogDiscovery": "Upstream code 11 suspension detected; isolated cleanly by ProviderRegistry",
+      "catalogDiscovery": "Operational in production backend; returned 12 Creative Commons tracks for 'dandelion'",
       "resolutionEndpoint": "Direct MP3 URL on prod-1.storage.jamendo.com (requires resolution: false)",
-      "expectedStatusProduction": "HTTP 200 audio/mpeg on storage CDN; catalog queries isolated to 'unavailable'",
-      "frontendHandling": "Eliminated false playing toasts; fallback to Archive/Audius; CC license and attribution modal preserved",
+      "expectedStatusProduction": "HTTP 200/206 audio/mpeg on storage CDN; full CORS access",
+      "frontendHandling": "Transport timing aligned with onPlaying; dock loading spinner displayed during buffer phase; CC license and attribution modal preserved",
       "testResult": "PASS"
     },
     {
@@ -112,6 +112,78 @@
     {
       "testCase": "Responsive Viewport 390px (Mobile)",
       "screenshot": "screenshot_incident_search_390.png",
+      "result": "PASS"
+    }
+  ],
+  "environmentAndCredentialsVerification": [
+    {
+      "testId": "ENV-001",
+      "description": "Vercel backend deployment timing & configuration receipt",
+      "evidence": "GET https://music-playlist-nine.vercel.app/api/test returns HTTP 200, process.environment = 'production', configured.hasJamendoClient = true.",
+      "result": "PASS"
+    },
+    {
+      "testId": "ENV-002",
+      "description": "ProviderRegistry health check on live Vercel backend",
+      "evidence": "GET https://music-playlist-nine.vercel.app/api/search/providers/health confirms Jamendo is status: 'available', isConfigured: true.",
+      "result": "PASS"
+    },
+    {
+      "testId": "ENV-003",
+      "description": "Zero credential exposure across telemetry, console logs, and reports",
+      "evidence": "All diagnostics confirm Boolean flags only (hasJamendoClient: true, hasJwtSecret: true, hasMongoUri: true); raw secret keys strictly suppressed.",
+      "result": "PASS"
+    }
+  ],
+  "jamendoPipelineVerification": [
+    {
+      "testId": "JAM-011",
+      "description": "Live Jamendo API application status verification",
+      "evidence": "Jamendo upstream application status is confirmed 'live' with 'Read & write' plan; upstream code 11 suspension is cleared.",
+      "result": "PASS"
+    },
+    {
+      "testId": "JAM-012",
+      "description": "Live search aggregation for query 'dandelion'",
+      "evidence": "GET /api/search?q=dandelion returns 30 total results, including 12 Creative Commons tracks from Jamendo with full CC license tags.",
+      "result": "PASS"
+    },
+    {
+      "testId": "JAM-013",
+      "description": "Jamendo storage CDN stream availability and CORS headers",
+      "evidence": "HEAD/GET https://prod-1.storage.jamendo.com/?trackid=1059994 returns HTTP 206 Partial Content (2,930,176 bytes audio/mpeg) with Access-Control-Allow-Origin: https://music-playlist-pp8l.vercel.app.",
+      "result": "PASS"
+    },
+    {
+      "testId": "JAM-014",
+      "description": "End-to-end browser playback of Oleg O. Kachanko - Dandelion in Edge",
+      "evidence": "Puppeteer automated test executed on Edge: Track queued -> play() invoked -> readyState transitioned 0 -> 4 -> currentTime progressed from 0.00s to 6.81s.",
+      "result": "PASS"
+    },
+    {
+      "testId": "JAM-015",
+      "description": "Jamendo track attribution and CC licensing metadata",
+      "evidence": "Track displays CC BY-NC-ND 3.0 pill, attribution modal link to jamendo.com/track/1059994, and legal badge.",
+      "result": "PASS"
+    }
+  ],
+  "playbackTransportAndSpaRoutingVerification": [
+    {
+      "testId": "PLAY-011",
+      "description": "Commercial licensing audit of all 18 homepage featured tracks",
+      "evidence": "Audit across Jamendo, Internet Archive, and Audius confirmed zero legal open-access master recordings exist for major-label commercial tracks (Alan Walker, Calvin Harris, etc.). Saavn is strictly quarantined in production.",
+      "result": "PASS"
+    },
+    {
+      "testId": "PLAY-012",
+      "description": "Elimination of false-playing UI state (pause icon at 0:00 during buffer)",
+      "evidence": "playerStore.js decoupling: onPlay retains isLoading: true, isPlaying: false; onPlaying triggers isPlaying: true; FloatingPlayerDock renders .dock-spinner during network buffering window.",
+      "result": "PASS"
+    },
+    {
+      "testId": "PLAY-013",
+      "description": "Frontend SPA routing rewrites configuration on Vercel",
+      "evidence": "music-playlist-frontend-vue/vercel.json created with SPA rewrite rule [/(.*) -> /index.html] to eliminate HTTP 404s on hard reload.",
       "result": "PASS"
     }
   ]

@@ -92,10 +92,11 @@
         <button
           class="cb big orb"
           id="pp"
-          :aria-label="playerStore.isPlaying ? 'Pause' : 'Play'"
+          :aria-label="playerStore.isLoading && !playerStore.isPlaying ? 'Loading audio' : (playerStore.isPlaying ? 'Pause' : 'Play')"
           @click="handleTogglePlay($event)"
         >
-          <svg v-if="playerStore.isPlaying" viewBox="0 0 24 24"><path :d="ICONS.pause" /></svg>
+          <span v-if="playerStore.isLoading && !playerStore.isPlaying" class="dock-spinner" aria-hidden="true"></span>
+          <svg v-else-if="playerStore.isPlaying" viewBox="0 0 24 24"><path :d="ICONS.pause" /></svg>
           <svg v-else viewBox="0 0 24 24"><path :d="ICONS.play" /></svg>
         </button>
 
@@ -371,7 +372,7 @@ const handleTogglePlay = (event) => {
     return;
   }
   const t = playerStore.currentTrack;
-  if (!playerStore.isPlaying && t && t.needsResolution && !resolvePlayableAudioUrl(t) && t.providerTrackId) {
+  if (!playerStore.isPlaying && !playerStore.isLoading && t && t.needsResolution && !resolvePlayableAudioUrl(t) && t.providerTrackId) {
     playerStore.playTrack(t);
     return;
   }
@@ -639,6 +640,16 @@ const ICONS = {
   height: 58px;
   color: #fff;
   margin: 0 0.35rem;
+}
+
+.dock-spinner {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  border: 2.5px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
 }
 
 .cb.big svg {
