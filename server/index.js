@@ -41,8 +41,7 @@ app.use(
 
       const isAllowed =
         configuredOrigins.includes(origin) ||
-        origin.endsWith(".vercel.app") ||
-        (process.env.NODE_ENV !== "production" && origin.includes("localhost"));
+        (process.env.NODE_ENV !== "production" && (origin.includes("localhost") || origin.includes("127.0.0.1")));
 
       if (isAllowed) {
         return callback(null, true);
@@ -196,9 +195,17 @@ app.use((err, req, res, next) => {
   });
 });
 
+// Environment fail-fast validation
+const validateEnvironment = () => {
+  if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET) {
+    throw new Error("FATAL: JWT_SECRET environment variable is missing in production.");
+  }
+};
+
 // Standalone server startup (if executed directly e.g. 'node index.js')
 const PORT = process.env.PORT || 5000;
 if (process.env.NODE_ENV !== "test" && require.main === module) {
+  validateEnvironment();
   connectDB()
     .catch((err) => console.warn("Starting server without active DB connection:", err.message))
     .finally(() => {
@@ -210,3 +217,4 @@ if (process.env.NODE_ENV !== "test" && require.main === module) {
 
 module.exports = app;
 module.exports.connectDB = connectDB;
+module.exports.validateEnvironment = validateEnvironment;

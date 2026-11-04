@@ -67,24 +67,6 @@ const router = createRouter({
 });
 
 router.beforeEach((to, from, next) => {
-  // Support instantaneous preview & test auditing with ?demo=1
-  if (to.query.demo === '1' || to.query.auth === 'demo') {
-    if (!localStorage.getItem('token')) {
-      localStorage.setItem('token', 'demo-token-soundwave-bubble');
-      localStorage.setItem(
-        'user',
-        JSON.stringify({
-          id: 'demo-user-67c000000000000000000001',
-          username: 'Acoustic Curator',
-          email: 'curator@soundwave.io',
-        })
-      );
-    }
-    if (!localStorage.getItem('soundwave_bubble_playlists')) {
-      localStorage.setItem('soundwave_bubble_playlists', JSON.stringify(MOOD_PLAYLISTS));
-    }
-  }
-
   const token = localStorage.getItem('token');
   const isAuthenticated = Boolean(token);
 

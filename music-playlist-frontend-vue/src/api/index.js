@@ -26,7 +26,8 @@ api.interceptors.response.use(
   (error) => {
     if (error.response && error.response.status === 401) {
       const code = error.response.data?.code;
-      if (code === 'TOKEN_EXPIRED' || code === 'INVALID_TOKEN' || code === 'NO_TOKEN') {
+      const hadToken = Boolean(localStorage.getItem('token'));
+      if (code === 'TOKEN_EXPIRED' || (code === 'INVALID_TOKEN' && hadToken)) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         // If not already on auth pages, redirect

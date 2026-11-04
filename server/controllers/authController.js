@@ -3,7 +3,12 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { isValidEmail, isValidPassword } = require("../utils/validation");
 
-const getJwtSecret = () => process.env.JWT_SECRET || "music_playlist_secret_key_2026";
+const getJwtSecret = () => {
+  if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET) {
+    throw new Error("FATAL: JWT_SECRET environment variable is missing in production.");
+  }
+  return process.env.JWT_SECRET || "soundwave_dev_jwt_secret_key_2026_secure";
+};
 const getJwtExpiresIn = () => process.env.JWT_EXPIRES_IN || "7d";
 
 const signup = async (req, res, next) => {

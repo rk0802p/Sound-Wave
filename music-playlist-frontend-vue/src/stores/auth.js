@@ -37,7 +37,9 @@ export const useAuthStore = defineStore('auth', {
   },
 
   actions: {
-    async login(email, password) {
+    async login(payloadOrEmail, maybePassword) {
+      const email = typeof payloadOrEmail === 'object' && payloadOrEmail !== null ? payloadOrEmail.email : payloadOrEmail;
+      const password = typeof payloadOrEmail === 'object' && payloadOrEmail !== null ? payloadOrEmail.password : maybePassword;
       this.isLoading = true;
       this.error = null;
       try {
@@ -45,18 +47,7 @@ export const useAuthStore = defineStore('auth', {
         this.setSession(data.token, data.user);
         return data;
       } catch (err) {
-        // If backend server is unreachable (offline / standalone demo mode)
-        if (!err.response || err.code === 'ERR_NETWORK') {
-          const demoUser = {
-            id: 'demo-user-67c000000000000000000001',
-            username: (email && email.split('@')[0]) || 'Acoustic Curator',
-            email: email || 'curator@soundwave.internal',
-          };
-          const demoToken = 'demo-token-soundwave-atelier';
-          this.setSession(demoToken, demoUser);
-          return { token: demoToken, user: demoUser };
-        }
-        const msg = err.response?.data?.message || err.message || 'Login failed';
+        const msg = err.response?.data?.message || (err.code === 'ERR_NETWORK' ? 'Unable to reach SOUNDWAVE server. Please check your connection.' : err.message) || 'Login failed';
         this.error = msg;
         throw err;
       } finally {
@@ -64,7 +55,17 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    async signup(username, email, password) {
+    async signup(payloadOrUsername, maybeEmail, maybePassword) {
+      let username, email, password;
+      if (typeof payloadOrUsername === 'object' && payloadOrUsername !== null) {
+        username = payloadOrUsername.username;
+        email = payloadOrUsername.email;
+        password = payloadOrUsername.password;
+      } else {
+        username = payloadOrUsername;
+        email = maybeEmail;
+        password = maybePassword;
+      }
       this.isLoading = true;
       this.error = null;
       try {
@@ -72,18 +73,7 @@ export const useAuthStore = defineStore('auth', {
         this.setSession(data.token, data.user);
         return data;
       } catch (err) {
-        // If backend server is unreachable (offline / standalone demo mode)
-        if (!err.response || err.code === 'ERR_NETWORK') {
-          const demoUser = {
-            id: 'demo-user-67c000000000000000000001',
-            username: username || 'Acoustic Curator',
-            email: email || 'curator@soundwave.internal',
-          };
-          const demoToken = 'demo-token-soundwave-atelier';
-          this.setSession(demoToken, demoUser);
-          return { token: demoToken, user: demoUser };
-        }
-        const msg = err.response?.data?.message || err.message || 'Signup failed';
+        const msg = err.response?.data?.message || (err.code === 'ERR_NETWORK' ? 'Unable to reach SOUNDWAVE server. Please check your connection.' : err.message) || 'Signup failed';
         this.error = msg;
         throw err;
       } finally {

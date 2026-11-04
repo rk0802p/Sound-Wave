@@ -163,4 +163,47 @@ describe("Security & Ownership Isolation Integration Tests", () => {
       expect(checkFake).toBeNull();
     });
   });
+
+  describe("CORS Strict Allowlist Enforcement", () => {
+    it("should allow configured production frontend origin", async () => {
+      const res = await request(app)
+        .get("/api/test")
+        .set("Origin", "https://music-playlist-pp8l.vercel.app");
+      expect(res.headers["access-control-allow-origin"]).toBe("https://music-playlist-pp8l.vercel.app");
+    });
+
+    it("should block arbitrary origins even if matching prefix and suffix", async () => {
+      const res = await request(app)
+        .get("/api/test")
+        .set("Origin", "https://music-playlist-malicious.vercel.app");
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe("CORS Error");
+    });
+  });
+
+  describe("Fail-Fast Startup Environment Validation", () => {
+    const origEnv = process.env.NODE_ENV;
+    const origSecret = process.env.JWT_SECRET;
+
+    afterEach(() => {
+      process.env.NODE_ENV = origEnv;
+      process.env.JWT_SECRET = origSecret;
+    });
+
+    it("should throw fatal error at startup if in production without JWT_SECRET", () => {
+      process.env.NODE_ENV = "production";
+      delete process.env.JWT_SECRET;
+      expect(() => {
+        app.validateEnvironment();
+      }).toThrow(/FATAL: JWT_SECRET environment variable is missing in production/i);
+    });
+
+    it("should allow startup when JWT_SECRET is provided in production", () => {
+      process.env.NODE_ENV = "production";
+      process.env.JWT_SECRET = "production_super_secret_key_12345";
+      expect(() => {
+        app.validateEnvironment();
+      }).not.toThrow();
+    });
+  });
 });

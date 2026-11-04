@@ -1,6 +1,11 @@
 const jwt = require("jsonwebtoken");
 
-const getJwtSecret = () => process.env.JWT_SECRET || "music_playlist_secret_key_2026";
+const getJwtSecret = () => {
+  if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET) {
+    throw new Error("FATAL: JWT_SECRET environment variable is missing in production.");
+  }
+  return process.env.JWT_SECRET || "soundwave_dev_jwt_secret_key_2026_secure";
+};
 
 const verifyToken = (req, res, next) => {
   const authHeader = req.headers.authorization;
