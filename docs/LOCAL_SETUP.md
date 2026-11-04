@@ -96,13 +96,20 @@ JWT_SECRET=soundwave_super_secret_jwt_key_local_dev_2026
 # If omitted, server runs gracefully in offline-capable mode
 # MONGO_URI=mongodb://localhost:27017/soundwave
 
+# Optional: Jamendo Music API Client ID (Creative Commons catalog search & streaming)
+# Note: JAMENDO_CLIENT_ID is already configured and active in the deployed Vercel backend.
+# For local development with live Jamendo results, add your Jamendo developer client ID here:
+# JAMENDO_CLIENT_ID=your_jamendo_client_id
+
 # Optional: Spotify Developer Credentials (for official Spotify Web API linking)
 # SPOTIFY_CLIENT_ID=your_client_id
 # SPOTIFY_CLIENT_SECRET=your_client_secret
 # SPOTIFY_REDIRECT_URI=http://localhost:5000/api/spotify/callback
 ```
 
-> **Note on MongoDB:** If `MONGO_URI` is not provided, the backend starts cleanly with a notice: `Starting server without active DB connection: MONGO_URI environment variable is not defined.` The frontend automatically utilizes its persistent local storage (`soundwave_bubble_playlists_v3`) for playlists, ensuring 100% functional music playback and exploration without requiring a database setup.
+> **Note on Jamendo Music Integration:** `JAMENDO_CLIENT_ID` is securely configured on the production backend. The adapter strictly uses streaming `audio` URLs (`audioformat=mp32`) and preserves Creator Creative Commons licenses (`CC BY`, `CC BY-NC-SA`, `CC BY-ND`, etc.) with direct backlinks to Jamendo track pages. Zero audio files or blobs are ever downloaded or stored.
+
+> **Note on MongoDB & User Sessions:** When `MONGO_URI` is provided, user accounts, JWT sessions, and playlists are securely persisted. Empty playlists are strictly preserved with 0 songs (`songs: []`) without false auto-population. On failed login/signup, real error messages are returned without generating fake tokens.
 
 ---
 
@@ -145,14 +152,14 @@ The `?demo=1` flag instantly provisions a demo curator profile, loads the 5 cura
 
 ## 6. Verification & Automated Testing
 
-### Backend Unit & Integration Tests (124 Tests)
+### Backend Unit & Integration Tests (130 Tests)
 Run the full 7-suite backend test suite:
 ```powershell
 npm test --prefix server
 ```
 *Expected Result:*
 - `Test Suites: 7 passed, 7 total`
-- `Tests: 124 passed, 124 total`
+- `Tests: 130 passed, 130 total`
 - Suites covered: `auth.test.js`, `playlist.test.js`, `songs.test.js`, `security.test.js`, `providers.test.js`, `spotify.test.js`, `multiSourceSearch.test.js`.
 
 ### Frontend Production Build Test

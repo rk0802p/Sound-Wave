@@ -15,6 +15,7 @@ A production-grade, full-stack music discovery and playlist application with a p
 - **Persistent Bottom Player Bar**: Integrated with Pinia (`player.js`). Music playback continues seamlessly and uninterrupted across page transitions, search queries, and playlist editing.
 - **Multi-Provider Playback Architecture**:
   - **Direct HTML5 Audio (`DirectAudioProvider`)**: Native streaming for MP3, FLAC, and OGG with full scrubbable progress bar, volume control, time events, and zero CORS errors.
+  - **Jamendo Music Integration (`JamendoProvider`)**: Official v3.0 API integration for legal Creative Commons music streaming (`audioformat=mp32`). Extracts explicit creator CC licenses (`CC BY`, `CC BY-NC-SA`, `CC BY-ND`, `CC0`), evaluates rights flags (`hasCommercialRestriction`, `hasDerivativeRestriction`), formats attribution credits, and provides direct backlinks to Jamendo track pages (`shareurl`). Zero audio storage or file caching.
   - **Audius Decentralized Streaming**: Resolves on-demand directly to decentralized creator node CDNs without requiring local audio caching or storage.
   - **Internet Archive Stream Resolver**: Streams curated, verified archival recordings on demand.
   - **Curated Discover Collection (Original 18 Spotify Songs)**: Curated collection matching the user's Spotify playlist screenshots (including Calvin Harris & Dua Lipa, Alan Walker, Wiz Khalifa & Charlie Puth, Ed Sheeran, Billie Eilish, J Balvin, FloyyMenor), fully playable via high-bitrate AAC streaming with honest unavailable fallback.
