@@ -520,6 +520,7 @@ import { usePlaylistStore } from '../stores/playlist';
 import { useAuthStore } from '../stores/auth';
 import { useToastStore } from '../stores/toast';
 import { FEATURED_SONGS } from '../data/featuredSongs';
+import { resolvePlayableAudioUrl } from '../services/providers/detector';
 import FloatingPlayerDock from '../components/player/FloatingPlayerDock.vue';
 import CreatePlaylistModal from '../components/playlists/CreatePlaylistModal.vue';
 
@@ -899,12 +900,17 @@ onMounted(() => {
   playlistStore.fetchPlaylists().catch(() => {});
   window.addEventListener('keydown', handleKeyDown);
 
-  // Set initial default track in player if none loaded
-  if (!playerStore.currentTrack && allCuratedTracks.value.length > 0) {
-    playerStore.currentTrack = allCuratedTracks.value[0];
+  // Set initial default track in player if none loaded or if loaded track has no playable audio URL
+  const currentAudioUrl = resolvePlayableAudioUrl(playerStore.currentTrack);
+  if (!currentAudioUrl && allCuratedTracks.value.length > 0) {
+    const initialTrack = allCuratedTracks.value[0];
+    playerStore.currentTrack = initialTrack;
     playerStore.queue = allCuratedTracks.value;
     playerStore.trackIndex = 0;
-    playerStore.duration = allCuratedTracks.value[0].duration;
+    playerStore.duration = initialTrack.duration;
+    if (initialTrack.palette) {
+      playerStore.setTheme(initialTrack.palette.o1, initialTrack.palette.o2, initialTrack.palette.tint);
+    }
   }
 
   if (route.query.drawer === 'true' || route.query.drawer === '1') {

@@ -52,6 +52,14 @@ export class UnifiedSoundController {
     return 'direct';
   }
 
+  get currentTrack() {
+    return this.activeProvider?.currentTrack || null;
+  }
+
+  async load(track) {
+    return this.loadAndPlay(track);
+  }
+
   async loadAndPlay(track) {
     const rawTargetType = this.detectType(track);
     const targetType = this.providers[rawTargetType] ? rawTargetType : 'direct';
@@ -78,7 +86,7 @@ export class UnifiedSoundController {
 
   play() {
     if (this.activeProvider) {
-      this.activeProvider.play();
+      return this.activeProvider.play();
     }
   }
 
