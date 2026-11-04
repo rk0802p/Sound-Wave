@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const verifyToken = require("../middleware/auth");
+const { verifyToken, optionalAuth } = require("../middleware/auth");
 const {
   requirePlaylistOwner,
   requirePlaylistAccess,
@@ -8,6 +8,9 @@ const {
 const {
   getPlaylists,
   getPlaylistById,
+  getPublicExplorePlaylists,
+  forkPlaylist,
+  getPlaylistOgMeta,
   createPlaylist,
   updatePlaylist,
   deletePlaylist,
@@ -18,13 +21,24 @@ const {
   resolveTrack,
 } = require("../controllers/playlistController");
 
+// Public explore feed (must be before /:id)
+router.get("/public/explore", getPublicExplorePlaylists);
+
 // Track metadata resolution (must be before /:id)
 router.get("/resolve/track", verifyToken, resolveTrack);
 
 // Playlist CRUD routes
 router.get("/", verifyToken, getPlaylists);
 router.post("/", verifyToken, createPlaylist);
-router.get("/:id", verifyToken, requirePlaylistAccess, getPlaylistById);
+
+// OpenGraph HTML preview for social crawlers
+router.get("/:id/og", getPlaylistOgMeta);
+
+// Fork a public playlist into user's own library
+router.post("/:id/fork", verifyToken, forkPlaylist);
+
+// Single playlist view: public playlists allow guest access, private playlists require owner
+router.get("/:id", optionalAuth, requirePlaylistAccess, getPlaylistById);
 router.put("/:id", verifyToken, requirePlaylistOwner, updatePlaylist);
 router.delete("/:id", verifyToken, requirePlaylistOwner, deletePlaylist);
 

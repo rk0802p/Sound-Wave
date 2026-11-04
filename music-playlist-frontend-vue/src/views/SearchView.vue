@@ -608,7 +608,16 @@ const isJamendoTrack = (t) => {
 
 const getTrackSourceUrl = (t) => {
   if (!t) return null;
-  return t.providerTrackUrl || t.source?.trackUrl || null;
+  const prov = t.provider || t.source?.provider;
+  const extId = t.providerTrackId || t.source?.externalId;
+  if (prov === 'jamendo' && extId) {
+    return `https://www.jamendo.com/track/${extId}`;
+  }
+  if (t.providerTrackUrl) return t.providerTrackUrl;
+  if (t.source?.url && t.source.url.includes('jamendo.com/track/')) return t.source.url;
+  if (t.source?.trackUrl) return t.source.trackUrl;
+  if (t.source?.url && !t.source.url.includes('storage.jamendo.com')) return t.source.url;
+  return null;
 };
 
 const getProviderStatusLabel = (name) => {

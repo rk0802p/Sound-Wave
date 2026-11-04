@@ -6,8 +6,18 @@ export const playlistApi = {
     return res.data;
   },
 
+  getPublicExplore: async (params = {}) => {
+    const res = await api.get('/api/playlists/public/explore', { params });
+    return res.data;
+  },
+
   getPlaylistById: async (id) => {
     const res = await api.get(`/api/playlists/${id}`);
+    return res.data;
+  },
+
+  forkPlaylist: async (id, data = {}) => {
+    const res = await api.post(`/api/playlists/${id}/fork`, data);
     return res.data;
   },
 

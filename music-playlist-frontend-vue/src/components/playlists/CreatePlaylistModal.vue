@@ -87,6 +87,21 @@
           </div>
         </div>
 
+        <!-- Public Sharing Toggle -->
+        <div class="form-group public-toggle-group">
+          <label class="toggle-label">
+            <input
+              type="checkbox"
+              v-model="isPublic"
+              class="toggle-checkbox"
+            />
+            <span class="toggle-text">
+              <span class="toggle-title">🌐 Make Public on Explore</span>
+              <small class="toggle-desc">Allow community discovery, social sharing, and forking</small>
+            </span>
+          </label>
+        </div>
+
         <!-- Form Actions -->
         <div class="modal-actions">
           <button type="button" class="cancel-btn" @click="$emit('close')">
@@ -116,6 +131,7 @@ const name = ref('');
 const description = ref('');
 const selectedEmoji = ref('🫧');
 const selectedPaletteIndex = ref(0);
+const isPublic = ref(true);
 const isSubmitting = ref(false);
 
 const emojiOptions = ['🫧', '☀️', '🌙', '📚', '🔥', '🚗', '🎵', '💜', '🎶', '✨', '🎸', '🌈'];
@@ -150,7 +166,7 @@ const handleSubmit = async (event) => {
       o1: palette.o1,
       o2: palette.o2,
       tint: palette.tint,
-      isPublic: true,
+      isPublic: isPublic.value,
     });
 
     if (rect) {
@@ -345,6 +361,45 @@ const handleSubmit = async (event) => {
   outline: 3px solid var(--ink);
   outline-offset: 2px;
   transform: scale(1.2);
+}
+
+.public-toggle-group {
+  margin-top: 0.5rem;
+  background: rgba(255, 255, 255, 0.5);
+  padding: 0.75rem 1rem;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  cursor: pointer;
+  text-transform: none !important;
+}
+
+.toggle-checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--o2, #ff4f9a);
+  cursor: pointer;
+}
+
+.toggle-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.toggle-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.toggle-desc {
+  font-size: 0.75rem;
+  color: var(--muted);
 }
 
 .modal-actions {

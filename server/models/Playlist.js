@@ -125,6 +125,21 @@ const playlistSchema = new mongoose.Schema(
     isPublic: {
       type: Boolean,
       default: false,
+      index: true,
+    },
+    forkedFrom: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Playlist",
+      default: null,
+    },
+    forkCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    tags: {
+      type: [String],
+      default: [],
     },
     songs: [songSchema],
   },
@@ -137,6 +152,7 @@ const playlistSchema = new mongoose.Schema(
 
 // Indexes
 playlistSchema.index({ userId: 1, createdAt: -1 });
+playlistSchema.index({ isPublic: 1, createdAt: -1 });
 playlistSchema.index({ name: "text", description: "text" });
 
 // Virtuals

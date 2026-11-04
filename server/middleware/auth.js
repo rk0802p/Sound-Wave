@@ -32,4 +32,27 @@ const verifyToken = (req, res, next) => {
   }
 };
 
+const optionalAuth = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    req.user = null;
+    return next();
+  }
+
+  const token = authHeader.split(" ")[1];
+  try {
+    const decoded = jwt.verify(token, getJwtSecret());
+    req.user = {
+      id: decoded.id,
+      username: decoded.username,
+      email: decoded.email,
+    };
+  } catch (err) {
+    req.user = null;
+  }
+  next();
+};
+
 module.exports = verifyToken;
+module.exports.verifyToken = verifyToken;
+module.exports.optionalAuth = optionalAuth;

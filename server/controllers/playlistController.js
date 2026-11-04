@@ -46,17 +46,197 @@ const getPlaylists = async (req, res, next) => {
 // GET /api/playlists/:id
 const getPlaylistById = async (req, res, next) => {
   try {
-    // req.playlist is populated and verified by ownership/access middleware
-    const playlist = req.playlist;
-    if (playlist.songs && playlist.songs.length > 0) {
-      playlist.songs.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+    const raw = req.playlist.toObject ? req.playlist.toObject() : req.playlist;
+    if (raw.songs && raw.songs.length > 0) {
+      raw.songs.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
     }
-    res.status(200).json(playlist);
+
+    const creatorName = req.playlist.userId?.username || "Soundwave Curator";
+    const creatorId = req.playlist.userId?._id || req.playlist.userId;
+
+    const responseData = {
+      ...raw,
+      userId: creatorId,
+      creator: {
+        _id: creatorId,
+        username: creatorName,
+      },
+      isOwner: Boolean(req.isOwner),
+    };
+
+    res.status(200).json(responseData);
   } catch (err) {
     next(err);
   }
 };
 
+// GET /api/playlists/public/explore
+const getPublicExplorePlaylists = async (req, res, next) => {
+  try {
+    const { search, genre, provider, sort, page, limit } = req.query;
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const limitNum = Math.max(1, Math.min(50, parseInt(limit, 10) || 12));
+    const skip = (pageNum - 1) * limitNum;
+
+    const query = { isPublic: true };
+
+    if (search && search.trim()) {
+      const searchRegex = new RegExp(search.trim(), "i");
+      query.$or = [
+        { name: searchRegex },
+        { description: searchRegex },
+        { "songs.title": searchRegex },
+        { "songs.artist": searchRegex },
+      ];
+    }
+
+    if (genre && genre.trim() && genre.toLowerCase() !== "all") {
+      const gRegex = new RegExp(genre.trim(), "i");
+      query.$or = query.$or || [];
+      query.$or.push({ tags: gRegex }, { "songs.genre": gRegex }, { description: gRegex });
+    }
+
+    if (provider && provider.trim() && provider.toLowerCase() !== "all") {
+      query["songs.source.provider"] = provider.trim().toLowerCase();
+    }
+
+    let sortObj = { createdAt: -1 };
+    if (sort === "updated") {
+      sortObj = { updatedAt: -1 };
+    } else if (sort === "forks") {
+      sortObj = { forkCount: -1, createdAt: -1 };
+    }
+
+    const [playlists, total] = await Promise.all([
+      Playlist.find(query)
+        .populate("userId", "username")
+        .sort(sortObj)
+        .skip(skip)
+        .limit(limitNum)
+        .lean(),
+      Playlist.countDocuments(query),
+    ]);
+
+    const sanitizedList = playlists.map((p) => {
+      const creatorName = p.userId?.username || "Soundwave Curator";
+      const creatorId = p.userId?._id || p.userId;
+      return {
+        ...p,
+        userId: creatorId,
+        creator: {
+          _id: creatorId,
+          username: creatorName,
+        },
+      };
+    });
+
+    res.status(200).json({
+      playlists: sanitizedList,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        totalPages: Math.ceil(total / limitNum),
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// POST /api/playlists/:id/fork
+const forkPlaylist = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { name } = req.body || {};
+
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid playlist ID format" });
+    }
+
+    const source = await Playlist.findById(id).lean();
+    if (!source) {
+      return res.status(404).json({ message: "Playlist not found" });
+    }
+
+    const isSourceOwner = String(source.userId) === String(req.user.id);
+    if (!source.isPublic && !isSourceOwner) {
+      return res.status(403).json({ message: "Cannot fork a private playlist" });
+    }
+
+    const clonedSongs = (source.songs || []).map((s, idx) => ({
+      title: s.title,
+      artist: s.artist,
+      album: s.album || "",
+      duration: s.duration || 0,
+      position: idx,
+      url: s.url || "",
+      source: s.source
+        ? {
+            provider: s.source.provider || "direct",
+            externalId: s.source.externalId || null,
+            url: s.source.url || "",
+          }
+        : { provider: "direct", externalId: null, url: s.url || "" },
+      coverImage: s.coverImage || "",
+      license: s.license || "",
+      licenseUrl: s.licenseUrl || "",
+      attribution: s.attribution || "",
+    }));
+
+    const forked = new Playlist({
+      name: name && String(name).trim() ? String(name).trim() : "Copy of " + source.name,
+      description: source.description
+        ? source.description + " (Forked from " + source.name + ")"
+        : "Forked from " + source.name,
+      coverImage: source.coverImage || "",
+      userId: req.user.id,
+      isPublic: false,
+      forkedFrom: source._id,
+      tags: source.tags || [],
+      songs: clonedSongs,
+    });
+
+    const saved = await forked.save();
+    await Playlist.findByIdAndUpdate(source._id, { $inc: { forkCount: 1 } });
+
+    res.status(201).json(saved);
+  } catch (err) {
+    next(err);
+  }
+};
+
+// GET /api/playlists/:id/og
+const getPlaylistOgMeta = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (!isValidObjectId(id)) {
+      return res.status(400).send("Invalid playlist ID");
+    }
+
+    const playlist = await Playlist.findById(id).populate("userId", "username").lean();
+    if (!playlist || !playlist.isPublic) {
+      return res.status(404).send("Playlist not found or private");
+    }
+
+    const creatorName = playlist.userId?.username || "Soundwave Curator";
+    const frontendUrl = process.env.FRONTEND_URL || "https://music-playlist-pp8l.vercel.app";
+    const canonicalUrl = frontendUrl + "/playlist/" + playlist._id;
+    const cover = playlist.coverImage || frontendUrl + "/favicon.ico";
+    const trackCount = playlist.songs ? playlist.songs.length : 0;
+    const desc = playlist.description || "Curated mixtape with " + trackCount + " tracks on SOUNDWAVE.";
+    const songsListHtml = playlist.songs && playlist.songs.length > 0
+      ? "<ul>" + playlist.songs.slice(0, 10).map((s) => "<li>" + s.title + " - " + s.artist + "</li>").join("") + "</ul>"
+      : "";
+
+    const html = "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"utf-8\">\n  <title>" + playlist.name + " — SOUNDWAVE Mixtape</title>\n  <meta property=\"og:title\" content=\"" + playlist.name + " by " + creatorName + "\" />\n  <meta property=\"og:description\" content=\"" + desc + "\" />\n  <meta property=\"og:type\" content=\"music.playlist\" />\n  <meta property=\"og:url\" content=\"" + canonicalUrl + "\" />\n  <meta property=\"og:image\" content=\"" + cover + "\" />\n  <meta name=\"twitter:card\" content=\"summary_large_image\" />\n  <meta name=\"twitter:title\" content=\"" + playlist.name + " — SOUNDWAVE\" />\n  <meta name=\"twitter:description\" content=\"" + desc + "\" />\n  <meta name=\"twitter:image\" content=\"" + cover + "\" />\n  <link rel=\"canonical\" href=\"" + canonicalUrl + "\" />\n</head>\n<body>\n  <h1>" + playlist.name + "</h1>\n  <p>" + desc + "</p>\n  <p>Curated by " + creatorName + " (" + trackCount + " tracks)</p>\n  " + songsListHtml + "\n  <a href=\"" + canonicalUrl + "\">Open in SOUNDWAVE</a>\n</body>\n</html>";
+
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    res.status(200).send(html);
+  } catch (err) {
+    next(err);
+  }
+};
 // POST /api/playlists
 const createPlaylist = async (req, res, next) => {
   try {
@@ -463,6 +643,9 @@ const reorderSongs = async (req, res, next) => {
 module.exports = {
   getPlaylists,
   getPlaylistById,
+  getPublicExplorePlaylists,
+  forkPlaylist,
+  getPlaylistOgMeta,
   createPlaylist,
   updatePlaylist,
   deletePlaylist,

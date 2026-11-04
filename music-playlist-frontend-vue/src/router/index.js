@@ -28,13 +28,21 @@ const routes = [
     meta: { requiresAuth: false },
   },
   {
-    path: '/playlists/:id',
-    name: 'PlaylistView',
-    redirect: (to) => ({ path: '/', query: { playlist: to.params.id } }),
+    path: '/explore',
+    name: 'Explore',
+    component: () => import('../views/ExploreView.vue'),
+    meta: { requiresAuth: false },
   },
   {
     path: '/playlist/:id',
-    redirect: (to) => ({ path: '/', query: { playlist: to.params.id } }),
+    name: 'PlaylistPreview',
+    component: () => import('../views/PlaylistPreviewView.vue'),
+    meta: { requiresAuth: false },
+  },
+  {
+    path: '/playlists/:id',
+    name: 'PlaylistView',
+    redirect: (to) => ({ path: `/playlist/${to.params.id}` }),
   },
   {
     path: '/login',

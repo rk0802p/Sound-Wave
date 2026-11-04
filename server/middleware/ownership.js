@@ -41,18 +41,24 @@ const requirePlaylistAccess = async (req, res, next) => {
   }
 
   try {
-    const playlist = await Playlist.findById(id);
+    const playlist = await Playlist.findById(id).populate("userId", "username");
 
     if (!playlist) {
       return res.status(404).json({ message: "Playlist not found" });
     }
 
-    const isOwner = req.user && playlist.userId.toString() === req.user.id;
+    const playlistOwnerId = (playlist.userId?._id || playlist.userId).toString();
+    const isOwner = req.user && playlistOwnerId === req.user.id;
+
     if (!isOwner && !playlist.isPublic) {
+      if (!req.user) {
+        return res.status(401).json({ message: "Authentication required to view private playlist" });
+      }
       return res.status(403).json({ message: "Not authorized to view this private playlist" });
     }
 
     req.playlist = playlist;
+    req.isOwner = Boolean(isOwner);
     next();
   } catch (err) {
     next(err);
