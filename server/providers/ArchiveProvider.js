@@ -30,7 +30,7 @@ class ArchiveProvider extends BaseProvider {
       const luceneQuery = `mediatype:audio AND (title:(${cleanQuery}) OR creator:(${cleanQuery})) AND -collection:(podcasts OR audio_news)`;
       const searchUrl = `${this.baseUrl}/advancedsearch.php?` + new URLSearchParams({
         q: luceneQuery,
-        'fl[]': 'identifier,title,creator,description,year,licenseurl,downloads',
+        'fl[]': 'identifier,title,creator,collection,description,year,licenseurl,downloads',
         'sort[]': 'downloads desc',
         rows: String(limit),
         page: '1',
@@ -144,11 +144,40 @@ class ArchiveProvider extends BaseProvider {
     const title = fileTitle || doc.title || identifier;
     const artist = doc.creator || 'Internet Archive Contributor';
 
-    // Transparent license disclosure: do not assume automatic public domain
-    const licenseText = doc.licenseurl
-      ? 'Archival License'
-      : 'Community Upload (Verify Copyright)';
+    // Rigorous rights & provenance audit
+    const rawFileName = bestFile?.name || '';
+    const hasRipperSignature = /flvto|ytmp3|y2mate|tubemate|snaptube|convert2mp3|mp3converter|ripper/i.test(rawFileName);
+
+    const collections = Array.isArray(doc.collection)
+      ? doc.collection.map(c => String(c).toLowerCase())
+      : (typeof doc.collection === 'string' ? [doc.collection.toLowerCase()] : []);
+    const isVerifiedCollection = collections.some(c =>
+      ['etree', 'audio_music', '78rpm', 'georgeblood', 'netlabels', 'freemusicarchive', 'taperssection'].includes(c)
+    );
+
+    const hasVerifiedLicense = Boolean(doc.licenseurl && (
+      doc.licenseurl.includes('creativecommons.org') ||
+      doc.licenseurl.includes('publicdomain')
+    ));
+
+    const rightsVerified = !hasRipperSignature && (hasVerifiedLicense || isVerifiedCollection);
+    const isPlayable = Boolean(streamUrl) && rightsVerified;
+
+    let licenseText = 'Unverified Community Upload';
+    if (hasVerifiedLicense) {
+      licenseText = 'Creative Commons / Public Domain';
+    } else if (isVerifiedCollection) {
+      licenseText = 'Verified Archival / Taper Collection';
+    } else if (hasRipperSignature) {
+      licenseText = 'Potential Unauthorized Upload (Ripper Signature)';
+    }
+
     const licenseUrl = doc.licenseurl || 'https://archive.org/about/terms.php';
+    const restrictionReason = !rightsVerified
+      ? (hasRipperSignature
+          ? 'Potential unauthorized recording (source filename contains ripper watermark)'
+          : 'Community upload with unverified copyright clearance')
+      : null;
 
     return {
       id: `archive:${identifier}`,
@@ -160,18 +189,21 @@ class ArchiveProvider extends BaseProvider {
       provider: 'archive',
       providerTrackId: identifier,
       providerTrackUrl: `${this.baseUrl}/details/${encodeURIComponent(identifier)}`,
-      url: streamUrl,
-      streamUrl,
-      isPlayable: Boolean(streamUrl),
+      url: isPlayable ? streamUrl : '',
+      streamUrl: isPlayable ? streamUrl : '',
+      isPlayable,
+      rightsVerified,
+      rightsStatus: rightsVerified ? 'verified' : 'unverified',
       license: licenseText,
       licenseUrl,
       attribution: 'Internet Archive (archive.org community archive)',
       playbackCapabilities: {
-        canSeek: true,
+        canSeek: isPlayable,
         canVolume: true,
         hasTimeEvents: true,
         isEmbedded: false,
-        playbackType: 'direct',
+        playbackType: isPlayable ? 'direct' : 'unsupported',
+        restrictionReason,
       },
     };
   }
@@ -199,8 +231,20 @@ class ArchiveProvider extends BaseProvider {
       doc.identifier = identifier;
 
       const track = await this.resolveDocToTrack(doc);
+      if (!track) {
+        return { streamUrl: null, metadata: null, error: 'Track not found on Internet Archive' };
+      }
+
+      if (!track.isPlayable || !track.rightsVerified) {
+        return {
+          streamUrl: null,
+          metadata: track,
+          error: `Playback restricted: ${track.playbackCapabilities?.restrictionReason || 'Unverified rights'}`,
+        };
+      }
+
       return {
-        streamUrl: track?.streamUrl || null,
+        streamUrl: track.streamUrl || null,
         metadata: track,
         error: null,
       };

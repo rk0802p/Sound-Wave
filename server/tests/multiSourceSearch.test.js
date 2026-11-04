@@ -416,6 +416,8 @@ describe('SOUNDWAVE Multi-Source Music Aggregation & Resilience Tests', () => {
                 identifier: 'test_item',
                 title: 'Resolved Item Title',
                 creator: 'Resolved Creator',
+                licenseurl: 'https://creativecommons.org/licenses/by/4.0/',
+                collection: ['audio_music'],
               },
             }),
           };
@@ -435,6 +437,36 @@ describe('SOUNDWAVE Multi-Source Music Aggregation & Resilience Tests', () => {
       const res = await request(app).get('/api/search/resolve?provider=archive&trackId=non_existent');
       expect(res.status).toBe(404);
       expect(res.body.message).toMatch(/not found/i);
+    });
+
+    it('Scenario 7b: should reject resolution for unauthorized community uploads or ripper filenames', async () => {
+      global.fetch = jest.fn(async (url) => {
+        const urlStr = String(url);
+        if (urlStr.includes('/files')) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              result: [{ name: 'song_flvto_rip.mp3', format: 'VBR MP3' }],
+            }),
+          };
+        }
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            metadata: {
+              identifier: 'unauthorized_rip',
+              title: 'Ripped Song',
+              creator: 'Unknown Uploader',
+            },
+          }),
+        };
+      });
+
+      const res = await request(app).get('/api/search/resolve?provider=archive&trackId=unauthorized_rip');
+      expect(res.status).toBe(404);
+      expect(res.body.message).toMatch(/restricted|unverified/i);
     });
   });
 
