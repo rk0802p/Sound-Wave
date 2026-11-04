@@ -1,0 +1,50 @@
+{
+  "phase": "6.6",
+  "project": "SOUNDWAVE",
+  "generatedAt": "2026-11-05T00:36:00.000Z",
+  "backendSuites": [
+    { "name": "observability.test.js", "tests": 8, "passed": 8, "failed": 0 },
+    { "name": "socialDiscovery.test.js", "tests": 13, "passed": 13, "failed": 0 },
+    { "name": "multiSourceSearch.test.js", "tests": 34, "passed": 34, "failed": 0 },
+    { "name": "providers.test.js", "tests": 33, "passed": 33, "failed": 0 },
+    { "name": "playlist.test.js", "tests": 20, "passed": 20, "failed": 0 },
+    { "name": "auth.test.js", "tests": 13, "passed": 13, "failed": 0 },
+    { "name": "ownership.test.js", "tests": 14, "passed": 14, "failed": 0 },
+    { "name": "musicLinkParser.test.js", "tests": 14, "passed": 14, "failed": 0 },
+    { "name": "spotify.test.js", "tests": 13, "passed": 13, "failed": 0 }
+  ],
+  "browserE2E": [
+    { "id": "SOC-E2E-PUBLISH-001", "name": "Public playlist creation & privacy persistence", "result": "PASS" },
+    { "id": "SOC-E2E-EXPLORE-001", "name": "Explore feed rendering & privacy sanitization", "result": "PASS" },
+    { "id": "SOC-E2E-PREVIEW-001", "name": "Anonymous unauthenticated preview & Jamendo badge", "result": "PASS" },
+    { "id": "SOC-E2E-SHARE-001", "name": "Share interaction and canonical URL copying", "result": "PASS" },
+    { "id": "SOC-E2E-OG-001", "name": "OpenGraph & Twitter Card server HTML inspection", "result": "PASS" },
+    { "id": "SOC-E2E-FORK-001", "name": "Complete fork journey, ownership isolation & atomic counter", "result": "PASS" },
+    { "id": "SOC-E2E-PRIVACY-001", "name": "Security regression & unauthorized access protection", "result": "PASS" },
+    { "id": "PWA-E2E-MANIFEST-001", "name": "Manifest & icon resources validation", "result": "PASS" },
+    { "id": "PWA-E2E-SW-CACHE-001", "name": "Cache API inspection & strict audio stream exclusion", "result": "PASS" },
+    { "id": "PWA-E2E-REAL-OFFLINE-001", "name": "Real CDP network disconnect & honest offline banner", "result": "PASS" },
+    { "id": "PWA-E2E-ISOLATION-001", "name": "Two-account offline privacy isolation & purge on logout", "result": "PASS" },
+    { "id": "VIS-E2E-LIFECYCLE-001", "name": "Audio graph lifecycle & uninterrupted playback", "result": "PASS" },
+    { "id": "VIS-E2E-WAVE-001", "name": "Mode A Ambient Waveform canvas rendering", "result": "PASS" },
+    { "id": "VIS-E2E-BARS-001", "name": "Mode B Frequency Spectrum Bars with Peak-Hold", "result": "PASS" },
+    { "id": "VIS-E2E-RING-001", "name": "Mode C Circular Radial Ring with Bass Core", "result": "PASS" },
+    { "id": "VIS-E2E-AUDIO-001", "name": "AudioContext AnalyserNode genuine signal inspection", "result": "PASS" },
+    { "id": "VIS-E2E-FALLBACK-001", "name": "Synthetic harmonic fallback for CORS-restricted streams", "result": "PASS" },
+    { "id": "VIS-E2E-REDUCED-MOTION-001", "name": "prefers-reduced-motion media feature detection & dampening", "result": "PASS" },
+    { "id": "REG-18-TRACKS-001", "name": "18 Spotify songs integrity & Track 12 honest unavailable", "result": "PASS" },
+    { "id": "RESP-E2E-DESKTOP-1280", "name": "Desktop 1280px viewport overflow & controls verification", "result": "PASS" },
+    { "id": "RESP-E2E-TABLET-768", "name": "Tablet 768px viewport overflow & grid layout verification", "result": "PASS" },
+    { "id": "RESP-E2E-MOBILE-390", "name": "Mobile 390px viewport overflow & dock verification", "result": "PASS" },
+    { "id": "REG-JAMENDO-ATTR-001", "name": "Jamendo CC attribution backlinks verification", "result": "PASS" },
+    { "id": "REG-ZERO-AUDIO-001", "name": "Zero audio binary storage in MongoDB & working tree", "result": "PASS" }
+  ],
+  "totals": {
+    "backendTests": 162,
+    "backendPassed": 162,
+    "browserE2ETests": 24,
+    "browserE2EPassed": 24,
+    "frontendBuildStatus": "PASS (1.72s)",
+    "overallStatus": "ACCEPTED"
+  }
+}

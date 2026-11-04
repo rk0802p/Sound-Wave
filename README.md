@@ -59,6 +59,65 @@ A production-grade, full-stack music discovery and playlist application with a p
 
 ---
 
+### 🎨 5. Real-Time Canvas Audio Visualization Engine
+- **Hardware-Accelerated Web Audio API (`AudioVisualizer.vue`)**:
+  - Attached directly to the HTML5 audio element via a singleton AudioContext graph (`window._soundwaveAudio`).
+  - **Tri-Mode Display**:
+    - **Mode A (Ambient Waveform)**: Fluid, multi-harmonic bezier curves rendered in glowing cyan-to-magenta gradients (`#00f2fe` → `#ff007f`).
+    - **Mode B (Frequency Spectrum Bars)**: Up to 48 vertical spectrum bars with real-time peak-hold decay and soft drop-shadow.
+    - **Mode C (Circular Spectral Ring)**: Radial frequency bursts emanating from a pulsating bass orb that expands with low-end audio energy.
+  - **Zero-Failure CORS Synthesis Fallback**: For cross-origin streams where browser security restricts direct byte inspection, the engine seamlessly switches to harmonic audio synthesis based on playback time and BPM, guaranteeing 100% uninterrupted audio.
+  - **Stage Expansion & Reduced Motion**: Toggle between compact dock visualizer and immersive fullscreen overlay; automatically honors `prefers-reduced-motion` by reducing framerates and damping rapid flashing.
+
+---
+
+### 🌐 6. Social Playlist Discovery & Mixtape Sharing
+- **Public Explore Feed (`/explore`)**:
+  - Filterable by network (`Jamendo CC`, `Internet Archive`, `Audius`, `Spotify`, `Direct`) and search keyword across titles and artists.
+  - Sorting options: `Newest`, `Most Forked 🔥`, and `Recently Updated`.
+  - Privacy-preserving: Public feeds expose curator usernames only, strictly omitting emails and sensitive identity fields.
+- **Dedicated Mixtape Previews (`/playlist/:id`)**:
+  - Publicly accessible to both guests and registered members.
+  - Clean tracklist table displaying numbering, title, artist, duration, and canonical Jamendo attribution links (`↗ JAMENDO`).
+- **One-Click Playlist Forking (`POST /api/playlists/:id/fork`)**:
+  - Clones all tracks, audio source links, Jamendo CC licenses, and metadata into the user's private library with one click.
+  - Atomically tracks community forks via `forkCount`.
+- **Dynamic OpenGraph Previews (`GET /api/playlists/:id/og`)**:
+  - Rich social preview meta tags (`og:title`, `og:image`, `og:type: music.playlist`) for link sharing on messaging and social platforms.
+
+---
+
+### 📱 7. Progressive Web App (PWA) & Offline Resilience
+- **Standalone PWA Installability**:
+  - Fully compliant Web App Manifest (`manifest.json`) supporting desktop and mobile home screen installation.
+  - Vector SVG icon (`/icon.svg`) with maskable support, custom theme color (`#0b0c10`), and quick-access app shortcuts (`/search`, `/explore`).
+- **Hardened Service Worker (`sw.js`)**:
+  - Pre-caches core application shell (`/`, `/index.html`, `/manifest.json`, `/favicon.ico`, `/icon.svg`).
+  - Stale-While-Revalidate for bundled assets and script chunks.
+  - Network-first for API requests with structured offline JSON fallback.
+  - **Strict Cache Exclusions**: Audio streams and media files (`storage.jamendo.com`, `archive.org`) are never stored in browser Cache API, strictly preventing storage quota exhaustion.
+- **Honest Offline Mode (`OfflineBanner.vue`)**:
+  - Real-time online/offline event detection.
+  - Displays honest notification when network drops: *"Displaying cached metadata. Remote audio streaming requires internet."*
+  - Instant green notification pulse when connection is re-established.
+- **User-Isolated Storage**:
+  - Local metadata caches are namespaced per user (`soundwave_bubble_playlists_v6_<userId>`) and purged upon signout, preventing cross-user data leakage on shared computers.
+
+---
+
+### 📊 8. Production Observability & Health Telemetry
+- **Structured NDJSON Logging (`server/utils/logger.js`)**:
+  - Formats log entries with ISO timestamps, log level, request IDs, and deep recursive secret redaction (`password`, `token`, `secret`, `authorization`, `jwt`, `mongo_uri`).
+- **Distributed Request Correlation (`x-request-id`)**:
+  - Injects or validates correlation IDs on all incoming requests; safely replaces malformed headers with UUIDs.
+- **Provider Circuit Breaker Metrics**:
+  - Real-time operational telemetry tracking latency averages (`avgLatencyMs`, `lastLatencyMs`), transition counts, and trip reasons.
+- **Health Telemetry Endpoints**:
+  - `GET /api/test`: Process health (PID, uptime), MongoDB connection status, configuration validity, and provider summaries.
+  - `GET /api/search/providers/health`: Detailed provider circuit breaker latency and status matrix.
+
+---
+
 ## 🏗️ Project Directory Structure
 
 ```
@@ -119,8 +178,11 @@ music_playlist/
 | Method | Endpoint | Description | Auth Required |
 | :--- | :--- | :--- | :--- |
 | `GET` | `/api/playlists` | Retrieve all playlists belonging to current user | Yes |
-| `POST` | `/api/playlists` | Create new playlist with custom title, cover art, and description | Yes |
-| `GET` | `/api/playlists/:id` | Get playlist details by ID (owner or public) | Yes |
+| `GET` | `/api/playlists/public/explore` | Public community mixtape feed with search, provider filter & sorting | No |
+| `POST` | `/api/playlists` | Create new playlist with custom title, cover art, description, and privacy | Yes |
+| `GET` | `/api/playlists/:id` | Get playlist details by ID (public access for guests, owner access for private) | No (Public) / Yes (Private) |
+| `POST` | `/api/playlists/:id/fork` | Fork a public playlist into user's own library with song replication | Yes |
+| `GET` | `/api/playlists/:id/og` | Render dynamic OpenGraph & Twitter Card social preview HTML | No |
 | `PUT` | `/api/playlists/:id` | Update playlist metadata (whitelisted fields only) | Yes (Owner) |
 | `DELETE` | `/api/playlists/:id` | Permanently delete playlist | Yes (Owner) |
 | `GET` | `/api/playlists/resolve/track` | Resolve preview metadata for YouTube/Spotify links via oEmbed | Yes |
