@@ -1,5 +1,19 @@
 <template>
   <div class="pg-search-root">
+    <!-- 0. Editorial Top Nav -->
+    <nav class="search-top-nav">
+      <router-link to="/" class="back-home-pill font-mono">
+        ← BACK TO HOMEPAGE
+      </router-link>
+      <div class="nav-brand font-display">
+        <span class="orb-icon">🎧</span>
+        <span>SOUNDWAVE ONLINE DISCOVERY</span>
+      </div>
+      <button class="queue-toggle-top font-mono" @click="showQueueDrawer = !showQueueDrawer">
+        UP NEXT QUEUE ({{ playerStore.queue?.length || 0 }})
+      </button>
+    </nav>
+
     <!-- 1. Editorial Search Header Stage -->
     <header class="pg-search-header">
       <div class="search-kicker-strip font-mono">
@@ -145,6 +159,13 @@
               >
                 AUDIUS: {{ getProviderStatusLabel('audius') }}
               </span>
+              <span
+                class="status-indicator"
+                :class="getProviderStatusClass('saavn')"
+                title="JioSaavn Development Provider (Experimental PoC)"
+              >
+                DEV-SAAVN: {{ getProviderStatusLabel('saavn') }}
+              </span>
             </div>
           </div>
 
@@ -206,6 +227,13 @@
             </div>
 
             <div class="result-actions" @click.stop>
+              <button
+                class="add-to-queue-btn font-mono"
+                @click="handleAddToQueue(track)"
+                title="Add to Up Next Queue"
+              >
+                + QUEUE
+              </button>
               <button
                 class="add-to-mixtape-btn font-mono"
                 @click="openAddModal(track)"
@@ -295,6 +323,16 @@
               </div>
             </div>
 
+            <div class="result-actions" @click.stop>
+              <button
+                class="add-to-queue-btn font-mono"
+                @click="handleAddToQueue(item.song)"
+                title="Add to Up Next Queue"
+              >
+                + QUEUE
+              </button>
+            </div>
+
             <span class="result-track-time font-mono">
               {{ formatDuration(item.song.duration) }}
             </span>
@@ -339,25 +377,80 @@
         </button>
       </div>
     </div>
+
+    <!-- Up Next Queue Drawer Overlay -->
+    <div
+      v-if="showQueueDrawer"
+      class="queue-drawer-overlay"
+      @click.self="showQueueDrawer = false"
+    >
+      <aside class="queue-drawer-panel glass" role="dialog" aria-label="Up Next Queue">
+        <div class="queue-drawer-header">
+          <div class="queue-title-wrap">
+            <h3 class="queue-title font-display">Up Next Queue</h3>
+            <span class="queue-badge font-mono">{{ playerStore.queue?.length || 0 }} TRACKS</span>
+          </div>
+          <button class="queue-close-btn font-mono" @click="showQueueDrawer = false">✕</button>
+        </div>
+
+        <div v-if="!playerStore.queue || playerStore.queue.length === 0" class="queue-empty font-mono">
+          Queue is empty. Select tracks and click "+ QUEUE" to add music.
+        </div>
+
+        <div v-else class="queue-track-list">
+          <div
+            v-for="(t, qIdx) in playerStore.queue"
+            :key="t._id || t.id || qIdx"
+            class="queue-track-row"
+            :class="{ 'is-active': playerStore.trackIndex === qIdx }"
+            @click="handlePlayQueueIndex(qIdx)"
+          >
+            <span class="queue-track-idx font-mono">{{ qIdx + 1 }}</span>
+            <div class="queue-track-meta">
+              <span class="queue-track-name font-display">{{ t.title || t[0] }}</span>
+              <span class="queue-track-sub font-mono">{{ t.artist || t[1] }}</span>
+            </div>
+            <span v-if="t.provider || t.source?.provider" class="queue-track-prov font-mono">
+              {{ (t.provider || t.source?.provider || '').toUpperCase() }}
+            </span>
+            <button
+              class="queue-remove-btn font-mono"
+              @click.stop="playerStore.removeFromQueue(qIdx)"
+              title="Remove from queue"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- Floating Player Dock -->
+    <FloatingPlayerDock
+      @toggle-queue="showQueueDrawer = !showQueueDrawer"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { usePlaylistStore } from '../stores/playlist';
 import { usePlayerStore } from '../stores/player';
 import { useToastStore } from '../stores/toast';
 import { detectProviderType } from '../services/providers/detector';
 import { searchApi } from '../api/search';
+import FloatingPlayerDock from '../components/player/FloatingPlayerDock.vue';
 
 const router = useRouter();
+const route = useRoute();
 const playlistStore = usePlaylistStore();
 const playerStore = usePlayerStore();
 const toastStore = useToastStore();
 
 const query = ref('');
 const activeCategory = ref('all'); // 'all' | 'online' | 'playlists' | 'tracks'
+const showQueueDrawer = ref(false);
 
 // Online Multi-Source Search State
 const onlineTracks = ref([]);
@@ -367,6 +460,7 @@ const showAddModal = ref(false);
 const targetTrackForAdd = ref(null);
 const isAddingToPlaylist = ref(false);
 let searchDebounceTimer = null;
+let currentSearchSeq = 0;
 
 const genreVibes = [
   { name: 'Late Night Lo-Fi', desc: 'Analog tape warmth, dust & cracked vinyl', code: 'FREQ // 01', query: 'Lo-Fi', tint: '#FFEFE7' },
@@ -463,6 +557,7 @@ const getProviderLabel = (input) => {
   if (type === 'archive') return 'ARCHIVE';
   if (type === 'jamendo') return 'JAMENDO';
   if (type === 'audius') return 'AUDIUS';
+  if (type === 'saavn') return 'DEV-SAAVN';
   return 'LOSSLESS';
 };
 
@@ -503,9 +598,11 @@ const fetchOnlineTracks = async (q) => {
     return;
   }
 
+  const seq = ++currentSearchSeq;
   isSearchingOnline.value = true;
   try {
     const res = await searchApi.search(q.trim());
+    if (seq !== currentSearchSeq) return;
     const data = res?.results ? res : res?.data;
     if (data) {
       onlineTracks.value = data.results || data.tracks || [];
@@ -514,10 +611,13 @@ const fetchOnlineTracks = async (q) => {
       }
     }
   } catch (err) {
+    if (seq !== currentSearchSeq) return;
     console.warn('Online search error:', err);
     onlineTracks.value = [];
   } finally {
-    isSearchingOnline.value = false;
+    if (seq === currentSearchSeq) {
+      isSearchingOnline.value = false;
+    }
   }
 };
 
@@ -533,7 +633,21 @@ watch(query, (newVal) => {
   }, 350);
 });
 
+watch(
+  () => route.query.q,
+  (newQ) => {
+    if (newQ && newQ !== query.value) {
+      query.value = String(newQ);
+      fetchOnlineTracks(query.value);
+    }
+  }
+);
+
 onMounted(async () => {
+  if (route.query.q) {
+    query.value = String(route.query.q);
+    fetchOnlineTracks(query.value);
+  }
   try {
     const res = await searchApi.getProviders();
     const data = res?.providers ? res : res?.data;
@@ -554,33 +668,78 @@ const handlePlayResultTrack = (item) => {
   }
 };
 
-const handlePlayOnlineTrack = (track) => {
+const handleAddToQueue = (track) => {
+  if (!track) return;
+  const playableTrack = {
+    _id: track.id || track._id || `online-${track.provider}-${Date.now()}`,
+    title: track.title,
+    artist: track.artist || 'Unknown Artist',
+    album: track.album || '',
+    duration: track.duration || 0,
+    url: track.streamUrl || track.url,
+    streamUrl: track.streamUrl || track.url,
+    coverImage: track.coverImage || track.artwork || '',
+    source: {
+      provider: track.provider || 'direct',
+      url: track.url || track.streamUrl,
+      externalId: track.providerTrackId || track.externalId || (track.id ? String(track.id).replace(/^[a-z0-9_-]+:/i, '') : ''),
+    },
+    provider: track.provider,
+    providerTrackId: track.providerTrackId || (track.id ? String(track.id).replace(/^[a-z0-9_-]+:/i, '') : ''),
+    needsResolution: Boolean(track.needsResolution),
+    isUnavailable: !track.isPlayable && !track.needsResolution,
+    license: track.license,
+    licenseUrl: track.licenseUrl,
+    attribution: track.attribution,
+  };
+
+  playerStore.addToQueue(playableTrack);
+  toastStore.success(`Added "${track.title}" to Up Next queue`);
+};
+
+const handlePlayOnlineTrack = async (track) => {
   if (isTrackPlaying(track)) {
     playerStore.togglePlay();
-  } else {
-    const playableTrack = {
-      _id: track.id || track._id || `online-${track.provider}-${Date.now()}`,
-      title: track.title,
-      artist: track.artist || 'Unknown Artist',
-      album: track.album || '',
-      duration: track.duration || 0,
-      url: track.streamUrl || track.url,
-      streamUrl: track.streamUrl || track.url,
-      coverImage: track.coverImage || track.artwork || '',
-      source: {
-        provider: track.provider || 'direct',
-        url: track.url || track.streamUrl,
-        externalId: track.providerTrackId || track.externalId || (track.id ? String(track.id).replace(/^(archive|jamendo|audius):/, '') : ''),
-      },
-      provider: track.provider,
-      providerTrackId: track.providerTrackId || (track.id ? String(track.id).replace(/^(archive|jamendo|audius):/, '') : ''),
-      license: track.license,
-      licenseUrl: track.licenseUrl,
-      attribution: track.attribution,
-    };
-    playerStore.playTrack(playableTrack, onlineTracks.value);
-    toastStore.info(`Playing ${track.title} via ${getProviderLabel(track)}`);
+    return;
   }
+
+  if (track.isPlayable === false && !track.needsResolution) {
+    const reason = track.playbackCapabilities?.restrictionReason || 'This track has no authorized playback stream';
+    toastStore.warn(`Playback unavailable: ${reason}`);
+    return;
+  }
+
+  const playableTrack = {
+    _id: track.id || track._id || `online-${track.provider}-${Date.now()}`,
+    title: track.title,
+    artist: track.artist || 'Unknown Artist',
+    album: track.album || '',
+    duration: track.duration || 0,
+    url: track.streamUrl || track.url,
+    streamUrl: track.streamUrl || track.url,
+    coverImage: track.coverImage || track.artwork || '',
+    source: {
+      provider: track.provider || 'direct',
+      url: track.url || track.streamUrl,
+      externalId: track.providerTrackId || track.externalId || (track.id ? String(track.id).replace(/^[a-z0-9_-]+:/i, '') : ''),
+    },
+    provider: track.provider,
+    providerTrackId: track.providerTrackId || (track.id ? String(track.id).replace(/^[a-z0-9_-]+:/i, '') : ''),
+    needsResolution: Boolean(track.needsResolution),
+    isUnavailable: !track.isPlayable && !track.needsResolution,
+    license: track.license,
+    licenseUrl: track.licenseUrl,
+    attribution: track.attribution,
+  };
+
+  await playerStore.playTrack(playableTrack, onlineTracks.value);
+  toastStore.info(`Playing ${track.title} via ${getProviderLabel(track)}`);
+};
+
+const handlePlayQueueIndex = (index) => {
+  if (!playerStore.queue || !playerStore.queue[index]) return;
+  playerStore.trackIndex = index;
+  playerStore.playTrack(playerStore.queue[index], playerStore.queue, index);
 };
 
 const switchAlternativeSource = (track, altIndex) => {
@@ -648,8 +807,73 @@ const addTrackToSelectedPlaylist = async (playlist) => {
 .pg-search-root {
   display: flex;
   flex-direction: column;
-  gap: 36px;
-  padding-bottom: 40px;
+  gap: 28px;
+  padding: 16px 24px 140px 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* 0. Top Navigation Strip */
+.search-top-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 18px;
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1.5px solid var(--pg-border, #111);
+  border-radius: 9999px;
+  box-shadow: 3px 3px 0px var(--pg-border, #111);
+}
+
+.back-home-pill {
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 6px 14px;
+  background: #111;
+  color: #fff;
+  border-radius: 9999px;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.back-home-pill:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  font-weight: 900;
+  color: var(--pg-ink, #111);
+  letter-spacing: -0.02em;
+}
+
+.orb-icon {
+  font-size: 1.1rem;
+}
+
+.queue-toggle-top {
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 6px 14px;
+  background: var(--pg-citron, #fef08a);
+  color: #111;
+  border: 1.5px solid var(--pg-border, #111);
+  border-radius: 9999px;
+  cursor: pointer;
+  box-shadow: 2px 2px 0px var(--pg-border, #111);
+  transition: all 0.15s ease;
+}
+
+.queue-toggle-top:hover {
+  transform: translateY(-1px);
+  box-shadow: 3px 3px 0px var(--pg-border, #111);
 }
 
 /* 1. Header */
@@ -1239,6 +1463,32 @@ const addTrackToSelectedPlaylist = async (playlist) => {
   border-color: #d1c2ea;
 }
 
+.track-source-pill.prov-saavn {
+  background: #ffe4e6;
+  color: #e11d48;
+  border-color: #fda4af;
+}
+
+.add-to-queue-btn {
+  padding: 4px 10px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  background: #fdf2f8;
+  border: 1.5px solid var(--pg-border);
+  border-radius: var(--pg-radius-full);
+  color: #be185d;
+  cursor: pointer;
+  transition: all var(--pg-transition-spring);
+  box-shadow: 1px 1px 0px var(--pg-border);
+}
+
+.add-to-queue-btn:hover {
+  background: #fbcfe8;
+  color: #9d174d;
+  transform: translateY(-1px);
+  box-shadow: 2px 2px 0px var(--pg-border);
+}
+
 .track-license-pill {
   font-size: 0.6rem;
   font-weight: 700;
@@ -1435,5 +1685,182 @@ const addTrackToSelectedPlaylist = async (playlist) => {
   border-radius: var(--pg-radius-md);
   font-size: 0.8rem;
   color: var(--pg-ink-secondary);
+}
+
+/* Queue Drawer Styles */
+.queue-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.queue-drawer-panel {
+  width: min(420px, 92vw);
+  height: 100%;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-left: 2px solid var(--pg-border, #111);
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.2);
+  animation: slideInRight 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.queue-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--pg-border, #111);
+  margin-bottom: 16px;
+}
+
+.queue-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.queue-title {
+  font-size: 1.25rem;
+  font-weight: 900;
+  margin: 0;
+  color: var(--pg-ink, #111);
+}
+
+.queue-badge {
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  background: #111;
+  color: #fff;
+  border-radius: 9999px;
+}
+
+.queue-close-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1.5px solid var(--pg-border, #111);
+  background: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  box-shadow: 2px 2px 0px var(--pg-border, #111);
+}
+
+.queue-empty {
+  font-size: 0.85rem;
+  color: var(--pg-ink-muted, #71717a);
+  text-align: center;
+  padding: 40px 16px;
+  line-height: 1.6;
+}
+
+.queue-track-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-right: 4px;
+}
+
+.queue-track-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1.5px solid var(--pg-border, #111);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 2px 2px 0px var(--pg-border, #111);
+}
+
+.queue-track-row:hover {
+  background: #fff;
+  transform: translateY(-1px);
+  box-shadow: 3px 3px 0px var(--pg-border, #111);
+}
+
+.queue-track-row.is-active {
+  background: #fdf2f8;
+  border-color: #e11d48;
+  box-shadow: 3px 3px 0px #e11d48;
+}
+
+.queue-track-idx {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--pg-ink-muted, #888);
+  width: 20px;
+}
+
+.queue-track-meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.queue-track-name {
+  font-size: 0.88rem;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--pg-ink, #111);
+}
+
+.queue-track-sub {
+  font-size: 0.72rem;
+  color: var(--pg-ink-secondary, #666);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.queue-track-prov {
+  font-size: 0.6rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 4px;
+}
+
+.queue-remove-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: var(--pg-ink-muted, #999);
+  padding: 4px 6px;
+  border-radius: 4px;
+}
+
+.queue-remove-btn:hover {
+  color: #e11d48;
+  background: rgba(225, 29, 72, 0.1);
 }
 </style>

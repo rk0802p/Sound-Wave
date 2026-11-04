@@ -24,7 +24,8 @@ const routes = [
   {
     path: '/search',
     name: 'Search',
-    redirect: { path: '/', hash: '#lists' },
+    component: () => import('../views/SearchView.vue'),
+    meta: { requiresAuth: false },
   },
   {
     path: '/playlists/:id',
