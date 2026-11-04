@@ -1,7 +1,10 @@
 music-playlist-frontend-vue/node_modules
 server/node_modules
 server/.env
+server/.env*.local
 music-playlist-frontend-vue/.env
+music-playlist-frontend-vue/.env*.local
+*.local
 coverage/
 server/coverage/
 dist/

@@ -150,6 +150,7 @@ app.get("/api/test", async (req, res) => {
 
 // Database connection middleware for protected data endpoints
 app.use(async (req, res, next) => {
+  if (req.path.startsWith("/api/search")) return next();
   if (process.env.NODE_ENV !== "test") {
     try {
       await connectDB();

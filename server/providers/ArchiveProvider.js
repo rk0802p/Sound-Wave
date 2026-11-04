@@ -11,6 +11,18 @@ class ArchiveProvider extends BaseProvider {
     return true; // Public official API, no API keys required
   }
 
+  getCapabilities() {
+    return {
+      supportsSearch: true,
+      supportsDirectStream: true,
+      requiresResolution: false,
+      isTemporaryUrl: false,
+      authRequired: false,
+      environmentRestrictions: 'unrestricted',
+      authorizationStatus: 'verified_public',
+    };
+  }
+
   /**
    * Search Internet Archive audio collections
    * @param {string} query

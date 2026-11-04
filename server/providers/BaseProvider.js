@@ -26,8 +26,24 @@ class BaseProvider {
   }
 
   /**
+   * Return standardized capability matrix for provider
+   * @returns {{ supportsSearch: boolean, supportsDirectStream: boolean, requiresResolution: boolean, isTemporaryUrl: boolean, authRequired: boolean, environmentRestrictions: string, authorizationStatus: string }}
+   */
+  getCapabilities() {
+    return {
+      supportsSearch: true,
+      supportsDirectStream: true,
+      requiresResolution: false,
+      isTemporaryUrl: false,
+      authRequired: false,
+      environmentRestrictions: 'unrestricted',
+      authorizationStatus: 'unresolved',
+    };
+  }
+
+  /**
    * Report health status and diagnostic information
-   * @returns {{ name: string, displayName: string, status: string, isConfigured: boolean, error: string|null, lastChecked: Date }}
+   * @returns {{ name: string, displayName: string, status: string, isConfigured: boolean, error: string|null, lastChecked: Date, capabilities: object }}
    */
   getHealth() {
     return {
@@ -37,6 +53,7 @@ class BaseProvider {
       isConfigured: this.isConfigured(),
       error: this.lastError,
       lastChecked: this.lastChecked,
+      capabilities: this.getCapabilities(),
     };
   }
 

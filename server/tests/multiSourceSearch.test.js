@@ -585,4 +585,230 @@ describe('SOUNDWAVE Multi-Source Music Aggregation & Resilience Tests', () => {
       }
     });
   });
+
+  describe('Phase 3.0B: Extended Multi-Source Search & Playability Validation', () => {
+    it('should include saavn provider health with DEV-SAAVN badge and unresolved terms status', async () => {
+      const res = await request(app).get('/api/search/providers');
+      expect(res.status).toBe(200);
+
+      const saavn = res.body.providers.find((p) => p.name === 'saavn');
+      expect(saavn).toBeDefined();
+      expect(saavn.displayName).toBe('JioSaavn (Dev)');
+      expect(saavn.badge).toBe('DEV-SAAVN');
+      expect(saavn.termsStatus).toBe('unresolved');
+      expect(saavn.experimental).toBe(true);
+      expect(saavn.developmentOnly).toBe(true);
+    });
+
+    it('should mark resolvable tracks (needsResolution: true) as isPlayable: true in aggregateSearch', async () => {
+      // Mock Saavn search response
+      global.fetch = jest.fn(async (url) => {
+        const urlStr = String(url);
+        if (urlStr.includes('jiosaavn.com/api.php') && urlStr.includes('search.getResults')) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              results: [
+                {
+                  id: 'test_saavn_01',
+                  title: 'Faded (Original)',
+                  subtitle: 'Alan Walker',
+                  image: 'https://c.saavncdn.com/test_150x150.jpg',
+                  perma_url: 'https://www.jiosaavn.com/song/faded/test_saavn_01',
+                  more_info: {
+                    album: 'Faded EP',
+                    duration: '212',
+                  },
+                },
+              ],
+            }),
+          };
+        }
+        return { ok: true, status: 200, json: async () => ({}) };
+      });
+
+      const res = await request(app).get('/api/search?q=Faded&providers=saavn');
+      expect(res.status).toBe(200);
+      expect(res.body.results.length).toBeGreaterThanOrEqual(1);
+
+      const saavnTrack = res.body.results.find((t) => t.provider === 'saavn');
+      expect(saavnTrack).toBeDefined();
+      expect(saavnTrack.needsResolution).toBe(true);
+      expect(saavnTrack.isPlayable).toBe(true);
+      expect(saavnTrack.providerTrackId).toBe('test_saavn_01');
+    });
+
+    it('should support provider filtering via query parameter', async () => {
+      global.fetch = jest.fn(async () => ({
+        ok: true,
+        status: 200,
+        json: async () => ({ data: [] }),
+      }));
+
+      const res = await request(app).get('/api/search?q=ambient&providers=audius');
+      expect(res.status).toBe(200);
+      expect(Object.keys(res.body.providers)).toEqual(['audius']);
+    });
+
+    it('should reject whitespace-only search query with 400', async () => {
+      const res = await request(app).get('/api/search?q=   ');
+      expect(res.status).toBe(400);
+      expect(res.body.message).toMatch(/Search query parameter 'q' is required/i);
+    });
+
+    it('should return 404 when resolving from an unsupported provider', async () => {
+      const res = await request(app).get('/api/search/resolve?provider=unknown_provider&trackId=123');
+      expect(res.status).toBe(404);
+      expect(res.body.message).toMatch(/not registered/i);
+    });
+  });
+
+  describe('Phase 4: Playback Source Strategy, Reliability & Resolution Guardrails', () => {
+    it('should return capabilities matrix for each provider in /api/search/providers', async () => {
+      const res = await request(app).get('/api/search/providers');
+      expect(res.status).toBe(200);
+
+      const providers = res.body.providers;
+      for (const p of providers) {
+        expect(p.capabilities).toBeDefined();
+        expect(typeof p.capabilities.supportsSearch).toBe('boolean');
+        expect(typeof p.capabilities.supportsDirectStream).toBe('boolean');
+        expect(typeof p.capabilities.requiresResolution).toBe('boolean');
+        expect(typeof p.capabilities.isTemporaryUrl).toBe('boolean');
+        expect(typeof p.capabilities.environmentRestrictions).toBe('string');
+        expect(typeof p.capabilities.authorizationStatus).toBe('string');
+      }
+
+      const saavn = providers.find((p) => p.name === 'saavn');
+      expect(saavn.capabilities.requiresResolution).toBe(true);
+      expect(saavn.capabilities.environmentRestrictions).toBe('development_only');
+      expect(saavn.capabilities.authorizationStatus).toBe('unresolved');
+    });
+
+    it('should strictly return 403 PROVIDER_UNCONFIGURED for Saavn resolution in production', async () => {
+      const prevEnv = process.env.NODE_ENV;
+      try {
+        process.env.NODE_ENV = 'production';
+        const saavnProvider = registry.get('saavn');
+        expect(saavnProvider.isConfigured()).toBe(false);
+
+        const res = await request(app).get('/api/search/resolve?provider=saavn&trackId=test_prod_block');
+        expect(res.status).toBe(403);
+        expect(res.body.code).toBe('PROVIDER_UNCONFIGURED');
+        expect(res.body.message).toMatch(/unconfigured or disabled/i);
+      } finally {
+        process.env.NODE_ENV = prevEnv;
+      }
+    });
+
+    it('should deduplicate concurrent in-flight resolution requests for the same track', async () => {
+      registry.resetCircuitBreakers();
+      const archiveProvider = registry.get('archive');
+      const resolveSpy = jest.spyOn(archiveProvider, 'resolveTrack').mockImplementation(async (id) => {
+        await new Promise((r) => setTimeout(r, 60));
+        return {
+          streamUrl: `https://archive.org/download/${id}/${id}.mp3`,
+          mimeType: 'audio/mpeg',
+          metadata: { title: 'Test Dedupe', artist: 'Artist' },
+        };
+      });
+
+      // Fire 2 concurrent requests for the identical trackId
+      const [res1, res2] = await Promise.all([
+        request(app).get('/api/search/resolve?provider=archive&trackId=concurrent_dedupe_item'),
+        request(app).get('/api/search/resolve?provider=archive&trackId=concurrent_dedupe_item'),
+      ]);
+
+      expect(res1.status).toBe(200);
+      expect(res2.status).toBe(200);
+      expect(res1.body.streamUrl).toBe('https://archive.org/download/concurrent_dedupe_item/concurrent_dedupe_item.mp3');
+      expect(res2.body.streamUrl).toBe('https://archive.org/download/concurrent_dedupe_item/concurrent_dedupe_item.mp3');
+
+      // The provider resolveTrack method must only have been invoked once
+      expect(resolveSpy).toHaveBeenCalledTimes(1);
+      resolveSpy.mockRestore();
+    });
+
+    it('should reject resolution when provider returns an invalid protocol stream URL (400)', async () => {
+      registry.resetCircuitBreakers();
+      const archiveProvider = registry.get('archive');
+      const resolveSpy = jest.spyOn(archiveProvider, 'resolveTrack').mockResolvedValue({
+        streamUrl: 'ftp://invalidscheme.example.com/audio.mp3',
+        metadata: {},
+      });
+
+      const res = await request(app).get('/api/search/resolve?provider=archive&trackId=bad_protocol_item');
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe('INVALID_STREAM_URL');
+      resolveSpy.mockRestore();
+    });
+
+    it('should preserve needsResolution and isPlayable on alternatives in deduplicateTracks', () => {
+      const tracks = [
+        {
+          id: '1',
+          title: 'Believer',
+          artist: 'Imagine Dragons',
+          duration: 204,
+          provider: 'archive',
+          providerTrackId: 'arch_believer',
+          streamUrl: 'https://archive.org/stream/believer.mp3',
+          isPlayable: true,
+          license: 'Public Domain',
+        },
+        {
+          id: '2',
+          title: 'Believer',
+          artist: 'Imagine Dragons',
+          duration: 205,
+          provider: 'saavn',
+          providerTrackId: 'saavn_believer',
+          streamUrl: null,
+          needsResolution: true,
+          isPlayable: true,
+          license: 'Development Only',
+        },
+      ];
+
+      const merged = registry.deduplicateTracks(tracks);
+      expect(merged.length).toBe(1);
+      expect(merged[0].alternatives.length).toBe(1);
+      expect(merged[0].alternatives[0].provider).toBe('saavn');
+      expect(merged[0].alternatives[0].needsResolution).toBe(true);
+      expect(merged[0].alternatives[0].isPlayable).toBe(true);
+    });
+
+    it('should distinguish audio variants (sped up, slowed, acoustic) and not merge them', () => {
+      const tracks = [
+        {
+          id: '1',
+          title: 'Dandelions',
+          artist: 'Ruth B.',
+          duration: 233,
+          provider: 'saavn',
+          providerTrackId: 'dan_orig',
+        },
+        {
+          id: '2',
+          title: 'Dandelions (Sped Up)',
+          artist: 'Ruth B.',
+          duration: 200,
+          provider: 'saavn',
+          providerTrackId: 'dan_sped',
+        },
+        {
+          id: '3',
+          title: 'Dandelions (Slowed + Reverb)',
+          artist: 'Ruth B.',
+          duration: 270,
+          provider: 'archive',
+          providerTrackId: 'dan_slow',
+        },
+      ];
+
+      const merged = registry.deduplicateTracks(tracks);
+      expect(merged.length).toBe(3);
+    });
+  });
 });

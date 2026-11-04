@@ -14,6 +14,18 @@ class JamendoProvider extends BaseProvider {
     return (process.env.JAMENDO_CLIENT_ID || '').trim();
   }
 
+  getCapabilities() {
+    return {
+      supportsSearch: true,
+      supportsDirectStream: true,
+      requiresResolution: false,
+      isTemporaryUrl: false,
+      authRequired: true,
+      environmentRestrictions: 'configured_only',
+      authorizationStatus: 'verified_public',
+    };
+  }
+
   /**
    * Search Jamendo Creative Commons music catalog
    * @param {string} query

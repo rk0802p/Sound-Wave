@@ -1,6 +1,7 @@
 const ArchiveProvider = require('./ArchiveProvider');
 const JamendoProvider = require('./JamendoProvider');
 const AudiusProvider = require('./AudiusProvider');
+const SaavnProvider = require('./SaavnProvider');
 const CircuitBreaker = require('./CircuitBreaker');
 
 class ProviderRegistry {
@@ -11,10 +12,16 @@ class ProviderRegistry {
     this.cacheMax = 150;
     this.cacheTtlMs = 1000 * 60 * 3; // 3 minutes TTL for search metadata
 
+    this.resolutionCache = new Map(); // In-memory LRU stream resolution cache
+    this.resolutionCacheMax = 200;
+    this.resolutionCacheTtlMs = 1000 * 60 * 10; // 10 minutes TTL for stream resolutions
+    this.activeResolutionPromises = new Map(); // In-flight resolution deduplication
+
     // Register active provider adapters
     this.register(new ArchiveProvider());
     this.register(new JamendoProvider());
     this.register(new AudiusProvider());
+    this.register(new SaavnProvider());
   }
 
   /**
@@ -60,6 +67,8 @@ class ProviderRegistry {
       breaker.reset();
     }
     this.metadataCache.clear();
+    this.resolutionCache.clear();
+    this.activeResolutionPromises.clear();
   }
 
   /**
@@ -109,8 +118,8 @@ class ProviderRegistry {
       const normTitle = this.normalizeText(track.title);
       const normArtist = this.normalizeText(track.artist);
 
-      // Distinguish explicit variants (remix, live, cover, acoustic, instrumental, mix)
-      const hasVariantModifier = /(remix|live|cover|acoustic|instrumental|edit|dub|mix)/i.test(track.title);
+      // Distinguish explicit variants (remix, live, cover, acoustic, instrumental, mix, sped up, slowed, tribute, karaoke, orchestral, nightcore, reverb)
+      const hasVariantModifier = /(remix|live|cover|acoustic|instrumental|edit|dub|mix|sped up|slowed|tribute|karaoke|orchestral|nightcore|reverb)/i.test(track.title);
 
       const key = `${normArtist}:::${normTitle}`;
 
@@ -130,8 +139,11 @@ class ProviderRegistry {
             providerTrackId: track.providerTrackId,
             providerTrackUrl: track.providerTrackUrl,
             streamUrl: track.streamUrl,
+            needsResolution: Boolean(track.needsResolution),
+            isPlayable: track.isPlayable !== false,
             license: track.license,
             attribution: track.attribution,
+            duration: track.duration,
           });
           continue;
         }
@@ -323,7 +335,7 @@ class ProviderRegistry {
             if (track && track.title && track.provider) {
               aggregatedTracks.push({
                 ...track,
-                isPlayable: track.isPlayable !== false && Boolean(track.streamUrl || track.url),
+                isPlayable: track.isPlayable !== false && Boolean(track.streamUrl || track.url || track.needsResolution),
               });
             }
           }
@@ -356,22 +368,112 @@ class ProviderRegistry {
   }
 
   /**
-   * Resolve track on demand from appropriate provider
+   * Resolve track on demand from appropriate provider with in-flight deduplication and URL validation
    * @param {string} providerName
    * @param {string} trackId
-   * @returns {Promise<{ streamUrl: string|null, metadata: object|null, error: string|null }>}
+   * @returns {Promise<{ streamUrl: string|null, metadata: object|null, error: string|null, code?: string }>}
    */
   async resolveTrack(providerName, trackId) {
-    const provider = this.get(providerName);
+    if (!providerName || typeof providerName !== 'string' || !trackId || typeof trackId !== 'string') {
+      return {
+        streamUrl: null,
+        metadata: null,
+        error: 'Invalid provider name or track ID',
+        code: 'INVALID_PARAMETERS',
+      };
+    }
+
+    const key = providerName.toLowerCase().trim();
+    const cleanTrackId = trackId.trim();
+
+    const provider = this.get(key);
     if (!provider) {
       return {
         streamUrl: null,
         metadata: null,
         error: `Provider '${providerName}' is not registered`,
+        code: 'PROVIDER_NOT_FOUND',
       };
     }
 
-    return provider.resolveTrack(trackId);
+    if (!provider.isConfigured()) {
+      return {
+        streamUrl: null,
+        metadata: null,
+        error: `Provider '${provider.displayName || providerName}' is unconfigured or disabled in this environment`,
+        code: 'PROVIDER_UNCONFIGURED',
+      };
+    }
+
+    const cacheKey = `${key}:${cleanTrackId}`;
+
+    // Return cached resolution if fresh
+    const cached = this.resolutionCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < this.resolutionCacheTtlMs) {
+      return cached.data;
+    }
+
+    // Deduplicate in-flight requests for identical provider + trackId
+    if (this.activeResolutionPromises.has(cacheKey)) {
+      return this.activeResolutionPromises.get(cacheKey);
+    }
+
+    const resolutionPromise = (async () => {
+      try {
+        const result = await provider.resolveTrack(cleanTrackId);
+
+        if (result && result.streamUrl) {
+          const isValidUrl = typeof result.streamUrl === 'string' && /^https?:\/\//i.test(result.streamUrl);
+          if (!isValidUrl) {
+            return {
+              streamUrl: null,
+              metadata: result.metadata || null,
+              error: 'Provider returned an invalid stream URL protocol',
+              code: 'INVALID_STREAM_URL',
+            };
+          }
+
+          const payload = {
+            streamUrl: result.streamUrl,
+            mimeType: result.mimeType || 'audio/mpeg',
+            expiresAt: result.expiresAt || null,
+            metadata: result.metadata || null,
+            error: null,
+          };
+
+          // Cache resolved stream
+          if (this.resolutionCache.size >= this.resolutionCacheMax) {
+            const oldestKey = this.resolutionCache.keys().next().value;
+            this.resolutionCache.delete(oldestKey);
+          }
+          this.resolutionCache.set(cacheKey, {
+            data: payload,
+            timestamp: Date.now(),
+          });
+
+          return payload;
+        }
+
+        return {
+          streamUrl: null,
+          metadata: result ? result.metadata : null,
+          error: (result && result.error) || 'Track could not be resolved from remote provider',
+          code: (result && result.code) || 'RESOLUTION_FAILED',
+        };
+      } catch (err) {
+        return {
+          streamUrl: null,
+          metadata: null,
+          error: err.message || 'Stream resolution error',
+          code: 'RESOLUTION_ERROR',
+        };
+      } finally {
+        this.activeResolutionPromises.delete(cacheKey);
+      }
+    })();
+
+    this.activeResolutionPromises.set(cacheKey, resolutionPromise);
+    return resolutionPromise;
   }
 }
 

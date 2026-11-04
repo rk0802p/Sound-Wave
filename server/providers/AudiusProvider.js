@@ -16,6 +16,18 @@ class AudiusProvider extends BaseProvider {
     return (process.env.AUDIUS_API_KEY || '').trim();
   }
 
+  getCapabilities() {
+    return {
+      supportsSearch: true,
+      supportsDirectStream: true,
+      requiresResolution: false,
+      isTemporaryUrl: false,
+      authRequired: false,
+      environmentRestrictions: 'unrestricted',
+      authorizationStatus: 'creator_terms',
+    };
+  }
+
   /**
    * Search Audius decentralized music network
    * @param {string} query

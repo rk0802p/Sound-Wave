@@ -62,8 +62,21 @@ const resolve = async (req, res, next) => {
     const result = await registry.resolveTrack(provider, trackId);
 
     if (result.error || !result.streamUrl) {
+      if (result.code === 'PROVIDER_UNCONFIGURED') {
+        return res.status(403).json({
+          message: result.error || 'Provider is unconfigured or disabled in this environment',
+          code: 'PROVIDER_UNCONFIGURED',
+        });
+      }
+      if (result.code === 'INVALID_PARAMETERS' || result.code === 'INVALID_STREAM_URL') {
+        return res.status(400).json({
+          message: result.error || 'Invalid resolution request',
+          code: result.code,
+        });
+      }
       return res.status(404).json({
         message: result.error || 'Track could not be resolved from remote provider',
+        code: result.code || 'RESOLUTION_FAILED',
       });
     }
 
