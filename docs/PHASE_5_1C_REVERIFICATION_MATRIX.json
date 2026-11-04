@@ -1,0 +1,559 @@
+[
+  {
+    "id": "HLTH-001",
+    "domain": "System Diagnostics",
+    "feature": "/api/test Health Structure & readyState",
+    "expected": "HTTP 200 with status \"ok\", database.status \"connected\", database.readyState 1, database.readyStateName \"connected\"",
+    "actual": "HTTP 200, status: \"ok\", dbStatus: \"connected\", readyState: 1 (connected)",
+    "evidence": "{\"status\":\"ok\",\"message\":\"Music Playlist API is operational\",\"database\":{\"status\":\"connected\",\"readyState\":1,\"readyStateName\":\"connected\",\"error\":null,\"suggestion\":null},\"configured\":{\"hasMongoUri\":true,\"hasJwtSecret\":true,\"frontendUrl\":null},\"timestamp\":\"2026-11-04T17:45:48.764Z\"}",
+    "status": "PASS",
+    "healthResponse": {
+      "status": "ok",
+      "message": "Music Playlist API is operational",
+      "database": {
+        "status": "connected",
+        "readyState": 1,
+        "readyStateName": "connected",
+        "error": null,
+        "suggestion": null
+      },
+      "configured": {
+        "hasMongoUri": true,
+        "hasJwtSecret": true,
+        "frontendUrl": null
+      },
+      "timestamp": "2026-11-04T17:45:48.764Z"
+    }
+  },
+  {
+    "id": "SRCH-001",
+    "domain": "Search Integration",
+    "feature": "Query: \"Faded\"",
+    "expected": "HTTP 200 with >= 1 results",
+    "actual": "HTTP 200, total results: 24 [archive: available (6 tracks), audius: available (12 tracks), jamendo: unconfigured (0 tracks), saavn: available (6 tracks)]",
+    "evidence": "Top: Faded (saavn)",
+    "status": "PASS",
+    "totalResults": 24,
+    "providerCounts": {
+      "saavn": 6,
+      "audius": 12,
+      "archive": 6
+    },
+    "providerStates": {
+      "archive": {
+        "name": "Internet Archive",
+        "status": "available",
+        "count": 6,
+        "error": null
+      },
+      "audius": {
+        "name": "Audius Music",
+        "status": "available",
+        "count": 12,
+        "error": null
+      },
+      "jamendo": {
+        "name": "Jamendo Music",
+        "status": "unconfigured",
+        "count": 0,
+        "error": null
+      },
+      "saavn": {
+        "name": "JioSaavn (Dev)",
+        "status": "available",
+        "count": 6,
+        "error": null
+      }
+    },
+    "environment": "local_development (Jamendo unconfigured locally without API key)"
+  },
+  {
+    "id": "SRCH-002",
+    "domain": "Search Integration",
+    "feature": "Query: \"Alan Walker\"",
+    "expected": "HTTP 200 with >= 1 results",
+    "actual": "HTTP 200, total results: 28 [archive: available (6 tracks), audius: available (10 tracks), jamendo: unconfigured (0 tracks), saavn: available (12 tracks)]",
+    "evidence": "Top: Headlights (feat. KIDDO) (saavn)",
+    "status": "PASS",
+    "totalResults": 28,
+    "providerCounts": {
+      "saavn": 12,
+      "archive": 6,
+      "audius": 10
+    },
+    "providerStates": {
+      "archive": {
+        "name": "Internet Archive",
+        "status": "available",
+        "count": 6,
+        "error": null
+      },
+      "audius": {
+        "name": "Audius Music",
+        "status": "available",
+        "count": 12,
+        "error": null
+      },
+      "jamendo": {
+        "name": "Jamendo Music",
+        "status": "unconfigured",
+        "count": 0,
+        "error": null
+      },
+      "saavn": {
+        "name": "JioSaavn (Dev)",
+        "status": "available",
+        "count": 12,
+        "error": null
+      }
+    },
+    "environment": "local_development (Jamendo unconfigured locally without API key)"
+  },
+  {
+    "id": "SRCH-003",
+    "domain": "Search Integration",
+    "feature": "Query: \"ocean breeze\"",
+    "expected": "HTTP 200 with >= 1 results",
+    "actual": "HTTP 200, total results: 30 [archive: available (6 tracks), audius: available (12 tracks), jamendo: unconfigured (0 tracks), saavn: available (12 tracks)]",
+    "evidence": "Top: Ocean breeze (saavn)",
+    "status": "PASS",
+    "totalResults": 30,
+    "providerCounts": {
+      "saavn": 12,
+      "archive": 6,
+      "audius": 12
+    },
+    "providerStates": {
+      "archive": {
+        "name": "Internet Archive",
+        "status": "available",
+        "count": 6,
+        "error": null
+      },
+      "audius": {
+        "name": "Audius Music",
+        "status": "available",
+        "count": 12,
+        "error": null
+      },
+      "jamendo": {
+        "name": "Jamendo Music",
+        "status": "unconfigured",
+        "count": 0,
+        "error": null
+      },
+      "saavn": {
+        "name": "JioSaavn (Dev)",
+        "status": "available",
+        "count": 12,
+        "error": null
+      }
+    },
+    "environment": "local_development (Jamendo unconfigured locally without API key)"
+  },
+  {
+    "id": "SRCH-004",
+    "domain": "Search Integration",
+    "feature": "Query: \"ambient\"",
+    "expected": "HTTP 200 with >= 1 results",
+    "actual": "HTTP 200, total results: 24 [archive: degraded (0 tracks), audius: available (12 tracks), jamendo: unconfigured (0 tracks), saavn: available (12 tracks)]",
+    "evidence": "Top: The Ambientalist - Call Of The Wind (Ambient Mix) (audius)",
+    "status": "PASS",
+    "totalResults": 24,
+    "providerCounts": {
+      "audius": 12,
+      "saavn": 12
+    },
+    "providerStates": {
+      "archive": {
+        "name": "Internet Archive",
+        "status": "degraded",
+        "count": 0,
+        "error": "Search request timed out"
+      },
+      "audius": {
+        "name": "Audius Music",
+        "status": "available",
+        "count": 12,
+        "error": null
+      },
+      "jamendo": {
+        "name": "Jamendo Music",
+        "status": "unconfigured",
+        "count": 0,
+        "error": null
+      },
+      "saavn": {
+        "name": "JioSaavn (Dev)",
+        "status": "available",
+        "count": 12,
+        "error": null
+      }
+    },
+    "environment": "local_development (Jamendo unconfigured locally without API key)"
+  },
+  {
+    "id": "SRCH-005",
+    "domain": "Search Integration",
+    "feature": "Query: \"electronic\"",
+    "expected": "HTTP 200 with >= 1 results",
+    "actual": "HTTP 200, total results: 30 [archive: available (6 tracks), audius: available (12 tracks), jamendo: unconfigured (0 tracks), saavn: available (12 tracks)]",
+    "evidence": "Top: Electronic (saavn)",
+    "status": "PASS",
+    "totalResults": 30,
+    "providerCounts": {
+      "saavn": 12,
+      "archive": 6,
+      "audius": 12
+    },
+    "providerStates": {
+      "archive": {
+        "name": "Internet Archive",
+        "status": "available",
+        "count": 6,
+        "error": null
+      },
+      "audius": {
+        "name": "Audius Music",
+        "status": "available",
+        "count": 12,
+        "error": null
+      },
+      "jamendo": {
+        "name": "Jamendo Music",
+        "status": "unconfigured",
+        "count": 0,
+        "error": null
+      },
+      "saavn": {
+        "name": "JioSaavn (Dev)",
+        "status": "available",
+        "count": 12,
+        "error": null
+      }
+    },
+    "environment": "local_development (Jamendo unconfigured locally without API key)"
+  },
+  {
+    "id": "SRCH-006",
+    "domain": "Search Integration",
+    "feature": "Query: \"rock\"",
+    "expected": "HTTP 200 with >= 1 results",
+    "actual": "HTTP 200, total results: 18 [archive: available (6 tracks), audius: degraded (0 tracks), jamendo: unconfigured (0 tracks), saavn: available (12 tracks)]",
+    "evidence": "Top: Rocky Bhai (saavn)",
+    "status": "PASS",
+    "totalResults": 18,
+    "providerCounts": {
+      "saavn": 12,
+      "archive": 6
+    },
+    "providerStates": {
+      "archive": {
+        "name": "Internet Archive",
+        "status": "available",
+        "count": 6,
+        "error": null
+      },
+      "audius": {
+        "name": "Audius Music",
+        "status": "degraded",
+        "count": 0,
+        "error": "Audius search request timed out"
+      },
+      "jamendo": {
+        "name": "Jamendo Music",
+        "status": "unconfigured",
+        "count": 0,
+        "error": null
+      },
+      "saavn": {
+        "name": "JioSaavn (Dev)",
+        "status": "available",
+        "count": 12,
+        "error": null
+      }
+    },
+    "environment": "local_development (Jamendo unconfigured locally without API key)"
+  },
+  {
+    "id": "SRCH-007",
+    "domain": "Search Integration",
+    "feature": "Query: \"Addicting Rock\"",
+    "expected": "HTTP 200 with >= 1 results",
+    "actual": "HTTP 200, total results: 12 [archive: available (0 tracks), audius: degraded (0 tracks), jamendo: unconfigured (0 tracks), saavn: available (12 tracks)]",
+    "evidence": "Top: Metropolitan Rock (saavn)",
+    "status": "PASS",
+    "totalResults": 12,
+    "providerCounts": {
+      "saavn": 12
+    },
+    "providerStates": {
+      "archive": {
+        "name": "Internet Archive",
+        "status": "available",
+        "count": 0,
+        "error": null
+      },
+      "audius": {
+        "name": "Audius Music",
+        "status": "degraded",
+        "count": 0,
+        "error": "Audius search request timed out"
+      },
+      "jamendo": {
+        "name": "Jamendo Music",
+        "status": "unconfigured",
+        "count": 0,
+        "error": null
+      },
+      "saavn": {
+        "name": "JioSaavn (Dev)",
+        "status": "available",
+        "count": 12,
+        "error": null
+      }
+    },
+    "environment": "local_development (Jamendo unconfigured locally without API key)"
+  },
+  {
+    "id": "SRCH-008",
+    "domain": "Search Integration",
+    "feature": "Query: \"Depress'Rock\"",
+    "expected": "HTTP 200 with >= 1 results",
+    "actual": "HTTP 200, total results: 12 [archive: available (0 tracks), audius: degraded (0 tracks), jamendo: unconfigured (0 tracks), saavn: available (12 tracks)]",
+    "evidence": "Top: Arcade (saavn)",
+    "status": "PASS",
+    "totalResults": 12,
+    "providerCounts": {
+      "saavn": 12
+    },
+    "providerStates": {
+      "archive": {
+        "name": "Internet Archive",
+        "status": "available",
+        "count": 0,
+        "error": null
+      },
+      "audius": {
+        "name": "Audius Music",
+        "status": "degraded",
+        "count": 0,
+        "error": "Audius search request timed out"
+      },
+      "jamendo": {
+        "name": "Jamendo Music",
+        "status": "unconfigured",
+        "count": 0,
+        "error": null
+      },
+      "saavn": {
+        "name": "JioSaavn (Dev)",
+        "status": "available",
+        "count": 12,
+        "error": null
+      }
+    },
+    "environment": "local_development (Jamendo unconfigured locally without API key)"
+  },
+  {
+    "id": "SRCH-009",
+    "domain": "Search Integration",
+    "feature": "Query: \"xyznonexistentquery9999\"",
+    "expected": "HTTP 200 with 0 results",
+    "actual": "HTTP 200, total results: 0 [archive: available (0 tracks), audius: circuit_broken (0 tracks), jamendo: unconfigured (0 tracks), saavn: available (0 tracks)]",
+    "evidence": "Top: none (none)",
+    "status": "PASS",
+    "totalResults": 0,
+    "providerCounts": {},
+    "providerStates": {
+      "archive": {
+        "name": "Internet Archive",
+        "status": "available",
+        "count": 0,
+        "error": null
+      },
+      "audius": {
+        "name": "Audius Music",
+        "status": "circuit_broken",
+        "count": 0,
+        "error": "Circuit breaker is OPEN for Audius Music (cooldown active)"
+      },
+      "jamendo": {
+        "name": "Jamendo Music",
+        "status": "unconfigured",
+        "count": 0,
+        "error": null
+      },
+      "saavn": {
+        "name": "JioSaavn (Dev)",
+        "status": "available",
+        "count": 0,
+        "error": null
+      }
+    },
+    "environment": "local_development (Jamendo unconfigured locally without API key)"
+  },
+  {
+    "id": "JM-LIVE-001",
+    "domain": "Jamendo Production Integration",
+    "feature": "Live Deployed Backend Jamendo Search (Depress'Rock)",
+    "expected": "HTTP 200 with Jamendo tracks via configured Vercel credentials",
+    "actual": "HTTP 200, returned 2 Jamendo tracks",
+    "evidence": "Top track: The Great Depression (id: DNA6x)",
+    "status": "PASS",
+    "environment": "production_deployed_backend",
+    "provider": "jamendo",
+    "resultsCount": 2,
+    "topTrackUrl": "https://audius.co/Rocarol/the-great-depression-52810"
+  },
+  {
+    "id": "PERS-001",
+    "domain": "Persistence Integration",
+    "feature": "Multi-Source Track Persistence & Provider Identity Survival",
+    "expected": "Restored playlist retains exact provider identities (archive, jamendo), external IDs, and license",
+    "actual": "Restored 2 songs (Archive: true, Jamendo: true, License preserved: true)",
+    "evidence": "[{\"title\":\"Canon in D\",\"provider\":\"archive\",\"id\":\"pachelbel_canon\",\"license\":\"\"},{\"title\":\"Addicting Rock\",\"provider\":\"jamendo\",\"id\":\"323717\",\"license\":\"CC BY-NC-SA 3.0\"}]",
+    "status": "PASS"
+  },
+  {
+    "id": "PERS-002",
+    "domain": "Persistence Integration",
+    "feature": "Fresh Playback Resolution for Restored Track",
+    "expected": "HTTP 200 resolving fresh stream URL for persisted track ID",
+    "actual": "HTTP 200, streamUrl: true",
+    "evidence": "streamUrl: https://prod-1.storage.jamendo.com/?trackid=323717...",
+    "status": "PASS"
+  },
+  {
+    "id": "PLAY-001",
+    "domain": "Playback Transport",
+    "feature": "Track Play & Progression",
+    "expected": "currentTime > 0 and audio.paused === false",
+    "actual": "CurrentTime: 2.05s, paused: false, title: \"One Kiss (with Dua Lipa)\"",
+    "evidence": "{\"hasAudio\":true,\"paused\":false,\"currentTime\":2.052199,\"title\":\"One Kiss (with Dua Lipa)\"}",
+    "status": "PASS"
+  },
+  {
+    "id": "PLAY-002",
+    "domain": "Playback Transport",
+    "feature": "Pause Control (#pp)",
+    "expected": "audio.paused transitions to true",
+    "actual": "audio.paused: true",
+    "evidence": "paused: true",
+    "status": "PASS"
+  },
+  {
+    "id": "PLAY-003",
+    "domain": "Playback Transport",
+    "feature": "Resume Control (#pp)",
+    "expected": "audio.paused transitions to false",
+    "actual": "audio.playing: true",
+    "evidence": "playing: true",
+    "status": "PASS"
+  },
+  {
+    "id": "PLAY-004",
+    "domain": "Playback Transport",
+    "feature": "Seek Progression",
+    "expected": "audio.currentTime advances to seek target",
+    "actual": "Seek advanced successfully: true",
+    "evidence": "seek: true",
+    "status": "PASS"
+  },
+  {
+    "id": "PLAY-005",
+    "domain": "Playback Transport",
+    "feature": "Volume & Mute Adjustment",
+    "expected": "audio.volume updates and audio.muted toggles",
+    "actual": "Volume & Mute confirmed: true",
+    "evidence": "volMute: true",
+    "status": "PASS"
+  },
+  {
+    "id": "PLAY-006",
+    "domain": "Playback Transport",
+    "feature": "Track Switching to Track 3 (Not You)",
+    "expected": "Dock title updates to Track 3",
+    "actual": "Dock title: \"Not You\"",
+    "evidence": "Title: Not You",
+    "status": "PASS"
+  },
+  {
+    "id": "PLAY-007",
+    "domain": "Playback Transport",
+    "feature": "Honest Unavailable Track 12 Handling",
+    "expected": "Player survives click without throwing fatal exception",
+    "actual": "Player and UI intact: true",
+    "evidence": "Survived: true",
+    "status": "PASS"
+  },
+  {
+    "id": "ATTR-DOCK-001",
+    "domain": "Attribution Accessibility",
+    "feature": "Floating Player Dock Jamendo Attribution & Backlink",
+    "expected": "Render clickable ↗ JAMENDO link with provider URL and CC license badge in floating dock",
+    "actual": "Dock Link: \"↗ JAMENDO\" (https://www.jamendo.com/track/323717), License: \"CC BY-NC-SA 3.0\"",
+    "evidence": "{\"hasLink\":true,\"linkHref\":\"https://www.jamendo.com/track/323717\",\"linkText\":\"↗ JAMENDO\",\"hasLicense\":true,\"licenseText\":\"CC BY-NC-SA 3.0\"}",
+    "status": "PASS",
+    "hasLink": true,
+    "linkHref": "https://www.jamendo.com/track/323717",
+    "linkText": "↗ JAMENDO",
+    "hasLicense": true,
+    "licenseText": "CC BY-NC-SA 3.0"
+  },
+  {
+    "id": "ATTR-QUE-001",
+    "domain": "Attribution Accessibility",
+    "feature": "Queue Drawer Jamendo Attribution & Link",
+    "expected": "Render clickable ↗ JAMENDO link in queue drawer row for Jamendo tracks with @click.stop",
+    "actual": "Queue Link: \"↗ JAMENDO\" (https://www.jamendo.com/track/323717)",
+    "evidence": "{\"hasQueueLink\":true,\"queueHref\":\"https://www.jamendo.com/track/323717\",\"queueText\":\"↗ JAMENDO\"}",
+    "status": "PASS",
+    "hasQueueLink": true,
+    "queueHref": "https://www.jamendo.com/track/323717",
+    "queueText": "↗ JAMENDO"
+  },
+  {
+    "id": "ATTR-SRCH-001",
+    "domain": "Attribution Accessibility",
+    "feature": "Search Results View Source Links & Jamendo Indicator",
+    "expected": "Search view renders active source badges and clickable view-on-source backlinks with @click.stop",
+    "actual": "Source links: 18, Sample: \"↗ SAAVN\" (https://www.jiosaavn.com/song/rocky-bhai/Kg0EZg4HaHc)",
+    "evidence": "{\"hasJamendoPill\":true,\"jamendoPillText\":\"JAMENDO: OFF\",\"totalSourceLinks\":18,\"sampleLink\":{\"text\":\"↗ SAAVN\",\"href\":\"https://www.jiosaavn.com/song/rocky-bhai/Kg0EZg4HaHc\"}}",
+    "status": "PASS",
+    "hasJamendoPill": true,
+    "jamendoPillText": "JAMENDO: OFF",
+    "totalSourceLinks": 18,
+    "sampleLink": {
+      "text": "↗ SAAVN",
+      "href": "https://www.jiosaavn.com/song/rocky-bhai/Kg0EZg4HaHc"
+    }
+  },
+  {
+    "id": "RESP-001",
+    "domain": "Responsive Viewports",
+    "feature": "Mobile Viewport (390px)",
+    "expected": "0px horizontal overflow across small mobile screen",
+    "actual": "Horizontal overflow: false",
+    "evidence": "mobOverflow: false",
+    "status": "PASS"
+  },
+  {
+    "id": "RESP-002",
+    "domain": "Responsive Viewports",
+    "feature": "Tablet Viewport (768px)",
+    "expected": "0px horizontal overflow across tablet screen",
+    "actual": "Horizontal overflow: false",
+    "evidence": "tabOverflow: false",
+    "status": "PASS"
+  },
+  {
+    "id": "RESP-003",
+    "domain": "Responsive Viewports",
+    "feature": "Desktop Viewport (1280px)",
+    "expected": "0px horizontal overflow across desktop screen",
+    "actual": "Horizontal overflow: false",
+    "evidence": "deskOverflow: false",
+    "status": "PASS"
+  }
+]
