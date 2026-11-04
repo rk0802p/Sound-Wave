@@ -151,6 +151,21 @@
         <svg viewBox="0 0 24 24"><path :d="ICONS.mic" /></svg>
       </button>
 
+      <!-- Real-Time Audio Visualizer Toggle -->
+      <button
+        class="cb"
+        id="visBtn"
+        :class="{ 'is-active': showVisualizer }"
+        :aria-pressed="showVisualizer ? 'true' : 'false'"
+        aria-label="Toggle Audio Visualizer"
+        title="Toggle Real-Time Audio Visualizer"
+        @click="showVisualizer = !showVisualizer"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 12h2M8 7v10M12 4v16M16 8v8M20 11v2" stroke-linecap="round" />
+        </svg>
+      </button>
+
       <!-- Queue Toggle -->
       <button
         class="cb"
@@ -186,6 +201,12 @@
         @input="handleVolumeInput"
       />
     </div>
+
+    <!-- Real-Time Audio Visualizer Component -->
+    <AudioVisualizer
+      :is-open="showVisualizer"
+      @close="showVisualizer = false"
+    />
   </div>
 </template>
 
@@ -193,10 +214,12 @@
 import { ref, computed, onMounted } from 'vue';
 import { usePlayerStore } from '../../stores/player';
 import { resolvePlayableAudioUrl } from '../../services/providers/detector';
+import AudioVisualizer from './AudioVisualizer.vue';
 
 const emit = defineEmits(['open-info', 'toggle-queue', 'bubble-pop']);
 const playerStore = usePlayerStore();
 const isVisible = ref(true);
+const showVisualizer = ref(false);
 
 // Persistent favorites in localStorage
 const favoritesSet = ref(new Set());
@@ -263,7 +286,17 @@ const isJamendoTrack = computed(() => {
 
 const jamendoTrackUrl = computed(() => {
   const t = playerStore.currentTrack;
-  return t?.providerTrackUrl || t?.source?.trackUrl || null;
+  if (!t) return null;
+  const prov = t.provider || t.source?.provider;
+  const extId = t.providerTrackId || t.source?.externalId;
+  if (prov === 'jamendo' && extId) {
+    return `https://www.jamendo.com/track/${extId}`;
+  }
+  if (t.providerTrackUrl) return t.providerTrackUrl;
+  if (t.source?.url && t.source.url.includes('jamendo.com/track/')) return t.source.url;
+  if (t.source?.trackUrl) return t.source.trackUrl;
+  if (t.source?.url && !t.source.url.includes('storage.jamendo.com')) return t.source.url;
+  return null;
 });
 
 const jamendoLicenseText = computed(() => {
@@ -582,6 +615,12 @@ const ICONS = {
 .cb[aria-pressed="true"] {
   color: var(--o2);
   filter: brightness(0.85);
+}
+
+#visBtn.is-active,
+#visBtn[aria-pressed="true"] {
+  color: #00f2fe;
+  filter: drop-shadow(0 0 8px rgba(0, 242, 254, 0.8));
 }
 
 .cb.fav[aria-pressed="true"] {
