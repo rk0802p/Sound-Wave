@@ -17,6 +17,10 @@ export const usePlayerStore = defineStore('player', {
       queue: initialPlaylist.songs,
       isPlaying: false,
       isLoading: false,
+      playbackState: 'idle', // 'idle' | 'resolving' | 'loading' | 'playing' | 'paused' | 'recovering' | 'failed' | 'ended'
+      repeat: 'off', // 'off' | 'all' | 'one'
+      shuffle: false,
+      recoveryNotice: null,
       playRequestId: 0,
       currentTime: 0,
       duration: initialTrack?.duration || 233,
@@ -56,12 +60,16 @@ export const usePlayerStore = defineStore('player', {
         onPlay: () => {
           this.isPlaying = true;
           this.isLoading = false;
+          this.playbackState = 'playing';
           if (typeof document !== 'undefined') {
             document.body.classList.add('playing');
           }
         },
         onPause: () => {
           this.isPlaying = false;
+          if (this.playbackState !== 'failed' && this.playbackState !== 'ended') {
+            this.playbackState = 'paused';
+          }
           if (typeof document !== 'undefined') {
             document.body.classList.remove('playing');
           }
@@ -69,12 +77,16 @@ export const usePlayerStore = defineStore('player', {
         onPlaying: () => {
           this.isPlaying = true;
           this.isLoading = false;
+          this.playbackState = 'playing';
           if (typeof document !== 'undefined') {
             document.body.classList.add('playing');
           }
         },
         onWaiting: () => {
           this.isLoading = true;
+          if (this.playbackState === 'playing') {
+            this.playbackState = 'loading';
+          }
         },
         onTimeUpdate: (time) => {
           this.currentTime = time;
@@ -85,11 +97,27 @@ export const usePlayerStore = defineStore('player', {
           }
         },
         onEnded: () => {
-          this.nextTrack();
+          if (this.repeat === 'one') {
+            this.seek(0);
+            this.playTrack(this.currentTrack, this.queue, this.trackIndex);
+          } else if (this.repeat === 'off' && this.trackIndex === this.queue.length - 1) {
+            this.isPlaying = false;
+            this.playbackState = 'ended';
+            if (typeof document !== 'undefined') {
+              document.body.classList.remove('playing');
+            }
+          } else {
+            this.nextTrack();
+          }
         },
         onError: (err) => {
           console.warn('Audio playback notice:', err);
           this.isLoading = false;
+          if (this.playbackState !== 'recovering') {
+            this.playbackState = 'failed';
+            this.isPlaying = false;
+            this.error = typeof err === 'object' && err?.message ? err.message : 'Audio stream playback error';
+          }
         },
       });
 
@@ -154,11 +182,67 @@ export const usePlayerStore = defineStore('player', {
       }
     },
 
+    async tryAlternativeFallback(track, reqId) {
+      if (!track || !Array.isArray(track.alternatives) || track.alternatives.length === 0) {
+        return false;
+      }
+
+      this.playbackState = 'recovering';
+      this.isLoading = true;
+
+      for (const alt of track.alternatives) {
+        if (this.playRequestId !== reqId) return false;
+        if (alt._attempted) continue;
+        alt._attempted = true;
+
+        let streamUrl = alt.streamUrl;
+        if (!streamUrl && alt.needsResolution && alt.provider && alt.providerTrackId) {
+          try {
+            const resolved = await searchApi.resolve(alt.provider, alt.providerTrackId);
+            if (this.playRequestId !== reqId) return false;
+            if (resolved?.streamUrl) {
+              streamUrl = resolved.streamUrl;
+            }
+          } catch (e) {
+            console.warn(`Alternative resolution failed for ${alt.provider}:`, e);
+          }
+        }
+
+        if (streamUrl && typeof streamUrl === 'string' && /^https?:\/\//i.test(streamUrl)) {
+          try {
+            // Apply alternative stream to track
+            track.streamUrl = streamUrl;
+            track.url = streamUrl;
+            track.provider = alt.provider;
+            track.activeAlternative = alt;
+            this.recoveryNotice = `Switched to ${alt.provider.toUpperCase()} fallback stream`;
+
+            await soundController.load(track);
+            if (this.playRequestId !== reqId) return false;
+
+            this.playbackState = 'playing';
+            this.isPlaying = true;
+            this.isLoading = false;
+            this.error = null;
+            return true;
+          } catch (loadErr) {
+            console.warn(`Alternative playback load failed for ${alt.provider}:`, loadErr);
+          }
+        }
+      }
+
+      return false;
+    },
+
     async playTrack(track, queue = null, index = null) {
       this.init();
-      if (!track) return;
+      if (!track) {
+        this.playbackState = 'idle';
+        return;
+      }
 
       this.error = null;
+      this.recoveryNotice = null;
       if (Array.isArray(queue) && queue.length > 0) {
         this.queue = queue;
         this.trackIndex = typeof index === 'number' ? index : queue.indexOf(track);
@@ -180,6 +264,7 @@ export const usePlayerStore = defineStore('player', {
       // On-demand playback resolution if URL is missing or marked for resolution
       if ((!audioUrl || track.needsResolution) && provider && provider !== 'spotify' && providerTrackId) {
         try {
+          this.playbackState = 'resolving';
           this.isLoading = true;
           const resolved = await searchApi.resolve(provider, providerTrackId);
 
@@ -194,6 +279,11 @@ export const usePlayerStore = defineStore('player', {
           }
         } catch (resErr) {
           console.warn('On-demand resolution notice:', resErr);
+          if (this.playRequestId !== reqId) return;
+
+          // Attempt alternative fallback if primary resolution failed
+          const recovered = await this.tryAlternativeFallback(track, reqId);
+          if (recovered || this.playRequestId !== reqId) return;
         }
       }
 
@@ -202,9 +292,14 @@ export const usePlayerStore = defineStore('player', {
 
       const isSpotify = provider === 'spotify' || (track.url && track.url.includes('spotify.com'));
       if (!audioUrl && !isSpotify) {
+        // Check if alternative fallback is available before giving up
+        const recovered = await this.tryAlternativeFallback(track, reqId);
+        if (recovered || this.playRequestId !== reqId) return;
+
         soundController.pause();
         this.isPlaying = false;
         this.isLoading = false;
+        this.playbackState = 'failed';
         this.currentTime = 0;
         this.error = 'No playable audio stream available for this track';
         if (typeof document !== 'undefined') {
@@ -214,9 +309,11 @@ export const usePlayerStore = defineStore('player', {
       }
 
       try {
+        this.playbackState = 'loading';
         this.isLoading = true;
         await soundController.load(track);
         if (this.playRequestId !== reqId) return;
+        this.playbackState = 'playing';
         this.isPlaying = true;
       } catch (err) {
         if (this.playRequestId !== reqId) return;
@@ -226,12 +323,15 @@ export const usePlayerStore = defineStore('player', {
         if (provider && provider !== 'spotify' && providerTrackId && !track._retriedOnce) {
           track._retriedOnce = true;
           try {
+            this.playbackState = 'recovering';
             const fresh = await searchApi.resolve(provider, providerTrackId);
             if (this.playRequestId !== reqId) return;
             if (fresh?.streamUrl) {
               track.streamUrl = fresh.streamUrl;
               track.url = fresh.streamUrl;
               await soundController.load(track);
+              if (this.playRequestId !== reqId) return;
+              this.playbackState = 'playing';
               this.isPlaying = true;
               return;
             }
@@ -240,17 +340,23 @@ export const usePlayerStore = defineStore('player', {
           }
         }
 
+        // Attempt alternative fallback if primary stream failed
+        const recovered = await this.tryAlternativeFallback(track, reqId);
+        if (recovered || this.playRequestId !== reqId) return;
+
         // Fallback direct audio if needed
         try {
           if (typeof window !== 'undefined' && window._soundwaveAudio && audioUrl) {
             window._soundwaveAudio.src = audioUrl;
             await window._soundwaveAudio.play();
             if (this.playRequestId === reqId) {
+              this.playbackState = 'playing';
               this.isPlaying = true;
             }
           }
         } catch (e) {
           if (this.playRequestId === reqId) {
+            this.playbackState = 'failed';
             this.isPlaying = false;
             this.error = 'Playback failed. The remote audio stream may be unavailable.';
           }
@@ -271,6 +377,7 @@ export const usePlayerStore = defineStore('player', {
       if (this.isPlaying) {
         soundController.pause();
         this.isPlaying = false;
+        this.playbackState = 'paused';
         if (typeof document !== 'undefined') {
           document.body.classList.remove('playing');
         }
@@ -278,7 +385,11 @@ export const usePlayerStore = defineStore('player', {
         if (!this.currentTrack) return;
         const audioUrl = resolvePlayableAudioUrl(this.currentTrack);
         if (!audioUrl) {
+          if (this.currentTrack.needsResolution && this.currentTrack.providerTrackId) {
+            return this.playTrack(this.currentTrack, this.queue, this.trackIndex);
+          }
           this.isPlaying = false;
+          this.playbackState = 'failed';
           return;
         }
         if (!soundController.currentTrack) {
@@ -287,6 +398,7 @@ export const usePlayerStore = defineStore('player', {
           try {
             await soundController.play();
             this.isPlaying = true;
+            this.playbackState = 'playing';
             if (typeof document !== 'undefined') {
               document.body.classList.add('playing');
             }
@@ -299,7 +411,14 @@ export const usePlayerStore = defineStore('player', {
 
     nextTrack() {
       if (!this.queue || this.queue.length === 0) return;
-      const nextIdx = (this.trackIndex + 1) % this.queue.length;
+      let nextIdx;
+      if (this.shuffle && this.queue.length > 1) {
+        do {
+          nextIdx = Math.floor(Math.random() * this.queue.length);
+        } while (nextIdx === this.trackIndex);
+      } else {
+        nextIdx = (this.trackIndex + 1) % this.queue.length;
+      }
       this.trackIndex = nextIdx;
       const nextSong = this.queue[nextIdx];
       this.playTrack(nextSong, this.queue, nextIdx);
@@ -317,6 +436,16 @@ export const usePlayerStore = defineStore('player', {
       this.playTrack(prevSong, this.queue, prevIdx);
     },
 
+    cycleRepeat() {
+      const modes = ['off', 'all', 'one'];
+      const nextIdx = (modes.indexOf(this.repeat) + 1) % modes.length;
+      this.repeat = modes[nextIdx];
+    },
+
+    toggleShuffle() {
+      this.shuffle = !this.shuffle;
+    },
+
     seek(seconds) {
       if (isNaN(seconds)) return;
       const clamped = Math.max(0, Math.min(seconds, this.duration || 0));
@@ -327,6 +456,30 @@ export const usePlayerStore = defineStore('player', {
     setVolume(vol) {
       this.volume = Math.max(0, Math.min(1, vol));
       soundController.setVolume(this.volume);
+    },
+
+    setMuted(muted) {
+      this.muted = Boolean(muted);
+      soundController.setMuted(this.muted);
+    },
+
+    addToQueue(track) {
+      if (!track) return;
+      if (!Array.isArray(this.queue)) {
+        this.queue = [];
+      }
+      this.queue.push(track);
+      if (!this.currentTrack) {
+        this.playTrack(track, this.queue, this.queue.length - 1);
+      }
+    },
+
+    removeFromQueue(index) {
+      if (!Array.isArray(this.queue) || index < 0 || index >= this.queue.length) return;
+      this.queue.splice(index, 1);
+      if (this.trackIndex >= this.queue.length) {
+        this.trackIndex = Math.max(0, this.queue.length - 1);
+      }
     },
   },
 });

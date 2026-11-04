@@ -29,7 +29,10 @@
       </div>
       <div class="nm">
         <b id="nT" :title="currentTrackTitle">{{ currentTrackTitle }}</b>
-        <small id="nA" :title="currentTrackArtist">{{ currentTrackArtist }}</small>
+        <small id="nA" :title="currentTrackArtist">
+          {{ currentTrackArtist }}
+          <span v-if="isUnavailable" class="unavailable-tag"> • Unavailable</span>
+        </small>
       </div>
     </div>
 
@@ -172,6 +175,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { usePlayerStore } from '../../stores/player';
+import { resolvePlayableAudioUrl } from '../../services/providers/detector';
 
 const emit = defineEmits(['open-info', 'toggle-queue', 'bubble-pop']);
 const playerStore = usePlayerStore();
@@ -268,7 +272,25 @@ const toggleMute = () => {
   playerStore.setMuted(!playerStore.muted);
 };
 
+const isUnavailable = computed(() => {
+  const t = playerStore.currentTrack;
+  if (!t) return false;
+  if (t.isUnavailable) return true;
+  const audioUrl = resolvePlayableAudioUrl(t);
+  const canResolve = Boolean(t.needsResolution && t.providerTrackId && t.provider && t.provider !== 'spotify');
+  return !audioUrl && !canResolve;
+});
+
 const handleTogglePlay = (event) => {
+  if (isUnavailable.value) {
+    if (event) emit('bubble-pop', { target: event.currentTarget, count: 10 });
+    return;
+  }
+  const t = playerStore.currentTrack;
+  if (!playerStore.isPlaying && t && t.needsResolution && !resolvePlayableAudioUrl(t) && t.providerTrackId) {
+    playerStore.playTrack(t);
+    return;
+  }
   playerStore.togglePlay();
   if (playerStore.isPlaying && event) {
     emit('bubble-pop', { target: event.currentTarget, count: 20 });
@@ -419,6 +441,14 @@ const ICONS = {
   color: var(--muted);
   font-weight: 600;
   font-size: 0.9rem;
+}
+
+.unavailable-tag {
+  color: #ff4f9a;
+  font-weight: 800;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 /* Center: Controls & Slider */

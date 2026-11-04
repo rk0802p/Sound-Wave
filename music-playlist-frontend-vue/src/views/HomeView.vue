@@ -272,9 +272,9 @@
             }"
             :style="{
               '--d': idx * 80 + 'ms',
-              '--o1': track.palette.o1,
-              '--o2': track.palette.o2,
-              '--sh': track.palette.o2 + '88',
+              '--o1': track.palette?.o1 || '#7ff0e6',
+              '--o2': track.palette?.o2 || '#19c9bd',
+              '--sh': (track.palette?.o2 || '#19c9bd') + '88',
             }"
             :data-id="track.id || track._id"
             @click="handlePlayTrack(track, displayedListenAgainTracks, idx, $event)"
@@ -333,9 +333,9 @@
             :class="{ 'on': isCurrentTrack(track) }"
             :style="{
               '--d': idx * 70 + 'ms',
-              '--o1': track.palette.o1,
-              '--o2': track.palette.o2,
-              '--sh': track.palette.o2 + '88',
+              '--o1': track.palette?.o1 || '#ffd27a',
+              '--o2': track.palette?.o2 || '#ffa24c',
+              '--sh': (track.palette?.o2 || '#ffa24c') + '88',
             }"
             :data-id="track.id || track._id"
             @click="handlePlayTrack(track, displayedTrendingTracks, idx, $event)"
@@ -361,7 +361,7 @@
         <div class="sh">
           <div class="curated-heading">
             <h2 class="rv in">Curated Discover</h2>
-            <p class="curated-sub font-mono">12 royalty-free open-access recordings with verified licenses</p>
+            <p class="curated-sub font-mono">18 tracks from your Spotify collection</p>
           </div>
           <button class="ib glass font-mono refresh-btn" title="Shuffle pick" @click="handleShuffleCurated($event)">
             ↺
@@ -370,16 +370,16 @@
 
         <div class="curated-grid">
           <div
-            v-for="(track, idx) in allCuratedTracks"
+            v-for="(track, idx) in displayedCuratedTracks"
             :key="track._id || track.id"
             class="curated-card glass"
             :class="{ 'on': isCurrentTrack(track) }"
             :style="{
-              '--o1': track.palette.o1,
-              '--o2': track.palette.o2,
-              '--sh': track.palette.o2 + '88',
+              '--o1': track.palette?.o1 || '#7ff0e6',
+              '--o2': track.palette?.o2 || '#19c9bd',
+              '--sh': (track.palette?.o2 || '#19c9bd') + '88',
             }"
-            @click="handlePlayTrack(track, allCuratedTracks, idx, $event)"
+            @click="handlePlayTrack(track, displayedCuratedTracks, idx, $event)"
           >
             <div class="card-left">
               <span class="orb card-orb">{{ track.emoji }}</span>
@@ -406,6 +406,13 @@
             </button>
           </div>
         </div>
+
+        <div v-if="displayedCuratedTracks.length === 0 && searchQuery.trim()" class="empty-curated-search glass">
+          <p>No homepage tracks match "{{ searchQuery.trim() }}".</p>
+          <router-link :to="{ path: '/search', query: { q: searchQuery.trim() } }" class="btn p font-mono">
+            Search Online Multi-Source Catalog →
+          </router-link>
+        </div>
       </section>
     </main>
 
@@ -415,6 +422,53 @@
       @toggle-queue="handleToggleQueue"
       @bubble-pop="handleBubblePop"
     />
+
+    <!-- Up Next Queue Drawer Overlay -->
+    <div
+      v-if="isQueueOpen"
+      class="queue-drawer-overlay"
+      @click.self="isQueueOpen = false"
+    >
+      <aside class="queue-drawer-panel glass" role="dialog" aria-label="Up Next Queue">
+        <div class="queue-drawer-header">
+          <div class="queue-title-wrap">
+            <h3 class="queue-title font-display">Up Next Queue</h3>
+            <span class="queue-badge font-mono">{{ playerStore.queue?.length || 0 }} TRACKS</span>
+          </div>
+          <button class="queue-close-btn font-mono" @click="isQueueOpen = false">✕</button>
+        </div>
+
+        <div v-if="!playerStore.queue || playerStore.queue.length === 0" class="queue-empty font-mono">
+          Queue is empty. Select tracks to play.
+        </div>
+
+        <div v-else class="queue-track-list">
+          <div
+            v-for="(t, qIdx) in playerStore.queue"
+            :key="t._id || t.id || qIdx"
+            class="queue-track-row"
+            :class="{ 'is-active': playerStore.trackIndex === qIdx }"
+            @click="handlePlayQueueItem(qIdx)"
+          >
+            <span class="queue-track-idx font-mono">{{ qIdx + 1 }}</span>
+            <div class="queue-track-meta">
+              <span class="queue-track-name font-display">{{ t.title || t[0] }}</span>
+              <span class="queue-track-sub font-mono">{{ t.artist || t[1] }}</span>
+            </div>
+            <span v-if="t.provider || t.source?.provider" class="queue-track-prov font-mono">
+              {{ (t.provider || t.source?.provider || '').toUpperCase() }}
+            </span>
+            <button
+              class="queue-remove-btn font-mono"
+              @click.stop="playerStore.removeFromQueue(qIdx)"
+              title="Remove from queue"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      </aside>
+    </div>
 
     <!-- MODAL: CREATE PLAYLIST -->
     <CreatePlaylistModal
@@ -463,7 +517,12 @@
 
           <div class="info-row">
             <label>Streaming Capability</label>
-            <p class="capability-text">Direct high-availability MP3 audio streamed from original publisher. No local audio downloaded.</p>
+            <p class="capability-text" v-if="selectedInfoTrack.audioUrl || selectedInfoTrack.streamUrl">
+              Direct high-availability MP3 audio streamed from original publisher. No local audio downloaded.
+            </p>
+            <p class="capability-text" v-else>
+              Direct static playback unavailable. Commercial copyrighted master recording requires licensed streaming authorization (Spotify OAuth / API subscription). Metadata preserved as source of truth.
+            </p>
           </div>
         </div>
       </div>
@@ -541,7 +600,7 @@ const PALETTES = [
   { o1: '#7ff0e6', o2: '#19c9bd', tint: '#d8faf6' }, // 5: Aqua
 ];
 
-const EMOJIS = ['🎹', '🌙', '🕊️', '🌧️', '🌸', '⚡', '☕', '🎻', '🍁', '🎩', '🎷', '🌃'];
+const EMOJIS = ['⚡', '🌸', '💫', '🌊', '🔥', '✨', '🕊️', '🌼', '💃', '💎', '🌧️', '🎧', '🌙', '🌴', '🕶️', '🐱', '🐾', '🚨'];
 
 const getPalette = (idx) => PALETTES[idx % PALETTES.length];
 
@@ -560,12 +619,14 @@ const ICONS = {
 
 // UI State
 const isDrawerOpen = ref(false);
+const isQueueOpen = ref(false);
 const isSearchFocused = ref(false);
 const searchQuery = ref('');
 const hasUnreadNotification = ref(true);
 const isMoodAccordionOpen = ref(false);
 const selectedGenreFilter = ref('');
-const activeFilter = ref(''); // '' | 'favorites' | 'search' | 'genre'
+const activeFilter = ref(''); // '' | 'favorites' | 'search' | 'genre' | 'playlist'
+const activePlaylist = ref(null);
 const showCreateModal = ref(false);
 const showSettingsModal = ref(false);
 const selectedInfoTrack = ref(null);
@@ -619,7 +680,7 @@ const currentPalette = computed(() => {
 const currentWashColor = computed(() => currentPalette.value.tint);
 
 // Genre chips
-const genreChips = ['All', 'Classical', 'Baroque', 'Romantic', 'Impressionist', 'Ragtime', 'Jazz'];
+const genreChips = ['All', 'English Pop', 'Electronic / Dance', 'Latin', 'Reggaeton', 'Alternative / Indie', 'Hip-Hop'];
 
 // Displayed Tracks with Search & Genre Filtering
 const displayedListenAgainTracks = computed(() => {
@@ -628,11 +689,12 @@ const displayedListenAgainTracks = computed(() => {
 });
 
 const displayedTrendingTracks = computed(() => {
-  let list = [
-    ...allCuratedTracks.value.slice(6, 12),
-    ...allCuratedTracks.value.slice(0, 2),
-  ];
+  let list = allCuratedTracks.value.slice(6);
   return applyFilters(list);
+});
+
+const displayedCuratedTracks = computed(() => {
+  return applyFilters(allCuratedTracks.value);
 });
 
 const applyFilters = (tracks) => {
@@ -643,10 +705,33 @@ const applyFilters = (tracks) => {
     result = result.filter((t) => favoritesList.value.includes(t.id || t._id));
   }
 
+  // Playlist filter
+  if (activeFilter.value === 'playlist' && activePlaylist.value) {
+    const plSongs = (activePlaylist.value.songs || []).map((s) => ({
+      ...s,
+      palette: s.palette || { o1: '#8ff2d3', o2: '#2fd3a2', tint: '#d3f8ec' },
+      emoji: s.emoji || '🎵',
+      genre: s.genre || 'Playlist',
+    }));
+    const plSongIds = plSongs.map((s) => s._id || s.id || s.title);
+    const matched = result.filter((t) => plSongIds.includes(t._id || t.id || t.title));
+    if (matched.length > 0) {
+      result = matched;
+    } else if (plSongs.length > 0) {
+      return plSongs;
+    }
+  }
+
   // Genre filter
   if (selectedGenreFilter.value && selectedGenreFilter.value !== 'All') {
     const g = selectedGenreFilter.value.toLowerCase();
-    result = result.filter((t) => (t.genre || '').toLowerCase().includes(g));
+    result = result.filter((t) => {
+      const trackGenre = (t.genre || '').toLowerCase();
+      if (g === 'latin') {
+        return trackGenre.includes('latin') || trackGenre.includes('reggaeton');
+      }
+      return trackGenre.includes(g);
+    });
   }
 
   // Text search query filter
@@ -663,6 +748,7 @@ const applyFilters = (tracks) => {
 const activeFilterBadge = computed(() => {
   if (searchQuery.value.trim()) return `Search: "${searchQuery.value.trim()}"`;
   if (activeFilter.value === 'favorites') return 'Favourites';
+  if (activeFilter.value === 'playlist' && activePlaylist.value) return `Playlist: "${activePlaylist.value.name}"`;
   if (selectedGenreFilter.value && selectedGenreFilter.value !== 'All') return `Genre: ${selectedGenreFilter.value}`;
   return '';
 });
@@ -671,6 +757,10 @@ const clearAllFilters = () => {
   searchQuery.value = '';
   activeFilter.value = '';
   selectedGenreFilter.value = '';
+  activePlaylist.value = null;
+  if (route.query.playlist) {
+    router.push({ path: '/' });
+  }
 };
 
 // Playback handlers
@@ -698,6 +788,21 @@ const handlePlayTrack = async (track, queue, index, event) => {
   if (event) {
     const rect = event.currentTarget.getBoundingClientRect();
     popParticles(rect.left + rect.width / 2, rect.top + rect.height / 2, 20, track.palette);
+  }
+
+  const audioUrl = resolvePlayableAudioUrl(track);
+  const canResolve = Boolean((!audioUrl || track.needsResolution) && track.providerTrackId && track.provider && track.provider !== 'spotify' && !track.isUnavailable);
+
+  if (!audioUrl && !canResolve) {
+    playerStore.currentTrack = track;
+    playerStore.queue = queue;
+    playerStore.trackIndex = index;
+    playerStore.currentTime = 0;
+    playerStore.duration = track.duration || 0;
+    playerStore.isPlaying = false;
+    playerStore.error = `Playback unavailable: "${track.title}" is currently unavailable for direct streaming.`;
+    toastStore.info(`"${track.title}" — Currently unavailable for direct streaming.`);
+    return;
   }
 
   await playerStore.playTrack(track, queue, index);
@@ -832,6 +937,7 @@ const openCreateModal = () => {
 };
 
 const handlePlaylistCreated = () => {
+  showCreateModal.value = false;
   playlistStore.fetchPlaylists();
   toastStore.success('Playlist bubble created successfully!');
 };
@@ -841,7 +947,13 @@ const openLicenseModal = (track) => {
 };
 
 const handleToggleQueue = () => {
-  toastStore.info(`Queue: ${playerStore.queue.length} tracks loaded.`);
+  isQueueOpen.value = !isQueueOpen.value;
+};
+
+const handlePlayQueueItem = (idx) => {
+  if (!playerStore.queue || !playerStore.queue[idx]) return;
+  playerStore.trackIndex = idx;
+  playerStore.playTrack(playerStore.queue[idx], playerStore.queue, idx);
 };
 
 const handleShuffleCurated = (event) => {
@@ -895,14 +1007,33 @@ const handleBubblePop = (data) => {
   }
 };
 
+watch(
+  () => [route.query.playlist, playlistStore.playlists],
+  ([newId, playlists]) => {
+    if (newId && Array.isArray(playlists) && playlists.length > 0) {
+      const found = playlists.find((p) => p._id === newId || p.id === newId);
+      if (found) {
+        activePlaylist.value = found;
+        activeFilter.value = 'playlist';
+        if (found.songs && found.songs.length > 0) {
+          playerStore.queue = found.songs;
+        }
+      }
+    } else if (!newId && activeFilter.value === 'playlist') {
+      activePlaylist.value = null;
+      activeFilter.value = '';
+    }
+  },
+  { immediate: true }
+);
+
 onMounted(() => {
   loadFavorites();
   playlistStore.fetchPlaylists().catch(() => {});
   window.addEventListener('keydown', handleKeyDown);
 
-  // Set initial default track in player if none loaded or if loaded track has no playable audio URL
-  const currentAudioUrl = resolvePlayableAudioUrl(playerStore.currentTrack);
-  if (!currentAudioUrl && allCuratedTracks.value.length > 0) {
+  // Set initial default track in player to the first song from Spotify collection if not actively playing
+  if (allCuratedTracks.value.length > 0 && !playerStore.isPlaying) {
     const initialTrack = allCuratedTracks.value[0];
     playerStore.currentTrack = initialTrack;
     playerStore.queue = allCuratedTracks.value;
@@ -2177,5 +2308,201 @@ onUnmounted(() => {
     bottom: 0;
     border-radius: 0 24px 24px 0;
   }
+}
+
+/* Empty Curated Search Banner */
+.empty-curated-search {
+  margin-top: 1.5rem;
+  padding: 2rem;
+  border-radius: 20px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.empty-curated-search p {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+
+/* Queue Drawer Styles for HomeView */
+.queue-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.queue-drawer-panel {
+  width: min(420px, 92vw);
+  height: 100%;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-left: 2px solid var(--pg-border, #111);
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.2);
+  animation: slideInRight 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.queue-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--pg-border, #111);
+  margin-bottom: 16px;
+}
+
+.queue-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.queue-title {
+  font-size: 1.25rem;
+  font-weight: 900;
+  margin: 0;
+  color: var(--pg-ink, #111);
+}
+
+.queue-badge {
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  background: #111;
+  color: #fff;
+  border-radius: 9999px;
+}
+
+.queue-close-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1.5px solid var(--pg-border, #111);
+  background: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  box-shadow: 2px 2px 0px var(--pg-border, #111);
+}
+
+.queue-empty {
+  font-size: 0.85rem;
+  color: var(--pg-ink-muted, #71717a);
+  text-align: center;
+  padding: 40px 16px;
+  line-height: 1.6;
+}
+
+.queue-track-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-right: 4px;
+}
+
+.queue-track-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1.5px solid var(--pg-border, #111);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 2px 2px 0px var(--pg-border, #111);
+}
+
+.queue-track-row:hover {
+  background: #fff;
+  transform: translateY(-1px);
+  box-shadow: 3px 3px 0px var(--pg-border, #111);
+}
+
+.queue-track-row.is-active {
+  background: #fdf2f8;
+  border-color: #e11d48;
+  box-shadow: 3px 3px 0px #e11d48;
+}
+
+.queue-track-idx {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--pg-ink-muted, #888);
+  width: 20px;
+}
+
+.queue-track-meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.queue-track-name {
+  font-size: 0.88rem;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--pg-ink, #111);
+}
+
+.queue-track-sub {
+  font-size: 0.72rem;
+  color: var(--pg-ink-secondary, #666);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.queue-track-prov {
+  font-size: 0.6rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 4px;
+}
+
+.queue-remove-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: var(--pg-ink-muted, #999);
+  padding: 4px 6px;
+  border-radius: 4px;
+}
+
+.queue-remove-btn:hover {
+  color: #e11d48;
+  background: rgba(225, 29, 72, 0.1);
 }
 </style>

@@ -135,6 +135,10 @@ const selectedGradient = computed(() => {
 const handleSubmit = async (event) => {
   if (!name.value.trim()) return;
   isSubmitting.value = true;
+  const targetEl = event?.currentTarget || event?.target;
+  const rect = targetEl && typeof targetEl.getBoundingClientRect === 'function'
+    ? targetEl.getBoundingClientRect()
+    : null;
 
   try {
     const palette = selectedGradient.value;
@@ -149,8 +153,7 @@ const handleSubmit = async (event) => {
       isPublic: true,
     });
 
-    if (event) {
-      const rect = event.currentTarget.getBoundingClientRect();
+    if (rect) {
       popParticles(rect.left + rect.width / 2, rect.top + rect.height / 2, 25, {
         o1: palette.o1,
         o2: palette.o2,
