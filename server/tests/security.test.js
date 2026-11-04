@@ -172,6 +172,13 @@ describe("Security & Ownership Isolation Integration Tests", () => {
       expect(res.headers["access-control-allow-origin"]).toBe("https://music-playlist-pp8l.vercel.app");
     });
 
+    it("should allow verified Vercel preview origin matching project and owner", async () => {
+      const res = await request(app)
+        .get("/api/test")
+        .set("Origin", "https://music-playlist-pp8l-3daj8v1nz-rajs-projects-d5dc1d63.vercel.app");
+      expect(res.headers["access-control-allow-origin"]).toBe("https://music-playlist-pp8l-3daj8v1nz-rajs-projects-d5dc1d63.vercel.app");
+    });
+
     it("should block arbitrary origins even if matching prefix and suffix", async () => {
       const res = await request(app)
         .get("/api/test")

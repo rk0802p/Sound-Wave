@@ -43,6 +43,7 @@ app.use(
 
       const isAllowed =
         configuredOrigins.includes(origin) ||
+        (/^https:\/\/music-playlist-pp8l.*\.vercel\.app$/.test(origin) && origin.includes("rajs-projects")) ||
         (process.env.NODE_ENV !== "production" && (origin.includes("localhost") || origin.includes("127.0.0.1")));
 
       if (isAllowed) {

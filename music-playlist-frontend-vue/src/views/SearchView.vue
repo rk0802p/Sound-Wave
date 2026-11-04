@@ -631,7 +631,8 @@ const getTrackSourceUrl = (t) => {
 
 const getProviderStatusLabel = (name) => {
   const prov = providerStatuses.value[name];
-  if (!prov) return 'ACTIVE';
+  if (!prov) return name === 'saavn' ? 'OFF' : 'ACTIVE';
+  if (prov.status === 'unconfigured' || prov.isConfigured === false) return 'OFF';
   if (prov.status === 'unconfigured') return 'OFF';
   if (prov.status === 'rate_limited') return 'LIMIT';
   if (prov.status === 'circuit_broken') return 'COOLDOWN';
