@@ -36,6 +36,8 @@ export const detectProviderType = (url) => {
     clean.endsWith('.m4a') ||
     clean.endsWith('.aac') ||
     clean.endsWith('.flac') ||
+    clean.endsWith('.mp4') ||
+    clean.includes('saavncdn.com') ||
     clean.startsWith('data:audio/') ||
     clean.startsWith('blob:') ||
     (clean.includes('upload.wikimedia.org') && (clean.includes('.ogg') || clean.includes('.mp3')))

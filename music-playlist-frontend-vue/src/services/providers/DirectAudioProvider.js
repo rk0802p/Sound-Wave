@@ -32,6 +32,9 @@ export class DirectAudioProvider {
     } else if (p === 'audius') {
       badge = 'AUDIUS';
       providerName = 'Audius Stream';
+    } else if (p === 'saavn') {
+      badge = 'DEV-SAAVN';
+      providerName = 'JioSaavn Dev Stream';
     }
 
     return {
@@ -62,7 +65,19 @@ export class DirectAudioProvider {
     bindEvent('timeupdate', () => this.callbacks.onTimeUpdate?.(this.audio.currentTime));
     bindEvent('loadedmetadata', () => this.callbacks.onLoadedMetadata?.(this.audio.duration));
     bindEvent('ended', () => this.callbacks.onEnded?.());
-    bindEvent('error', (err) => this.callbacks.onError?.(err));
+    bindEvent('error', (err) => {
+      const mediaError = this.audio?.error;
+      const detail = {
+        code: mediaError ? mediaError.code : 0,
+        message: mediaError ? mediaError.message : 'Audio playback error',
+        kind: mediaError?.code === 2 ? 'network'
+            : mediaError?.code === 3 ? 'decode'
+            : mediaError?.code === 4 ? 'src_not_supported'
+            : 'general',
+        raw: err,
+      };
+      this.callbacks.onError?.(detail);
+    });
 
     this.isInitialized = true;
   }
@@ -71,9 +86,15 @@ export class DirectAudioProvider {
     if (!this.audio) return;
     this.currentTrack = track;
     const url = resolvePlayableAudioUrl(track);
-    if (!url) {
+    if (!url || typeof url !== 'string' || !/^https?:\/\//i.test(url)) {
       if (this.audio) this.audio.pause();
-      return;
+      const errDetail = {
+        code: 4,
+        message: url ? 'Invalid audio stream URL protocol' : 'No direct playable audio URL available',
+        kind: 'invalid_url',
+      };
+      this.callbacks.onError?.(errDetail);
+      throw new Error(errDetail.message);
     }
 
     if (this.audio.src !== url) {
