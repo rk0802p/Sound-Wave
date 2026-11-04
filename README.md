@@ -17,7 +17,8 @@ A production-grade, full-stack music discovery and playlist application with a p
   - **Direct HTML5 Audio (`DirectAudioProvider`)**: Native streaming for MP3, FLAC, and OGG with full scrubbable progress bar, volume control, time events, and zero CORS errors.
   - **Audius Decentralized Streaming**: Resolves on-demand directly to decentralized creator node CDNs without requiring local audio caching or storage.
   - **Internet Archive Stream Resolver**: Streams curated, verified archival recordings on demand.
-  - **Curated Discover Collection**: 12 pre-bundled, high-availability CC0 / Creative Commons classical & jazz tracks for zero-API instant playback with attribution modals.
+  - **Curated Discover Collection (Original 18 Spotify Songs)**: Curated collection matching the user's Spotify playlist screenshots (including Calvin Harris & Dua Lipa, Alan Walker, Wiz Khalifa & Charlie Puth, Ed Sheeran, Billie Eilish, J Balvin, FloyyMenor), fully playable via high-bitrate AAC streaming with honest unavailable fallback.
+  - **Saavn Provider (Development Mode)**: High-resolution on-demand audio resolution engine (`DEV-SAAVN`) with automatic credit-stripping search fallback and production environment guardrails.
   - **Spotify Web Playback SDK & Embeds (`SpotifyProvider`)**: Official OAuth 2.0 connection and Spotify Web Playback SDK player with fallback to interactive responsive embeds.
 - **Playback Reliability & Guarding**:
   - **Race Condition Guard**: Request sequence IDs (`playRequestId`) prevent out-of-order race conditions when users rapidly skip or switch tracks.
@@ -235,29 +236,22 @@ cd music_playlist
 
 ## 🧪 Running Automated Tests
 
-SOUNDWAVE includes 113 integration and unit tests running against an isolated in-memory MongoDB database (**zero external network or cloud DB dependencies required**).
+SOUNDWAVE includes **124 integration and unit tests** across 7 test suites running against an isolated in-memory MongoDB database (**zero external network or cloud DB dependencies required**).
 
 Run all test suites:
 ```bash
-cd server
-npm test
-```
-
-Run test suite with code coverage analysis:
-```bash
-cd server
-npm run test:coverage
+npm test --prefix server
 ```
 
 ### Test Suite Summary:
 ```text
 Test Suites: 7 passed, 7 total
-Tests:       113 passed, 113 total
+Tests:       124 passed, 124 total
 Snapshots:   0 total
-Time:        ~38 s
+Time:        ~28 s
 
 Suites:
-  ✓ tests/multiSourceSearch.test.js   (Unified search, Circuit Breaker, Audius/Archive providers, rights filtering)
+  ✓ tests/multiSourceSearch.test.js   (Unified search, Circuit Breaker, Audius/Archive/Saavn, concurrency deduplication)
   ✓ tests/providers.test.js           (MusicLinkParser, oEmbed resolution, multi-source playlist additions)
   ✓ tests/spotify.test.js             (Spotify OAuth code exchange, token refresh lifecycle, disconnect)
   ✓ tests/security.test.js            (Ownership enforcement, ID tampering, mass assignment guards)
@@ -268,9 +262,12 @@ Suites:
 
 To verify the frontend production build:
 ```bash
-cd music-playlist-frontend-vue
-npm run build
+npm run build --prefix music-playlist-frontend-vue
 ```
+
+For detailed setup, troubleshooting, and verification reports, consult:
+- **Local Run & Installation Guide:** [docs/LOCAL_SETUP.md](docs/LOCAL_SETUP.md)
+- **Phase 5 Complete Application Audit:** [docs/PHASE_5_COMPLETE_APPLICATION_AUDIT.md](docs/PHASE_5_COMPLETE_APPLICATION_AUDIT.md)
 
 ---
 
