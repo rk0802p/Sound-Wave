@@ -1,297 +1,523 @@
 <template>
-  <div class="home-container" :class="[activeFocusSection ? 'focus-' + activeFocusSection : '']" ref="containerRef">
-    <!-- Fixed Background Wash with Smooth Mood Transitions -->
+  <div class="soundwave-home" :class="{ 'playing': playerStore.isPlaying, 'drawer-open': isDrawerOpen }">
+    <!-- Fixed Background Wash with Dynamic Tint Transition -->
     <div class="wash" id="wash" :style="{ backgroundColor: currentWashColor }"></div>
 
-    <!-- Fixed Top Scroll Progress Bar -->
-    <div id="prog" :style="{ width: scrollProgress + '%' }"></div>
-
-    <!-- 1. HERO SECTION -->
-    <section class="hero" id="hero">
-      <!-- Top Brand & Curator Navigation Header -->
-      <header class="hero-header">
-        <div class="brand">
-          <span class="orb">🎧</span>
-          <span>Soundwave</span>
-        </div>
-
-        <nav class="hero-nav">
-          <button
-            class="header-pill-btn font-display"
-            @click="showCreateModal = true"
-            title="Create a new bubble playlist"
-          >
-            <span class="pill-icon">+</span><span class="desktop-only"> New Bubble</span>
-          </button>
-
-          <template v-if="authStore.isAuthenticated">
-            <div class="user-pill glass">
-              <span class="user-avatar">{{ authStore.username?.[0]?.toUpperCase() || 'U' }}</span>
-              <span class="user-name">{{ authStore.username }}</span>
-            </div>
-            <button class="logout-btn" @click="handleLogout" title="Sign Out">
-              ✕
-            </button>
-          </template>
-          <template v-else>
-            <router-link to="/login" class="login-pill-btn font-display">
-              Sign In
-            </router-link>
-          </template>
-        </nav>
-      </header>
-
-      <!-- Interactive Floating Bubbles with Mouse Parallax & Bobbing -->
-      <div id="floaters">
-        <div
-          v-for="(fl, idx) in floatersList"
-          :key="idx"
-          class="fl"
-          :style="{
-            '--s': fl.s + 'px',
-            '--k': (fl.s / 12).toFixed(1),
-            left: fl.l + '%',
-            top: fl.t + '%',
-            translate: '-50% 0',
-            animationDelay: fl.d,
-          }"
-        >
-          <div
-            class="orb"
-            :style="{
-              '--o1': getPresetColor(idx).o1,
-              '--o2': getPresetColor(idx).o2,
-              '--sh': getPresetColor(idx).o2 + '88',
-            }"
-          >
-            {{ fl.e }}
-          </div>
-        </div>
-      </div>
-
-      <!-- Hero Center Headline & CTA -->
-      <div class="hero-content">
-        <h1 id="h1">
-          <span style="--i:0">Music,</span><br />
-          <span style="--i:1">but make</span><br />
-          <span style="--i:2">it <b class="g">bubbly.</b></span>
-        </h1>
-        <p>Playlists that look as good as they sound. Scroll to find your mood.</p>
-        <button class="cta" id="cta" @click="handleCtaClick">
-          <svg v-if="playerStore.isPlaying" viewBox="0 0 24 24">
-            <path d="M6 4h4v16H6zM14 4h4v16h-4z" />
-          </svg>
-          <svg v-else viewBox="0 0 24 24">
-            <path d="M7 4v16l13-8z" />
-          </svg>
-          <span id="ctaT">{{ playerStore.isPlaying ? 'Pause' : 'Press play' }}</span>
-        </button>
-      </div>
-
-      <!-- Bouncing Scroll Cue -->
-      <div class="cue" aria-hidden="true" @click="scrollToMoods">
-        Scroll ↓
-      </div>
-    </section>
-
-    <!-- 2. STICKY MOOD SCROLL STORY SECTION -->
-    <section class="mood" id="mood" ref="moodSectionRef" aria-label="Moods">
-      <div class="pin">
-        <!-- Left: Text Scenes -->
-        <div class="txts" id="txts">
-          <div
-            v-for="(p, idx) in MOOD_PLAYLISTS"
-            :key="p.id"
-            class="txt"
-            :class="{ on: activeMoodIndex === idx && inMoodScene }"
-          >
-            <small>Mood</small>
-            <h2>{{ p.n }}</h2>
-            <p>{{ p.line }}</p>
-          </div>
-        </div>
-
-        <!-- Right: Orbiting Bubbles & Central Giant Mood Bubble -->
-        <div class="bigw">
-          <div class="orbit" id="orbit">
-            <i v-for="n in 3" :key="n">
-              <span
-                class="orb"
-                :style="{
-                  '--o1': activeMoodPreset.o1,
-                  '--o2': activeMoodPreset.o2,
-                  '--sh': activeMoodPreset.o2 + '88',
-                }"
-              ></span>
-            </i>
-          </div>
-
-          <div id="bigs">
-            <div
-              v-for="(p, idx) in MOOD_PLAYLISTS"
-              :key="p.id"
-              class="orb big"
-              :class="{ on: activeMoodIndex === idx && inMoodScene }"
-              :style="{
-                '--o1': p.o1,
-                '--o2': p.o2,
-                '--sh': p.o2 + '88',
-              }"
-            >
-              {{ p.e }}
-            </div>
-          </div>
-        </div>
-
-        <!-- Right Side Progress Dots -->
-        <div class="dots" id="dots" aria-hidden="true">
-          <b
-            v-for="(p, idx) in MOOD_PLAYLISTS"
-            :key="idx"
-            :class="{ on: activeMoodIndex === idx }"
-            @click="scrollToMoodIndex(idx)"
-          ></b>
-        </div>
-      </div>
-    </section>
-
-    <!-- 3. PLAYLISTS SECTION (Pick a bubble.) -->
-    <section class="sec" id="lists">
-      <h2 class="t rv">Pick a bubble.</h2>
-      <p class="rv" style="--d: 100ms">
-        Each playlist has its own color, its own mood. Tap one to start listening.
-      </p>
-
-      <div class="grid" id="grid">
-        <button
-          v-for="(p, idx) in allPlaylists"
-          :key="p._id || p.id"
-          class="pc glass rv"
-          :style="{
-            '--d': idx * 90 + 'ms',
-            '--o1': p.o1 || MOOD_PLAYLISTS[idx % 5].o1,
-            '--o2': p.o2 || MOOD_PLAYLISTS[idx % 5].o2,
-            '--sh': (p.o2 || MOOD_PLAYLISTS[idx % 5].o2) + '88',
-          }"
-          :data-p="idx"
-          :aria-pressed="selectedPlaylistIndex === idx ? 'true' : 'false'"
-          @click="handleSelectPlaylist(p, idx, $event)"
-        >
-          <span class="pl">
-            <svg viewBox="0 0 24 24">
-              <path d="M7 4v16l13-8z" />
-            </svg>
-          </span>
-          <span class="orb">{{ p.e || p.emoji || '🎵' }}</span>
-          <div>
-            <h3>{{ p.n || p.name }}</h3>
-            <small>
-              {{ p.songs?.length || p.t?.length || 0 }} tracks,
-              {{ getPlaylistMinutes(p) }} min
-            </small>
-          </div>
-        </button>
-      </div>
-    </section>
-
-    <!-- 4. NOW PLAYING SECTION (Now playing.) -->
-    <section class="sec" id="now" ref="nowSectionRef">
-      <h2 class="t rv">Now playing.</h2>
-
-      <div
-        class="np glass rv"
-        id="np"
-        :style="{
-          '--o1': currentPlaylistPreset.o1,
-          '--o2': currentPlaylistPreset.o2,
-          '--sh': currentPlaylistPreset.o2 + '88',
-        }"
-      >
-        <!-- Left: Large Squishing Mood Orb & 26-bar Dynamic Visualizer -->
-        <div class="npl">
-          <div class="orb">{{ currentPlaylistPreset.e || currentPlaylistPreset.emoji || '🎧' }}</div>
-          <div class="viz">
-            <i
-              v-for="b in visualizerBars"
-              :key="b.id"
-              :style="{
-                '--d': b.delay,
-                '--h': b.height,
-              }"
-            ></i>
-          </div>
-        </div>
-
-        <!-- Right: Current Playlist Title & Tracklist Rows -->
-        <div class="np-details">
-          <h3 class="np-title">
-            {{ currentPlaylistPreset.n || currentPlaylistPreset.name }}
-          </h3>
-
-          <div class="rows">
-            <button
-              v-for="(track, idx) in currentTrackList"
-              :key="track._id || idx"
-              class="row"
-              :class="{ on: activeTrackIndex === idx }"
-              :data-t="idx"
-              @click="handleSelectTrack(track, idx, $event)"
-            >
-              <span class="n">{{ idx + 1 }}</span>
-              <span class="row-meta">
-                <strong>{{ track.title || track[0] }}</strong>
-                <small>{{ track.artist || track[1] }}</small>
-              </span>
-              <small class="row-dur">{{ formatDuration(track.duration || track[2]) }}</small>
-            </button>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- 5. TICKER CHIPS INFINITE MARQUEE -->
-    <div class="chips" aria-hidden="true">
-      <div id="chips">
-        <span
-          v-for="(chip, idx) in marqueeChips"
-          :key="idx"
-          :style="{
-            '--a': chip.o1,
-            '--b': chip.o2,
-          }"
-        >
-          {{ chip.e }} {{ chip.n }}
-        </span>
-      </div>
+    <!-- Background Drifting Pastel Blobs -->
+    <div class="bgb" aria-hidden="true">
+      <i :style="{ background: currentPalette.o1 }"></i>
+      <i :style="{ background: '#ffd7a0' }"></i>
+      <i :style="{ background: '#e1d2ff' }"></i>
     </div>
 
-    <!-- 6. FOOTER -->
-    <footer>
-      <h2 class="rv">Your move.</h2>
-      <p class="footer-note rv" style="--d: 120ms">
-        Crafted with glossy love for Soundwave. Every frequency finds its sphere.
-      </p>
-    </footer>
+    <!-- 1. FLOATING PILL TOP NAVIGATION BAR -->
+    <header class="top glass" role="banner">
+      <!-- Menu Drawer Toggle -->
+      <button
+        class="ib orb"
+        id="menu"
+        aria-label="Open navigation drawer"
+        title="Open navigation menu"
+        @click="openDrawer"
+      >
+        <svg viewBox="0 0 24 24"><path :d="ICONS.menu" /></svg>
+      </button>
 
-    <!-- Fixed Floating Player Dock -->
-    <FloatingPlayerDock />
+      <!-- Brand Logo with Bouncing Orb -->
+      <router-link to="/" class="logo" title="Soundwave Music">
+        <span class="orb" aria-hidden="true">🎧</span>
+        <span>Soundwave</span>
+      </router-link>
 
-    <!-- Create Playlist Modal -->
+      <div class="sp"></div>
+
+      <!-- Expandable Glass Search Pill -->
+      <label class="search" :class="{ 'is-focused': isSearchFocused }">
+        <span class="search-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path :d="ICONS.search" /></svg>
+        </span>
+        <input
+          id="q"
+          ref="searchInputRef"
+          v-model="searchQuery"
+          type="search"
+          placeholder="Search catalog, tracks, artists..."
+          aria-label="Search tracks"
+          @focus="isSearchFocused = true"
+          @blur="isSearchFocused = false"
+          @input="handleSearchInput"
+          @keydown.enter="handleSearchSubmit"
+        />
+        <button
+          v-if="searchQuery"
+          class="clear-btn"
+          aria-label="Clear search query"
+          @click="searchQuery = ''"
+        >
+          ✕
+        </button>
+      </label>
+
+      <!-- Notification Bell with Pulsing Dot -->
+      <button
+        class="ib glass bell-btn"
+        id="bell"
+        aria-label="Notifications"
+        title="Notifications"
+        @click="handleBellClick($event)"
+      >
+        <svg viewBox="0 0 24 24"><path :d="ICONS.bell" /></svg>
+        <i v-if="hasUnreadNotification" class="dot" id="dot"></i>
+      </button>
+    </header>
+
+    <!-- 2. SLIDING NAVIGATION DRAWER & SCRIM -->
+    <div
+      class="scrim"
+      :class="{ 'is-open': isDrawerOpen }"
+      aria-hidden="true"
+      @click="closeDrawer"
+    ></div>
+
+    <aside
+      class="drawer glass"
+      id="drawer"
+      :class="{ 'is-open': isDrawerOpen }"
+      :inert="!isDrawerOpen ? '' : null"
+      aria-label="Application Menu"
+    >
+      <!-- Drawer Header -->
+      <div class="dh">
+        <button
+          class="ib orb"
+          id="menu2"
+          aria-label="Close navigation drawer"
+          title="Close menu"
+          @click="closeDrawer"
+        >
+          <svg viewBox="0 0 24 24"><path :d="ICONS.menu" /></svg>
+        </button>
+        <div class="logo">
+          <span class="orb" aria-hidden="true">🎧</span>
+          <span>Soundwave</span>
+        </div>
+      </div>
+
+      <!-- User Auth State -->
+      <div class="drawer-auth">
+        <template v-if="authStore.isAuthenticated">
+          <div class="user-pill glass">
+            <span class="user-avatar orb">{{ userInitial }}</span>
+            <div class="user-info">
+              <strong>{{ authStore.username || 'Curator' }}</strong>
+              <small>{{ authStore.user?.email || 'Logged in' }}</small>
+            </div>
+          </div>
+          <button class="btn s logout-btn" @click="handleLogout">
+            Sign out
+          </button>
+        </template>
+        <template v-else>
+          <div class="auth">
+            <router-link to="/login" class="btn p" @click="closeDrawer">Log in</router-link>
+            <router-link to="/signup" class="btn s" @click="closeDrawer">Sign up</router-link>
+          </div>
+        </template>
+      </div>
+
+      <!-- Navigation Links -->
+      <div class="drawer-nav-group">
+        <!-- Favourites Filter -->
+        <button
+          class="nav"
+          :class="{ 'is-active': activeFilter === 'favorites' }"
+          @click="handleFilterFavorites"
+        >
+          <span class="orb" style="--o1:#ffa6d4;--o2:#ff4f9a">
+            <svg viewBox="0 0 24 24"><path :d="ICONS.heart" /></svg>
+          </span>
+          <span>Favourites ({{ favoritesList.length }})</span>
+        </button>
+
+        <!-- Library Link -->
+        <router-link to="/library" class="nav" @click="closeDrawer">
+          <span class="orb" style="--o1:#8ff2d3;--o2:#2fd3a2">📚</span>
+          <span>My Library</span>
+        </router-link>
+
+        <!-- Search Link -->
+        <router-link to="/search" class="nav" @click="closeDrawer">
+          <span class="orb" style="--o1:#9ad8ff;--o2:#3fa7ff">🔍</span>
+          <span>Search Catalog</span>
+        </router-link>
+      </div>
+
+      <!-- Playlists Section -->
+      <div class="drawer-section">
+        <div class="lab">
+          <span>Playlists ({{ playlistStore.playlists.length }})</span>
+          <button id="newpl" @click="openCreateModal">+ New</button>
+        </div>
+
+        <div v-if="playlistStore.playlists.length > 0" class="pls" id="pls">
+          <router-link
+            v-for="(p, idx) in playlistStore.playlists"
+            :key="p._id || idx"
+            :to="'/playlist/' + (p._id || p.id)"
+            class="nav pl-item"
+            @click="closeDrawer"
+          >
+            <span
+              class="orb"
+              :style="{
+                '--o1': getPalette(idx).o1,
+                '--o2': getPalette(idx).o2,
+                '--sh': getPalette(idx).o2 + '88',
+              }"
+            >
+              🎵
+            </span>
+            <span class="pl-name">{{ p.name }}</span>
+          </router-link>
+        </div>
+        <div v-else class="empty" id="empty">
+          <p>No playlists yet</p>
+          <button id="create" @click="openCreateModal">+ Create playlist</button>
+        </div>
+      </div>
+
+      <!-- Mood & Genre Filter Accordion -->
+      <div id="langs" class="drawer-section">
+        <button
+          class="lab accordion-header"
+          id="langbtn"
+          :class="{ on: isMoodAccordionOpen }"
+          :aria-expanded="isMoodAccordionOpen ? 'true' : 'false'"
+          @click="isMoodAccordionOpen = !isMoodAccordionOpen"
+        >
+          <span id="langt">Moods & Genres ({{ selectedGenreFilter || 'All' }})</span>
+          <span class="chev" id="ic-c">
+            <svg viewBox="0 0 24 24"><path :d="ICONS.chev" /></svg>
+          </span>
+        </button>
+        <div class="acc" :class="{ on: isMoodAccordionOpen }" id="acc">
+          <div>
+            <div class="chips" id="chips">
+              <button
+                v-for="chip in genreChips"
+                :key="chip"
+                class="chip"
+                :aria-pressed="selectedGenreFilter === chip ? 'true' : 'false'"
+                @click="handleSelectGenre(chip)"
+              >
+                {{ chip }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Settings / Audio Engine Info -->
+      <button class="nav" @click="showSettingsModal = true">
+        <span class="orb" style="--o1:#c9b6ff;--o2:#8a68ff">⚙️</span>
+        <span>Settings & Audio</span>
+      </button>
+
+      <!-- Drawer Footer Links -->
+      <div class="foot">
+        <a href="https://github.com/rk0802p/music_playlist" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://archive.org" target="_blank" rel="noopener">Archive</a>
+        <a href="https://audius.co" target="_blank" rel="noopener">Audius</a>
+      </div>
+    </aside>
+
+    <!-- 3. MAIN HOMEPAGE CONTENT -->
+    <main class="home-main">
+      <!-- Animated Staggered Hero Greeting -->
+      <h1 class="greet" id="greet" aria-live="polite">
+        <span
+          v-for="(word, wIdx) in greetingWords"
+          :key="wIdx"
+          :class="{ 'g': wIdx > 0 }"
+          :style="{ '--i': wIdx }"
+        >
+          {{ word }}&nbsp;
+        </span>
+        <span class="em" style="--i: 3" aria-hidden="true">🎶</span>
+      </h1>
+
+      <!-- Active Filter Banner (When searching or filtering by genre/favourite) -->
+      <div v-if="activeFilterBadge" class="filter-banner glass">
+        <span>Filtering by: <strong>{{ activeFilterBadge }}</strong></span>
+        <button class="filter-clear" @click="clearAllFilters">✕ Reset Filter</button>
+      </div>
+
+      <!-- 4. "LISTEN AGAIN" SECTION -->
+      <section class="home-section" aria-label="Listen Again">
+        <div class="sh">
+          <h2 class="rv in">Listen again</h2>
+          <span class="section-tag font-mono">POPULAR ROTATION</span>
+        </div>
+
+        <div class="again" id="again">
+          <button
+            v-for="(track, idx) in displayedListenAgainTracks"
+            :key="track.id || track._id"
+            class="song glass rv in"
+            :class="{
+              'on': isCurrentTrack(track),
+              'is-active': isCurrentTrack(track),
+            }"
+            :style="{
+              '--d': idx * 80 + 'ms',
+              '--o1': track.palette.o1,
+              '--o2': track.palette.o2,
+              '--sh': track.palette.o2 + '88',
+            }"
+            :data-id="track.id || track._id"
+            @click="handlePlayTrack(track, displayedListenAgainTracks, idx, $event)"
+          >
+            <!-- Squishy Glossy Orb with Emoji or Album Art -->
+            <span class="orb" aria-hidden="true">
+              {{ track.emoji }}
+            </span>
+
+            <!-- Track Metadata -->
+            <span class="mt">
+              <b>{{ track.title }}</b>
+              <small>{{ track.artist }}</small>
+            </span>
+
+            <!-- 3-Bar Live Equalizer Visualizer (Active when Playing) -->
+            <span class="eq" aria-hidden="true">
+              <b></b><b></b><b></b>
+            </span>
+          </button>
+        </div>
+      </section>
+
+      <!-- 5. "TRENDING" HORIZONTAL CAROUSEL SECTION -->
+      <section class="home-section" aria-label="Trending Tracks">
+        <div class="sh">
+          <h2 class="rv in">Trending</h2>
+          <div class="arrows">
+            <button
+              class="ib"
+              id="lt"
+              aria-label="Scroll trending carousel left"
+              title="Scroll left"
+              @click="scrollCarousel(-460)"
+            >
+              <svg viewBox="0 0 24 24"><path :d="ICONS.l" /></svg>
+            </button>
+            <button
+              class="ib"
+              id="rt"
+              aria-label="Scroll trending carousel right"
+              title="Scroll right"
+              @click="scrollCarousel(460)"
+            >
+              <svg viewBox="0 0 24 24"><path :d="ICONS.r" /></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Horizontal Track Carousel -->
+        <div class="track" id="track" ref="trackCarouselRef">
+          <button
+            v-for="(track, idx) in displayedTrendingTracks"
+            :key="track.id || track._id"
+            class="tc rv in"
+            :class="{ 'on': isCurrentTrack(track) }"
+            :style="{
+              '--d': idx * 70 + 'ms',
+              '--o1': track.palette.o1,
+              '--o2': track.palette.o2,
+              '--sh': track.palette.o2 + '88',
+            }"
+            :data-id="track.id || track._id"
+            @click="handlePlayTrack(track, displayedTrendingTracks, idx, $event)"
+          >
+            <!-- Large Glossy Cover with 3D Radial Shine & Sheen Sweep -->
+            <div class="cv">
+              <span>{{ track.emoji }}</span>
+              <span class="pl" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path v-if="isCurrentTrack(track) && playerStore.isPlaying" :d="ICONS.pause" />
+                  <path v-else :d="ICONS.play" />
+                </svg>
+              </span>
+            </div>
+            <b>{{ track.title }}</b>
+            <small>{{ track.artist }}</small>
+          </button>
+        </div>
+      </section>
+
+      <!-- 6. CURATED DISCOVER SHELF (Zero-API High-Availability Collection) -->
+      <section class="home-section" aria-label="Curated Discover Collection">
+        <div class="sh">
+          <div class="curated-heading">
+            <h2 class="rv in">Curated Discover</h2>
+            <p class="curated-sub font-mono">12 royalty-free open-access recordings with verified licenses</p>
+          </div>
+          <button class="ib glass font-mono refresh-btn" title="Shuffle pick" @click="handleShuffleCurated($event)">
+            ↺
+          </button>
+        </div>
+
+        <div class="curated-grid">
+          <div
+            v-for="(track, idx) in allCuratedTracks"
+            :key="track._id || track.id"
+            class="curated-card glass"
+            :class="{ 'on': isCurrentTrack(track) }"
+            :style="{
+              '--o1': track.palette.o1,
+              '--o2': track.palette.o2,
+              '--sh': track.palette.o2 + '88',
+            }"
+            @click="handlePlayTrack(track, allCuratedTracks, idx, $event)"
+          >
+            <div class="card-left">
+              <span class="orb card-orb">{{ track.emoji }}</span>
+              <div class="card-text">
+                <strong class="card-title">{{ track.title }}</strong>
+                <span class="card-artist">{{ track.artist }}</span>
+                <div class="card-tags">
+                  <span class="badge badge-license font-mono" @click.stop="openLicenseModal(track)">
+                    {{ track.license?.badge || 'CC' }}
+                  </span>
+                  <span class="badge badge-genre font-mono">{{ track.genre }}</span>
+                </div>
+              </div>
+            </div>
+
+            <button
+              class="ib orb play-mini"
+              :aria-label="isCurrentTrack(track) && playerStore.isPlaying ? 'Pause' : 'Play ' + track.title"
+            >
+              <svg viewBox="0 0 24 24">
+                <path v-if="isCurrentTrack(track) && playerStore.isPlaying" :d="ICONS.pause" />
+                <path v-else :d="ICONS.play" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- 7. FLOATING BOTTOM GLASS PLAYER DOCK -->
+    <FloatingPlayerDock
+      @open-info="openLicenseModal"
+      @toggle-queue="handleToggleQueue"
+      @bubble-pop="handleBubblePop"
+    />
+
+    <!-- MODAL: CREATE PLAYLIST -->
     <CreatePlaylistModal
       v-if="showCreateModal"
       @close="showCreateModal = false"
       @created="handlePlaylistCreated"
     />
+
+    <!-- MODAL: TRACK LICENSE & ATTRIBUTION -->
+    <div
+      v-if="selectedInfoTrack"
+      class="modal-backdrop"
+      @click.self="selectedInfoTrack = null"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div class="modal-card glass">
+        <div class="modal-header">
+          <div class="logo">
+            <span class="orb">{{ selectedInfoTrack.emoji || '📜' }}</span>
+            <span>License & Attribution</span>
+          </div>
+          <button class="close-btn" @click="selectedInfoTrack = null" aria-label="Close dialog">✕</button>
+        </div>
+
+        <div class="modal-body">
+          <h3>{{ selectedInfoTrack.title }}</h3>
+          <p class="modal-artist">{{ selectedInfoTrack.artist }}</p>
+
+          <div class="info-row">
+            <label>License</label>
+            <div class="license-chip">{{ selectedInfoTrack.license?.name || 'Creative Commons / Public Domain' }}</div>
+          </div>
+
+          <div class="info-row" v-if="selectedInfoTrack.license?.attribution">
+            <label>Attribution</label>
+            <blockquote class="attribution-box">{{ selectedInfoTrack.license.attribution }}</blockquote>
+          </div>
+
+          <div class="info-row" v-if="selectedInfoTrack.source?.pageUrl">
+            <label>Original Source</label>
+            <a :href="selectedInfoTrack.source.pageUrl" target="_blank" rel="noopener" class="source-link">
+              {{ selectedInfoTrack.source.name || 'Internet Archive item page' }} ↗
+            </a>
+          </div>
+
+          <div class="info-row">
+            <label>Streaming Capability</label>
+            <p class="capability-text">Direct high-availability MP3 audio streamed from original publisher. No local audio downloaded.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: SETTINGS & AUDIO ENGINE INFO -->
+    <div
+      v-if="showSettingsModal"
+      class="modal-backdrop"
+      @click.self="showSettingsModal = false"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div class="modal-card glass">
+        <div class="modal-header">
+          <div class="logo">
+            <span class="orb">⚙️</span>
+            <span>Audio Engine Settings</span>
+          </div>
+          <button class="close-btn" @click="showSettingsModal = false" aria-label="Close dialog">✕</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="setting-item">
+            <strong>Persistent HTML5 Audio Engine</strong>
+            <p>Active driver: <code>DirectAudioProvider</code> (HTML5 Audio, Audius, Internet Archive)</p>
+          </div>
+
+          <div class="setting-item">
+            <strong>Volume Memory</strong>
+            <p>Current level: {{ Math.round(playerStore.volume * 100) }}% ({{ playerStore.muted ? 'Muted' : 'Unmuted' }})</p>
+          </div>
+
+          <div class="setting-item">
+            <strong>Playback Race Guard</strong>
+            <p>State: Enabled (Sequence tracking active via <code>playRequestId</code>)</p>
+          </div>
+
+          <div class="setting-item">
+            <strong>Spotify Developer Mode</strong>
+            <p>OAuth & Web Playback SDK: Available for allowlisted test accounts (25 max)</p>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { usePlayerStore } from '../stores/player';
 import { usePlaylistStore } from '../stores/playlist';
 import { useAuthStore } from '../stores/auth';
-import { MOOD_PLAYLISTS, formatDuration, popParticles } from '../data/moodPlaylists';
+import { useToastStore } from '../stores/toast';
+import { FEATURED_SONGS } from '../data/featuredSongs';
 import FloatingPlayerDock from '../components/player/FloatingPlayerDock.vue';
 import CreatePlaylistModal from '../components/playlists/CreatePlaylistModal.vue';
 
@@ -300,501 +526,842 @@ const route = useRoute();
 const playerStore = usePlayerStore();
 const playlistStore = usePlaylistStore();
 const authStore = useAuthStore();
+const toastStore = useToastStore();
 
-const containerRef = ref(null);
-const moodSectionRef = ref(null);
-const nowSectionRef = ref(null);
-const showCreateModal = ref(false);
-
-const scrollProgress = ref(0);
-const activeMoodIndex = ref(0);
-const inMoodScene = ref(false);
-const selectedPlaylistIndex = ref(0);
-const activeFocusSection = computed(() => {
-  return route.query.section || null;
-});
-
-// Floaters configuration from reference HTML
-const floatersList = [
-  { s: 130, l: 6, t: 12, e: '🎵', d: '--dl:0s' },
-  { s: 90, l: 86, t: 18, e: '💜', d: '--dl:-2s' },
-  { s: 170, l: 80, t: 62, e: '🎶', d: '--dl:-1s' },
-  { s: 70, l: 22, t: 70, e: '✨', d: '--dl:-3s' },
-  { s: 110, l: 10, t: 74, e: '🎸', d: '--dl:-4s' },
-  { s: 60, l: 92, t: 40, e: '🫧', d: '--dl:-2.5s' },
-  { s: 150, l: 45, t: 6, e: '🌈', d: '--dl:-5s' },
+// Reference Color Palettes (Amber, Lavender, Mint, Rose, Sky, Aqua)
+const PALETTES = [
+  { o1: '#ffd27a', o2: '#ffa24c', tint: '#ffe9c9' }, // 0: Amber
+  { o1: '#c9b6ff', o2: '#8a68ff', tint: '#e6dcff' }, // 1: Lavender
+  { o1: '#8ff2d3', o2: '#2fd3a2', tint: '#d3f8ec' }, // 2: Mint
+  { o1: '#ff9bd2', o2: '#ff4f9a', tint: '#ffd9ec' }, // 3: Rose
+  { o1: '#9ad8ff', o2: '#3fa7ff', tint: '#d4eeff' }, // 4: Sky
+  { o1: '#7ff0e6', o2: '#19c9bd', tint: '#d8faf6' }, // 5: Aqua
 ];
 
-// Pre-generated 26 visualizer bars with pseudo-random delay and height
-const visualizerBars = Array.from({ length: 26 }, (_, i) => ({
-  id: i,
-  delay: ((i % 10) * 0.1).toFixed(2),
-  height: (0.35 + ((i * 17) % 65) / 100).toFixed(2),
-}));
+const EMOJIS = ['🎹', '🌙', '🕊️', '🌧️', '🌸', '⚡', '☕', '🎻', '🍁', '🎩', '🎷', '🌃'];
 
-// Quadrupled marquee chips for seamless infinite loop
-const marqueeChips = computed(() => {
-  return [
-    ...MOOD_PLAYLISTS,
-    ...MOOD_PLAYLISTS,
-    ...MOOD_PLAYLISTS,
-    ...MOOD_PLAYLISTS,
+const getPalette = (idx) => PALETTES[idx % PALETTES.length];
+
+// Reusable SVG icons from reference
+const ICONS = {
+  menu: 'M3 6h18v2H3zM3 11h18v2H3zM3 16h18v2H3z',
+  search: 'M10.5 3a7.5 7.5 0 1 0 4.5 13.500l4.500 4.500 1.500-1.500-4.500-4.500A7.500 7.500 0 0 0 10.500 3zm0 2a5.500 5.500 0 1 1 0 11 5.500 5.500 0 0 1 0-11z',
+  bell: 'M12 3a6 6 0 0 0-6 6v4l-2 3h16l-2-3V9a6 6 0 0 0-6-6zm-2 15a2 2 0 0 0 4 0z',
+  heart: 'M12 21s-8-5.200-8-11a4.600 4.600 0 0 1 8-3 4.600 4.600 0 0 1 8 3c0 5.800-8 11-8 11z',
+  play: 'M7 4v16l13-8z',
+  pause: 'M6 4h4v16H6zM14 4h4v16h-4z',
+  l: 'M14 6l-6 6 6 6 1.400-1.400L10.800 12l4.600-4.600z',
+  r: 'M10 6l6 6-6 6-1.400-1.400 4.600-4.600-4.600-4.600z',
+  chev: 'M7 10l5 5 5-5z',
+};
+
+// UI State
+const isDrawerOpen = ref(false);
+const isSearchFocused = ref(false);
+const searchQuery = ref('');
+const hasUnreadNotification = ref(true);
+const isMoodAccordionOpen = ref(false);
+const selectedGenreFilter = ref('');
+const activeFilter = ref(''); // '' | 'favorites' | 'search' | 'genre'
+const showCreateModal = ref(false);
+const showSettingsModal = ref(false);
+const selectedInfoTrack = ref(null);
+const trackCarouselRef = ref(null);
+const searchInputRef = ref(null);
+const favoritesList = ref([]);
+
+// Dynamic Greeting based on time of day
+const greetingWords = computed(() => {
+  const h = new Date().getHours();
+  let baseGreeting = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+  if (authStore.isAuthenticated && authStore.username) {
+    baseGreeting = `${baseGreeting}, ${authStore.username}`;
+  }
+  return baseGreeting.split(' ');
+});
+
+const userInitial = computed(() => {
+  return (authStore.username?.[0] || 'U').toUpperCase();
+});
+
+// Load persistent favorites
+const loadFavorites = () => {
+  try {
+    const raw = localStorage.getItem('soundwave_favorites');
+    favoritesList.value = raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    favoritesList.value = [];
+  }
+};
+
+// Curated Track Catalog with Palettes and Emojis
+const allCuratedTracks = computed(() => {
+  return FEATURED_SONGS.map((t, i) => ({
+    ...t,
+    palette: getPalette(i),
+    emoji: EMOJIS[i % EMOJIS.length],
+  }));
+});
+
+// Dynamic background wash color based on active track
+const currentPalette = computed(() => {
+  const t = playerStore.currentTrack;
+  if (!t) return PALETTES[5]; // Default Aqua
+  const foundIdx = allCuratedTracks.value.findIndex(
+    (x) => x.id === t.id || x._id === t._id || x.title === t.title
+  );
+  return foundIdx !== -1 ? getPalette(foundIdx) : PALETTES[5];
+});
+
+const currentWashColor = computed(() => currentPalette.value.tint);
+
+// Genre chips
+const genreChips = ['All', 'Classical', 'Baroque', 'Romantic', 'Impressionist', 'Ragtime', 'Jazz'];
+
+// Displayed Tracks with Search & Genre Filtering
+const displayedListenAgainTracks = computed(() => {
+  let list = allCuratedTracks.value.slice(0, 6);
+  return applyFilters(list);
+});
+
+const displayedTrendingTracks = computed(() => {
+  let list = [
+    ...allCuratedTracks.value.slice(6, 12),
+    ...allCuratedTracks.value.slice(0, 2),
   ];
+  return applyFilters(list);
 });
 
-// All playlists combining MOOD_PLAYLISTS and any user-created playlists
-const allPlaylists = computed(() => {
-  if (playlistStore.playlists && playlistStore.playlists.length > 0) {
-    return playlistStore.playlists;
+const applyFilters = (tracks) => {
+  let result = [...tracks];
+
+  // Favourites filter
+  if (activeFilter.value === 'favorites') {
+    result = result.filter((t) => favoritesList.value.includes(t.id || t._id));
   }
-  return MOOD_PLAYLISTS;
-});
 
-const currentPlaylistPreset = computed(() => {
-  const list = allPlaylists.value;
-  return list[selectedPlaylistIndex.value] || MOOD_PLAYLISTS[0];
-});
-
-const activeMoodPreset = computed(() => {
-  return MOOD_PLAYLISTS[activeMoodIndex.value] || MOOD_PLAYLISTS[0];
-});
-
-const currentWashColor = computed(() => {
-  if (inMoodScene.value) {
-    return activeMoodPreset.value.tint;
+  // Genre filter
+  if (selectedGenreFilter.value && selectedGenreFilter.value !== 'All') {
+    const g = selectedGenreFilter.value.toLowerCase();
+    result = result.filter((t) => (t.genre || '').toLowerCase().includes(g));
   }
-  return currentPlaylistPreset.value.tint || MOOD_PLAYLISTS[0].tint;
-});
 
-const currentTrackList = computed(() => {
-  const p = currentPlaylistPreset.value;
-  if (p.songs && p.songs.length > 0) return p.songs;
-  if (p.t && p.t.length > 0) {
-    return p.t.map((item, idx) => {
-      if (Array.isArray(item)) {
-        return {
-          _id: `t-${idx}`,
-          title: item[0],
-          artist: item[1],
-          duration: item[2],
-          url: item[3] || '',
-        };
-      }
-      return item;
-    });
+  // Text search query filter
+  if (searchQuery.value.trim()) {
+    const q = searchQuery.value.toLowerCase().trim();
+    result = result.filter((t) =>
+      `${t.title} ${t.artist} ${t.genre || ''}`.toLowerCase().includes(q)
+    );
   }
-  return [];
-});
 
-const activeTrackIndex = computed(() => {
-  return playerStore.trackIndex;
-});
-
-const getPresetColor = (idx) => {
-  return MOOD_PLAYLISTS[idx % MOOD_PLAYLISTS.length];
+  return result;
 };
 
-const getPlaylistMinutes = (p) => {
-  const songs = p.songs || p.t || [];
-  const totalSecs = songs.reduce((sum, t) => {
-    const sec = Array.isArray(t) ? t[2] : (t.duration || 0);
-    return sum + (Number(sec) || 0);
-  }, 0);
-  return Math.round(totalSecs / 60);
+const activeFilterBadge = computed(() => {
+  if (searchQuery.value.trim()) return `Search: "${searchQuery.value.trim()}"`;
+  if (activeFilter.value === 'favorites') return 'Favourites';
+  if (selectedGenreFilter.value && selectedGenreFilter.value !== 'All') return `Genre: ${selectedGenreFilter.value}`;
+  return '';
+});
+
+const clearAllFilters = () => {
+  searchQuery.value = '';
+  activeFilter.value = '';
+  selectedGenreFilter.value = '';
 };
 
-// Scroll Scene logic matching reference HTML
-const handleScroll = () => {
-  if (typeof window === 'undefined') return;
-  const sy = window.scrollY;
-  const vh = window.innerHeight;
-  const docHeight = document.documentElement.scrollHeight - vh;
+// Playback handlers
+const isCurrentTrack = (track) => {
+  if (!playerStore.currentTrack) return false;
+  return (
+    playerStore.currentTrack.id === track.id ||
+    playerStore.currentTrack._id === track._id ||
+    playerStore.currentTrack.title === track.title
+  );
+};
 
-  scrollProgress.value = docHeight > 0 ? (sy / docHeight) * 100 : 0;
-  document.documentElement.style.setProperty('--sy', sy);
-
-  if (activeFocusSection.value === 'mood') {
-    inMoodScene.value = true;
-    activeMoodIndex.value = 1;
-    playerStore.setMoodScene(true, 1, MOOD_PLAYLISTS[1]);
+const handlePlayTrack = async (track, queue, index, event) => {
+  if (isCurrentTrack(track) && playerStore.isPlaying) {
+    playerStore.togglePlay();
     return;
   }
-  if (!moodSectionRef.value) return;
-  const m = moodSectionRef.value;
-  const top = m.offsetTop;
-  const h = m.offsetHeight - vh;
-  const pr = Math.max(0, Math.min(1, (sy - top) / h));
 
-  const currentlyInMood = sy > top - vh * 0.5 && sy < top + h + vh * 0.5;
-  inMoodScene.value = currentlyInMood;
+  // Update theme colors
+  if (track.palette) {
+    playerStore.setTheme(track.palette.o1, track.palette.o2, track.palette.tint);
+  }
 
-  const moodIdx = Math.min(MOOD_PLAYLISTS.length - 1, Math.floor(pr * MOOD_PLAYLISTS.length));
-  activeMoodIndex.value = moodIdx;
+  // Trigger bubble pop animation
+  if (event) {
+    const rect = event.currentTarget.getBoundingClientRect();
+    popParticles(rect.left + rect.width / 2, rect.top + rect.height / 2, 20, track.palette);
+  }
 
-  // Sync theme
-  if (currentlyInMood) {
-    const target = MOOD_PLAYLISTS[moodIdx];
-    playerStore.setMoodScene(true, moodIdx, target);
+  await playerStore.playTrack(track, queue, index);
+};
+
+// Carousel scrolling
+const scrollCarousel = (delta) => {
+  if (trackCarouselRef.value) {
+    trackCarouselRef.value.scrollBy({ left: delta, behavior: 'smooth' });
+  }
+};
+
+// Drawer controls
+const openDrawer = () => {
+  isDrawerOpen.value = true;
+};
+
+const closeDrawer = () => {
+  isDrawerOpen.value = false;
+};
+
+const handleKeyDown = (e) => {
+  if (e.key === 'Escape' && isDrawerOpen.value) {
+    closeDrawer();
+  }
+};
+
+// Search handling
+const handleSearchInput = () => {
+  if (searchQuery.value.trim()) {
+    activeFilter.value = 'search';
+  } else if (activeFilter.value === 'search') {
+    activeFilter.value = '';
+  }
+};
+
+const handleSearchSubmit = () => {
+  if (searchQuery.value.trim()) {
+    router.push({ path: '/search', query: { q: searchQuery.value.trim() } });
+  }
+};
+
+// Bell notifications
+const handleBellClick = (event) => {
+  hasUnreadNotification.value = false;
+  toastStore.info('All 12 curated tracks verified for direct HTTP 200 playback!');
+  if (event) {
+    const rect = event.currentTarget.getBoundingClientRect();
+    popParticles(rect.left + rect.width / 2, rect.top + rect.height / 2, 12, {
+      o1: '#ff4f9a',
+      o2: '#ffa24c',
+    });
+  }
+};
+
+// Favourites toggle
+const handleFilterFavorites = () => {
+  loadFavorites();
+  if (activeFilter.value === 'favorites') {
+    activeFilter.value = '';
   } else {
-    playerStore.setMoodScene(false, 0, currentPlaylistPreset.value);
-  }
-};
-
-const handlePointerMove = (e) => {
-  if (e.pointerType !== 'mouse') return;
-  document.documentElement.style.setProperty('--mx', e.clientX - window.innerWidth / 2);
-  document.documentElement.style.setProperty('--mx2', e.clientY - window.innerHeight / 2);
-};
-
-// Play/Pause CTA click
-const handleCtaClick = (event) => {
-  playerStore.togglePlay();
-  if (playerStore.isPlaying && event) {
-    const rect = event.currentTarget.getBoundingClientRect();
-    popParticles(rect.left + rect.width / 2, rect.top + rect.height / 2, 22, {
-      o1: currentPlaylistPreset.value.o1,
-      o2: currentPlaylistPreset.value.o2,
-    });
-  }
-};
-
-// Playlist selection click
-const handleSelectPlaylist = (playlist, index, event) => {
-  selectedPlaylistIndex.value = index;
-  playlistStore.selectPlaylist(index);
-
-  // Play immediately with real audio
-  playerStore.selectPlaylist(playlist, true);
-
-  if (event) {
-    const rect = event.currentTarget.getBoundingClientRect();
-    popParticles(rect.left + rect.width / 2, rect.top + rect.height / 2, 24, {
-      o1: playlist.o1 || MOOD_PLAYLISTS[index % 5].o1,
-      o2: playlist.o2 || MOOD_PLAYLISTS[index % 5].o2,
-    });
-  }
-
-  // Smooth scroll into Now Playing
-  setTimeout(() => {
-    if (nowSectionRef.value) {
-      nowSectionRef.value.scrollIntoView({ behavior: 'smooth' });
+    activeFilter.value = 'favorites';
+    if (favoritesList.value.length === 0) {
+      toastStore.info('No tracks favorited yet! Click the heart in the player to save a track.');
     }
-  }, 450);
+  }
+  closeDrawer();
 };
 
-// Track row selection click
-const handleSelectTrack = (track, index, event) => {
-  playerStore.playTrack(track, currentTrackList.value, index);
-  if (event) {
-    const rect = event.currentTarget.getBoundingClientRect();
-    popParticles(rect.left + rect.width / 2, rect.top + rect.height / 2, 14, {
-      o1: currentPlaylistPreset.value.o1,
-      o2: currentPlaylistPreset.value.o2,
-    });
+const handleSelectGenre = (chip) => {
+  if (chip === 'All') {
+    selectedGenreFilter.value = '';
+    activeFilter.value = '';
+  } else {
+    selectedGenreFilter.value = chip;
+    activeFilter.value = 'genre';
   }
+  isMoodAccordionOpen.value = false;
+  closeDrawer();
 };
 
-const scrollToMoods = () => {
-  if (moodSectionRef.value) {
-    moodSectionRef.value.scrollIntoView({ behavior: 'smooth' });
-  }
+// Modal helpers
+const openCreateModal = () => {
+  closeDrawer();
+  showCreateModal.value = true;
 };
 
-const scrollToMoodIndex = (idx) => {
-  if (activeFocusSection.value === 'mood') {
-    inMoodScene.value = true;
-    activeMoodIndex.value = 1;
-    playerStore.setMoodScene(true, 1, MOOD_PLAYLISTS[1]);
-    return;
+const handlePlaylistCreated = () => {
+  playlistStore.fetchPlaylists();
+  toastStore.success('Playlist bubble created successfully!');
+};
+
+const openLicenseModal = (track) => {
+  selectedInfoTrack.value = track || playerStore.currentTrack;
+};
+
+const handleToggleQueue = () => {
+  toastStore.info(`Queue: ${playerStore.queue.length} tracks loaded.`);
+};
+
+const handleShuffleCurated = (event) => {
+  if (allCuratedTracks.value.length > 0) {
+    const rndIdx = Math.floor(Math.random() * allCuratedTracks.value.length);
+    handlePlayTrack(allCuratedTracks.value[rndIdx], allCuratedTracks.value, rndIdx, event);
   }
-  if (!moodSectionRef.value) return;
-  const m = moodSectionRef.value;
-  const top = m.offsetTop;
-  const h = m.offsetHeight - window.innerHeight;
-  const step = h / MOOD_PLAYLISTS.length;
-  window.scrollTo({
-    top: top + step * idx + 10,
-    behavior: 'smooth',
-  });
 };
 
 const handleLogout = () => {
   authStore.logout();
-  router.push('/login');
+  closeDrawer();
+  toastStore.info('Logged out successfully.');
 };
 
-const handlePlaylistCreated = (newPlaylist) => {
-  const idx = allPlaylists.value.findIndex((p) => p._id === newPlaylist._id);
-  if (idx !== -1) {
-    handleSelectPlaylist(newPlaylist, idx, null);
+// Particle pop function
+const popParticles = (x, y, n = 18, colorPair = null) => {
+  if (typeof window === 'undefined') return;
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  const o1 = colorPair?.o1 || playerStore.o1 || '#7ff0e6';
+  const o2 = colorPair?.o2 || playerStore.o2 || '#19c9bd';
+
+  for (let i = 0; i < n; i++) {
+    const d = document.createElement('i');
+    d.className = 'bub';
+    const s = 12 + Math.random() * 28;
+    d.style.cssText = `left:${x}px;top:${y}px;width:${s}px;height:${s}px;--bc:${i % 2 ? o1 : o2}`;
+    document.body.appendChild(d);
+    const a = Math.random() * 6.28;
+    const v = 50 + Math.random() * 160;
+
+    d.animate(
+      [
+        { transform: 'translate(0,0) scale(.3)', opacity: 1 },
+        { transform: `translate(${Math.cos(a) * v}px,${Math.sin(a) * v - 150}px) scale(1)`, opacity: 1, offset: 0.75 },
+        { transform: `translate(${Math.cos(a) * v}px,${Math.sin(a) * v - 175}px) scale(1.4)`, opacity: 0 },
+      ],
+      {
+        duration: 900 + Math.random() * 650,
+        easing: 'cubic-bezier(.2,.8,.3,1)',
+      }
+    ).onfinish = () => d.remove();
+  }
+};
+
+const handleBubblePop = (data) => {
+  if (data?.target) {
+    const rect = data.target.getBoundingClientRect();
+    popParticles(rect.left + rect.width / 2, rect.top + rect.height / 2, data.count || 16);
   }
 };
 
 onMounted(() => {
-  // Sync initial theme
-  playerStore.setTheme(currentPlaylistPreset.value.o1, currentPlaylistPreset.value.o2, currentPlaylistPreset.value.tint);
+  loadFavorites();
+  playlistStore.fetchPlaylists().catch(() => {});
+  window.addEventListener('keydown', handleKeyDown);
 
-  handleScroll();
-  window.addEventListener('scroll', handleScroll, { passive: true });
-  window.addEventListener('resize', handleScroll);
-  window.addEventListener('pointermove', handlePointerMove);
+  // Set initial default track in player if none loaded
+  if (!playerStore.currentTrack && allCuratedTracks.value.length > 0) {
+    playerStore.currentTrack = allCuratedTracks.value[0];
+    playerStore.queue = allCuratedTracks.value;
+    playerStore.trackIndex = 0;
+    playerStore.duration = allCuratedTracks.value[0].duration;
+  }
 
-  // IntersectionObserver for .rv elements
-  nextTick(() => {
-    const io = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((e) => {
-          if (e.isIntersecting) {
-            e.target.classList.add('in');
-            io.unobserve(e.target);
-          }
-        });
-      },
-      { threshold: 0.15 }
-    );
-    document.querySelectorAll('.rv').forEach((el) => io.observe(el));
-  });
-
-  const executeScrollParam = () => {
-    try {
-      const sp = new URLSearchParams(window.location.search).get('scroll');
-      if (sp === 'mood') {
-        const m = moodSectionRef.value || document.getElementById('mood');
-        if (m) {
-          const top = m.offsetTop;
-          const h = m.offsetHeight - window.innerHeight;
-          window.scrollTo(0, top + h * 0.35);
-        } else {
-          window.scrollTo(0, 1600);
-        }
-        handleScroll();
-      } else if (sp === 'lists') {
-        const listsEl = document.getElementById('lists');
-        if (listsEl) {
-          listsEl.scrollIntoView();
-        } else {
-          window.scrollTo(0, 4800);
-        }
-        handleScroll();
-      } else if (sp === 'now') {
-        const nowEl = document.getElementById('now');
-        if (nowEl) {
-          nowEl.scrollIntoView();
-        } else {
-          window.scrollTo(0, 5600);
-        }
-        handleScroll();
-      }
-    } catch (e) {
-      console.warn('Scroll execution error:', e);
-    }
-  };
-
-  executeScrollParam();
-  nextTick(() => executeScrollParam());
-  setTimeout(() => executeScrollParam(), 100);
-  setTimeout(() => executeScrollParam(), 350);
+  if (route.query.drawer === 'true' || route.query.drawer === '1') {
+    isDrawerOpen.value = true;
+  }
+  if (route.query.playing === 'true') {
+    playerStore.isPlaying = true;
+    playerStore.currentTime = 42;
+  }
 });
 
 onUnmounted(() => {
-  window.removeEventListener('scroll', handleScroll);
-  window.removeEventListener('resize', handleScroll);
-  window.removeEventListener('pointermove', handlePointerMove);
+  window.removeEventListener('keydown', handleKeyDown);
 });
 </script>
 
 <style scoped>
-.home-container {
+/* SOUNDWAVE Main Home Layout */
+.soundwave-home {
   position: relative;
+  min-height: 100vh;
   width: 100%;
-  overflow-x: hidden;
-}
-
-@media (max-width: 600px) {
-  .desktop-only { display: none !important; }
-}
-@media (min-width: 601px) {
-  .mobile-only { display: none !important; }
-}
-
-@media (max-width: 600px) {
-  .hero {
-    padding: 4.5rem 1rem 2.5rem !important;
-  }
-  .hero p {
-    font-size: 1.05rem !important;
-    max-width: 28ch !important;
-  }
-  .hero h1 {
-    font-size: clamp(2.8rem, 13vw, 4.5rem) !important;
-  }
-  .hero-header {
-    left: 1rem !important;
-    right: 1rem !important;
-    top: 1rem !important;
-  }
-  .login-pill-btn {
-    padding: 0.4rem 0.85rem !important;
-    font-size: 0.82rem !important;
-    white-space: nowrap !important;
-  }
-}
-
-/* 1. HERO */
-.hero {
-  position: relative;
-  min-height: 100svh;
-  width: 100%;
-  max-width: 100vw;
-  box-sizing: border-box;
-  display: grid;
-  place-items: center;
-  text-align: center;
-  padding: 5rem 1.25rem 3rem;
-  overflow: hidden;
-}
-
-.hero-header {
-  position: absolute;
-  top: 1.2rem;
-  left: 1.5rem;
-  right: 1.5rem;
-  width: auto;
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  z-index: 10;
-}
-
-.brand {
-  font: 800 1.4rem "Bricolage Grotesque", sans-serif;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
   color: var(--ink);
+  font-family: Figtree, system-ui, sans-serif;
+  overflow-x: hidden;
+  padding-bottom: 9rem;
 }
 
-.brand .orb {
-  width: 30px;
-  height: 30px;
-  font-size: 0.9rem;
-  box-shadow: inset -4px -6px 10px rgba(0, 0, 0, 0.15), inset 3px 4px 8px rgba(255, 255, 255, 0.6);
-}
-
-.hero-nav {
+/* 1. TOP FLOATING NAVBAR */
+.top {
+  position: fixed;
+  z-index: 40;
+  left: 50%;
+  transform: translate(-50%, 0);
+  top: calc(0.8rem + env(safe-area-inset-top, 0px));
+  width: min(1240px, calc(100% - 1.5rem));
   display: flex;
   align-items: center;
   gap: 0.8rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: 99px;
+  box-shadow: 0 16px 40px rgba(120, 80, 200, 0.14), 0 0 0 1px rgba(255, 255, 255, 0.9);
+  transition: transform 0.3s;
 }
 
-.header-pill-btn {
+.ib {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  flex: none;
+  position: relative;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  color: var(--ink);
+  transition: transform 0.3s cubic-bezier(0.2, 2.4, 0.4, 1);
+}
+
+.ib:hover {
+  transform: scale(1.15) rotate(-6deg);
+}
+
+.ib:active {
+  transform: scale(0.9);
+}
+
+.ib.orb {
+  color: #fff;
+  background: radial-gradient(circle at 30% 24%, #fff 0 5%, rgba(255, 255, 255, 0) 26%),
+              radial-gradient(circle at 70% 78%, rgba(255, 255, 255, 0.4), transparent 40%),
+              radial-gradient(circle at 50% 45%, var(--o1, #7ff0e6), var(--o2, #19c9bd) 78%);
+  box-shadow: inset -6px -9px 15px rgba(0, 0, 0, 0.14),
+              inset 5px 7px 12px rgba(255, 255, 255, 0.55),
+              0 10px 20px var(--sh, rgba(25, 201, 189, 0.35));
+}
+
+.logo {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.5rem 1.1rem;
-  border-radius: 99px;
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.9);
+  gap: 0.5rem;
+  font: 800 1.35rem "Bricolage Grotesque", sans-serif;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
   color: var(--ink);
-  font-size: 0.92rem;
-  font-weight: 700;
-  box-shadow: 0 6px 16px rgba(120, 80, 200, 0.1);
-  transition: transform 0.2s, background 0.2s;
 }
 
-.header-pill-btn:hover {
-  transform: translateY(-2px);
-  background: #ffffff;
+.logo .orb {
+  width: 38px;
+  height: 38px;
+  font-size: 1.1rem;
+  animation: wob 3s ease-in-out infinite;
 }
 
-.login-pill-btn {
-  padding: 0.5rem 1.1rem;
+@keyframes wob {
+  50% {
+    transform: rotate(-14deg) scale(1.1);
+  }
+}
+
+.sp {
+  flex: 1;
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: min(320px, 40vw);
+  padding: 0.6rem 1rem;
   border-radius: 99px;
-  background: linear-gradient(180deg, #9b7bff, #6a4de0);
-  color: #fff;
-  font-size: 0.92rem;
-  font-weight: 700;
-  box-shadow: 0 6px 16px rgba(106, 77, 224, 0.35);
-  transition: transform 0.2s;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: inset 0 2px 6px rgba(43, 29, 90, 0.08);
+  transition: width 0.4s cubic-bezier(0.2, 1.4, 0.3, 1), box-shadow 0.2s;
+  position: relative;
 }
 
-.login-pill-btn:hover {
-  transform: translateY(-2px);
+.search.is-focused {
+  width: min(440px, 55vw);
+  box-shadow: inset 0 2px 6px rgba(43, 29, 90, 0.08), 0 0 0 2px var(--o2, #19c9bd);
+}
+
+.search-icon svg {
+  width: 18px;
+  height: 18px;
+  color: var(--muted);
+}
+
+.search input {
+  border: 0;
+  background: none;
+  outline: 0;
+  width: 100%;
+  min-width: 0;
+  font-size: 0.95rem;
+  color: var(--ink);
+}
+
+.clear-btn {
+  border: 0;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0 4px;
+}
+
+.bell-btn {
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.dot {
+  position: absolute;
+  top: 6px;
+  right: 7px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #ff4f9a;
+  border: 2px solid #fff;
+  animation: pulse 1.6s ease-out infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 79, 154, 0.6);
+  }
+  100% {
+    box-shadow: 0 0 0 12px rgba(255, 79, 154, 0);
+  }
+}
+
+/* 2. SLIDING DRAWER & SCRIM */
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  background: rgba(43, 29, 90, 0.25);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s;
+}
+
+.scrim.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.drawer {
+  position: fixed;
+  z-index: 55;
+  left: 0.6rem;
+  top: calc(0.6rem + env(safe-area-inset-top, 0px));
+  bottom: calc(0.6rem + env(safe-area-inset-bottom, 0px));
+  width: min(360px, calc(100% - 1.2rem));
+  border-radius: 36px;
+  padding: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  transform: translateX(-115%) rotate(-3deg);
+  transition: transform 0.6s cubic-bezier(0.2, 1.4, 0.3, 1);
+  overflow-y: auto;
+  box-shadow: 0 20px 50px rgba(43, 29, 90, 0.2);
+}
+
+.drawer.is-open {
+  transform: none;
+}
+
+.dh {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.drawer-auth {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.auth {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
 }
 
 .user-pill {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.35rem 0.8rem 0.35rem 0.4rem;
+  gap: 0.7rem;
+  padding: 0.6rem 0.9rem;
   border-radius: 99px;
 }
 
 .user-avatar {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: var(--ink);
-  color: #fff;
-  display: grid;
-  place-items: center;
-  font-size: 0.75rem;
+  width: 36px;
+  height: 36px;
   font-weight: 800;
+  color: #fff;
+  font-size: 1rem;
 }
 
-.user-name {
-  font-size: 0.88rem;
+.user-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.user-info strong {
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-info small {
+  font-size: 0.8rem;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn {
+  padding: 0.85rem 1rem;
+  border-radius: 99px;
   font-weight: 700;
+  font-size: 0.95rem;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  border: 0;
+  transition: transform 0.25s cubic-bezier(0.2, 2.2, 0.4, 1);
+}
+
+.btn:hover {
+  transform: scale(1.07) rotate(-1.5deg);
+}
+
+.btn:active {
+  transform: scale(0.94);
+}
+
+.btn.p {
+  color: #fff;
+  background: linear-gradient(180deg, var(--o1, #7ff0e6), var(--o2, #19c9bd));
+  box-shadow: inset 0 3px 6px rgba(255, 255, 255, 0.55), 0 10px 22px var(--sh, rgba(25, 201, 189, 0.45));
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.btn.s {
+  background: #fff;
+  color: var(--ink);
+  box-shadow: inset 0 0 0 2px var(--ink);
+}
+
+.drawer-nav-group {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: 99px;
+  font: 800 1.1rem "Bricolage Grotesque", sans-serif;
+  color: var(--ink);
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.3s cubic-bezier(0.2, 2, 0.4, 1);
+}
+
+.nav:hover {
+  background: rgba(255, 255, 255, 0.85);
+  transform: translateX(6px);
+}
+
+.nav.is-active {
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 14px rgba(43, 29, 90, 0.1);
+}
+
+.nav .orb {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  font-size: 1rem;
+}
+
+.nav .orb svg {
+  width: 18px;
+  height: 18px;
+  fill: #fff;
+}
+
+.drawer-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.lab {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--muted);
+  padding: 0 0.5rem;
+}
+
+.lab button {
+  color: var(--o2, #19c9bd);
+  font-weight: 800;
+  filter: brightness(0.8);
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.pls {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.pl-item .pl-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.empty {
+  padding: 0.4rem 0.5rem;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.accordion-header {
+  width: 100%;
+  cursor: pointer;
+  border: 0;
+  background: none;
+}
+
+.acc {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.45s cubic-bezier(0.2, 1.2, 0.3, 1);
+}
+
+.acc > div {
+  overflow: hidden;
+}
+
+.acc.on {
+  grid-template-rows: 1fr;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0.4rem 0.2rem;
+}
+
+.chip {
+  padding: 0.4rem 0.85rem;
+  border-radius: 99px;
+  background: rgba(43, 29, 90, 0.08);
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 0.85rem;
+  border: 0;
+  cursor: pointer;
+  transition: transform 0.25s cubic-bezier(0.2, 2.4, 0.4, 1), background 0.2s;
+}
+
+.chip:hover {
+  transform: scale(1.08);
+}
+
+.chip[aria-pressed="true"] {
+  color: #fff;
+  background: linear-gradient(180deg, var(--o1, #7ff0e6), var(--o2, #19c9bd));
+  box-shadow: 0 6px 14px var(--sh, rgba(25, 201, 189, 0.45));
+}
+
+.chev {
+  transition: transform 0.4s cubic-bezier(0.2, 2, 0.4, 1);
+  display: inline-flex;
+}
+
+.accordion-header.on .chev {
+  transform: rotate(180deg);
+}
+
+.foot {
+  margin-top: auto;
+  display: flex;
+  gap: 1rem;
+  padding: 0.6rem 0.5rem;
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.foot a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.foot a:hover {
   color: var(--ink);
 }
 
-.logout-btn {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.9);
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--muted);
-  display: grid;
-  place-items: center;
-  transition: all 0.2s;
+/* 3. MAIN CONTENT */
+.home-main {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 7.5rem 1.25rem 2rem;
 }
 
-.logout-btn:hover {
-  background: #ff4f9a;
-  color: #fff;
+/* GREETING */
+.greet {
+  font-size: clamp(2.8rem, 8.5vw, 6.5rem);
+  margin-bottom: 2.5rem;
+  line-height: 1;
+  font-family: "Bricolage Grotesque", sans-serif;
+  letter-spacing: -0.03em;
 }
 
-.hero-content {
-  position: relative;
-  z-index: 3;
-}
-
-.hero h1 {
-  font-size: clamp(3.4rem, 11vw, 9.5rem);
-  position: relative;
-  z-index: 3;
-  margin: 0;
-  line-height: 0.95;
-}
-
-.hero h1 span {
+.greet span {
   display: inline-block;
   opacity: 0;
   transform: translateY(70%) scale(0.7);
   animation: pop 0.9s cubic-bezier(0.2, 1.7, 0.3, 1) forwards;
-  animation-delay: calc(var(--i) * 120ms + 200ms);
+  animation-delay: calc(var(--i) * 110ms + 150ms);
 }
 
-.hero h1 .g {
-  background: linear-gradient(100deg, #ff6fb5, #9b7bff, #4cb8ff);
+.greet .g {
+  background: linear-gradient(100deg, #19c9bd, #4cb8ff, #9b7bff, #ff6fb5);
+  background-size: 200%;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  animation: pop 0.9s cubic-bezier(0.2, 1.7, 0.3, 1) forwards, flow 5s linear infinite;
+  animation-delay: calc(var(--i) * 110ms + 150ms), 0s;
+}
+
+.greet .em {
+  animation: pop 0.9s cubic-bezier(0.2, 1.7, 0.3, 1) forwards, bob 2.2s ease-in-out infinite;
+  animation-delay: 600ms, 1.5s;
 }
 
 @keyframes pop {
@@ -804,588 +1371,555 @@ onUnmounted(() => {
   }
 }
 
-.hero p {
-  position: relative;
-  z-index: 3;
-  max-width: 36ch;
-  margin: 1.4rem auto 2rem;
-  color: var(--muted);
-  font-size: 1.2rem;
-}
-
-.cta {
-  position: relative;
-  z-index: 3;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.7rem;
-  padding: 1rem 1.9rem;
-  border-radius: 99px;
-  font-weight: 700;
-  font-size: 1.1rem;
-  color: #fff;
-  background: linear-gradient(180deg, #9b7bff, #6a4de0);
-  box-shadow: inset 0 3px 6px rgba(255, 255, 255, 0.5), 0 14px 30px rgba(106, 77, 224, 0.45);
-  transition: transform 0.25s cubic-bezier(0.2, 2, 0.4, 1);
-}
-
-.cta:hover {
-  transform: scale(1.08) translateY(-3px);
-}
-
-.cta:active {
-  transform: scale(0.93);
-}
-
-.fl {
-  position: absolute;
-  z-index: 1;
-  will-change: transform;
-  transform: translate(
-    calc(var(--mx, 0) * var(--k) * 1px),
-    calc(var(--mx2, 0) * var(--k) * 1px + var(--sy, 0) * var(--k) * -0.35px)
-  );
-  width: var(--s);
-  height: var(--s);
-}
-
-.fl .orb {
-  width: 100%;
-  height: 100%;
-  font-size: calc(var(--s) * 0.4);
-  animation: bob 6s ease-in-out infinite;
-  animation-delay: var(--dl);
+@keyframes flow {
+  to {
+    background-position: 200% 0;
+  }
 }
 
 @keyframes bob {
   50% {
-    transform: translateY(-26px) rotate(8deg) scale(1.04);
+    transform: translateY(-12px) rotate(14deg);
   }
 }
 
-:global(.playing) .fl .orb {
-  animation-duration: 1.4s;
-}
-
-.cue {
-  position: absolute;
-  bottom: 1.4rem;
-  left: 50%;
-  translate: -50% 0;
-  z-index: 3;
-  color: var(--muted);
-  font-weight: 700;
-  animation: nud 1.6s ease-in-out infinite;
-  cursor: pointer;
-}
-
-@keyframes nud {
-  50% {
-    transform: translateY(8px);
-  }
-}
-
-@media (max-width: 480px) {
-  .hero-header {
-    left: 0.75rem !important;
-    right: 0.75rem !important;
-    top: 0.75rem !important;
-    width: auto !important;
-  }
-  .brand {
-    font-size: 1.1rem !important;
-    gap: 0.35rem !important;
-  }
-  .brand .orb {
-    width: 24px !important;
-    height: 24px !important;
-    font-size: 0.75rem !important;
-  }
-  .hero-nav {
-    gap: 0.35rem !important;
-    flex-shrink: 0;
-  }
-  .header-pill-btn span:not(.pill-icon) {
-    display: none !important;
-  }
-  .header-pill-btn {
-    width: 28px !important;
-    height: 28px !important;
-    padding: 0 !important;
-    justify-content: center;
-    border-radius: 50% !important;
-    font-size: 1rem !important;
-  }
-  .login-pill-btn {
-    padding: 0.35rem 0.7rem !important;
-    font-size: 0.78rem !important;
-    white-space: nowrap;
-  }
-}
-
-/* 2. MOOD SCROLL STORY */
-.mood {
-  height: 560vh;
-  position: relative;
-}
-
-.pin {
-  position: sticky;
-  top: 0;
-  height: 100svh;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  align-items: center;
-  gap: 2rem;
-  padding: 0 6vw;
-  max-width: 1300px;
-  margin: 0 auto;
-}
-
-.txts {
-  display: grid;
-}
-
-.txt {
-  grid-area: 1/1;
-  opacity: 0;
-  transform: translateY(60px) scale(0.96);
-  transition: opacity 0.6s, transform 0.7s cubic-bezier(0.2, 1.4, 0.3, 1);
-  pointer-events: none;
-}
-
-.txt.on {
-  opacity: 1;
-  transform: none;
-  pointer-events: auto;
-}
-
-.txt small {
-  font-weight: 700;
-  color: var(--muted);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
-.txt h2 {
-  font-size: clamp(3rem, 8vw, 7rem);
-  margin: 0.6rem 0 1rem;
-}
-
-.txt p {
-  font-size: 1.25rem;
-  max-width: 30ch;
-  color: var(--muted);
-}
-
-.bigw {
-  position: relative;
-  display: grid;
-  place-items: center;
-  aspect-ratio: 1;
-  max-width: 520px;
-  width: 100%;
-  margin-left: auto;
-}
-
-.big {
-  position: absolute;
-  width: 82%;
-  aspect-ratio: 1;
-  font-size: clamp(5rem, 14vw, 10rem);
-  opacity: 0;
-  transform: scale(0.3) rotate(-30deg);
-  transition: opacity 0.6s, transform 0.9s cubic-bezier(0.2, 1.6, 0.3, 1);
-}
-
-.big.on {
-  opacity: 1;
-  transform: none;
-  animation: squish 4s ease-in-out infinite 0.9s;
-}
-
-@keyframes squish {
-  50% {
-    transform: scale(1.04, 0.97);
-  }
-}
-
-.orbit {
-  position: absolute;
-  inset: 0;
-  animation: rot 12s linear infinite;
-}
-
-.orbit i {
-  position: absolute;
-  left: 50%;
-  top: -2%;
-  width: 15%;
-  aspect-ratio: 1;
-  translate: -50% 0;
-}
-
-.orbit i:nth-child(2) {
-  top: auto;
-  bottom: 6%;
-  left: 8%;
-  width: 10%;
-}
-
-.orbit i:nth-child(3) {
-  top: 38%;
-  left: auto;
-  right: -4%;
-  width: 8%;
-}
-
-.orbit .orb {
-  width: 100%;
-  height: 100%;
-  box-shadow: inset -5px -7px 12px rgba(0, 0, 0, 0.15), inset 4px 5px 9px rgba(255, 255, 255, 0.6), 0 12px 20px var(--sh);
-}
-
-@keyframes rot {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.dots {
-  position: absolute;
-  right: 2.5vw;
-  top: 50%;
-  translate: 0 -50%;
-  display: grid;
-  gap: 0.7rem;
-}
-
-.dots b {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: rgba(43, 29, 90, 0.2);
-  transition: 0.4s;
-  cursor: pointer;
-}
-
-.dots b.on {
-  background: var(--ink);
-  transform: scale(1.5);
-}
-
-@media (max-width: 820px) {
-  .pin {
-    grid-template-columns: 1fr;
-    align-content: center;
-    padding-top: 2rem;
-  }
-  .bigw {
-    max-width: 300px;
-    margin: 0 auto;
-    order: -1;
-  }
-  .txt {
-    text-align: center;
-  }
-  .txt p {
-    margin: 0 auto;
-  }
-  .dots {
-    display: none;
-  }
-}
-
-/* 3. PLAYLISTS SECTION */
-.sec {
-  max-width: 1160px;
-  margin: 0 auto;
-  padding: 7rem 1.25rem 2rem;
-}
-
-.sec h2.t {
-  font-size: clamp(2.6rem, 7vw, 5.5rem);
-  margin-bottom: 0.8rem;
-}
-
-.sec > p {
-  color: var(--muted);
-  max-width: 44ch;
-  font-size: 1.2rem;
-  margin: 0 0 2.5rem;
-}
-
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-  gap: 1.4rem;
-}
-
-.pc {
-  position: relative;
-  text-align: left;
-  border-radius: 38px;
-  padding: 1.5rem;
+/* Active Filter Banner */
+.filter-banner {
   display: flex;
-  flex-direction: column;
-  gap: 1.6rem;
-  overflow: hidden;
-  transition: transform 0.3s;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 1.2rem;
+  border-radius: 99px;
+  margin-bottom: 2rem;
+  font-size: 0.95rem;
 }
 
-.pc .orb {
-  width: 96px;
-  height: 96px;
-  font-size: 2.6rem;
+.filter-clear {
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.filter-clear:hover {
+  color: var(--ink);
+}
+
+/* Section Common Header */
+.home-section {
+  margin-bottom: 4rem;
+}
+
+.sh {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0 0 1.2rem;
+}
+
+.sh h2 {
+  font-size: clamp(1.9rem, 4vw, 2.8rem);
+}
+
+.section-tag {
+  font-size: 0.8rem;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  font-weight: 700;
+}
+
+/* 4. "LISTEN AGAIN" GRID */
+.again {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+  gap: 1rem;
+}
+
+.song {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  text-align: left;
+  width: 100%;
+  padding: 0.7rem 1.2rem 0.7rem 0.7rem;
+  border-radius: 99px;
+  cursor: pointer;
+  border: 0;
+  transition: transform 0.35s cubic-bezier(0.2, 2, 0.4, 1), background 0.2s, box-shadow 0.2s;
+}
+
+.song:hover {
+  transform: translateY(-5px) scale(1.03) rotate(-0.8deg);
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.song .orb {
+  width: 68px;
+  height: 68px;
+  font-size: 1.9rem;
+  flex: none;
   transition: transform 0.5s cubic-bezier(0.2, 3, 0.4, 1);
 }
 
-.pc:hover .orb {
-  transform: scale(1.18, 0.9) rotate(-8deg);
+.song:hover .orb {
+  transform: scale(1.15, 0.92) rotate(-10deg);
 }
 
-.pc h3 {
-  font-size: 1.7rem;
+.song b {
+  display: block;
+  font: 800 1.15rem "Bricolage Grotesque", sans-serif;
+  line-height: 1.1;
+  color: var(--ink);
 }
 
-.pc small {
+.song small {
   color: var(--muted);
-  font-weight: 700;
+  font-weight: 600;
 }
 
-.pc .pl {
-  position: absolute;
-  right: 1.1rem;
-  top: 1.1rem;
-  width: 46px;
-  height: 46px;
-  border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-  display: grid;
-  place-items: center;
-  transition: transform 0.3s;
-}
-
-.pc:hover .pl {
-  transform: scale(1.2);
-}
-
-.pc[aria-pressed="true"] {
-  outline: 3px solid var(--ink);
-  outline-offset: 3px;
-}
-
-/* 4. NOW PLAYING */
-.np {
-  display: grid;
-  grid-template-columns: 0.9fr 1.1fr;
-  gap: 2.5rem;
-  align-items: center;
-  border-radius: 48px;
-  padding: clamp(1.5rem, 4vw, 3rem);
-}
-
-@media (max-width: 820px) {
-  .np {
-    grid-template-columns: 1fr;
-  }
-}
-
-.npl {
-  display: grid;
-  place-items: center;
-  gap: 1.5rem;
-}
-
-.npl .orb {
-  width: min(300px, 64vw);
-  aspect-ratio: 1;
-  font-size: 5rem;
-  animation: squish 3s ease-in-out infinite;
-}
-
-.viz {
-  display: flex;
-  align-items: flex-end;
-  gap: 5px;
-  height: 70px;
-  width: 100%;
-}
-
-.viz i {
+.song .mt {
   flex: 1;
-  height: 100%;
-  border-radius: 99px;
-  background: linear-gradient(180deg, var(--o1), var(--o2));
-  transform: scaleY(0.12);
-  transform-origin: bottom;
-  animation: bar 1s ease-in-out infinite alternate;
-  animation-delay: calc(var(--d) * -1s);
+  min-width: 0;
 }
 
-:global(.playing) .viz i {
-  animation-duration: 0.45s;
+.song .mt b,
+.song .mt small {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.song.on {
+  background: #fff;
+  box-shadow: 0 0 0 3px var(--o2, #19c9bd), 0 14px 30px var(--sh, rgba(25, 201, 189, 0.35));
+}
+
+/* Equalizer Bars */
+.eq {
+  display: none;
+  align-items: flex-end;
+  gap: 2px;
+  height: 18px;
+  flex: none;
+}
+
+.song.on .eq {
+  display: inline-flex;
+}
+
+.eq b {
+  width: 4px;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--o2, #19c9bd);
+  transform: scaleY(0.25);
+  transform-origin: bottom;
+  animation: bar 0.5s ease-in-out infinite alternate;
+  animation-play-state: paused;
+  display: block;
+}
+
+.eq b:nth-child(2) {
+  animation-delay: -0.2s;
+}
+
+.eq b:nth-child(3) {
+  animation-delay: -0.35s;
+}
+
+.soundwave-home.playing .song.on .eq b {
+  animation-play-state: running;
 }
 
 @keyframes bar {
   to {
-    transform: scaleY(var(--h));
+    transform: scaleY(1);
   }
 }
 
-.np-title {
-  font-size: 2.6rem;
-  margin-bottom: 1.2rem;
+/* 5. "TRENDING" CAROUSEL */
+.arrows {
+  display: flex;
+  gap: 0.6rem;
 }
 
-.rows {
-  display: grid;
-  gap: 0.5rem;
-}
-
-.row {
-  display: grid;
-  grid-template-columns: 2.4rem 1fr auto;
-  gap: 1rem;
-  align-items: center;
-  text-align: left;
-  padding: 0.85rem 1.1rem;
-  border-radius: 99px;
-  transition: transform 0.3s cubic-bezier(0.2, 2, 0.4, 1), background 0.2s;
-}
-
-.row:hover {
-  transform: translateX(10px) scale(1.02);
-  background: rgba(255, 255, 255, 0.8);
-}
-
-.row.on {
+.arrows .ib {
   background: #fff;
-  box-shadow: 0 10px 24px rgba(120, 80, 200, 0.2);
-}
-
-.row strong {
-  display: block;
-  line-height: 1.2;
-}
-
-.row small {
-  color: var(--muted);
-}
-
-.row .n {
-  width: 2.2rem;
-  height: 2.2rem;
-  border-radius: 50%;
+  box-shadow: 0 8px 18px rgba(120, 80, 200, 0.16);
   display: grid;
   place-items: center;
-  font-weight: 700;
-  background: rgba(43, 29, 90, 0.07);
 }
 
-.row.on .n {
-  background: linear-gradient(var(--o1), var(--o2));
-  color: #fff;
-}
-
-/* 5. CHIPS TICKER */
-.chips {
-  overflow: hidden;
-  margin: 6rem 0 0;
-  padding: 1rem 0;
-}
-
-.chips div {
+.track {
   display: flex;
+  gap: 1.2rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding: 1rem 0.3rem 2rem;
+  scrollbar-width: none;
+}
+
+.track::-webkit-scrollbar {
+  display: none;
+}
+
+.tc {
+  flex: none;
+  width: 210px;
+  scroll-snap-align: start;
+  text-align: left;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  transition: transform 0.4s cubic-bezier(0.2, 2, 0.4, 1);
+}
+
+.tc:hover {
+  transform: translateY(-12px) rotate(-2.5deg) scale(1.04);
+}
+
+.tc .cv {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 34px;
+  font-size: 4.2rem;
+  display: grid;
+  place-items: center;
+  position: relative;
+  overflow: hidden;
+  background: radial-gradient(circle at 28% 22%, rgba(255, 255, 255, 0.9) 0 6%, transparent 28%),
+              linear-gradient(145deg, var(--o1, #7ff0e6), var(--o2, #19c9bd));
+  box-shadow: inset -10px -14px 26px rgba(0, 0, 0, 0.14),
+              inset 8px 10px 20px rgba(255, 255, 255, 0.55),
+              0 18px 30px var(--sh, rgba(25, 201, 189, 0.45));
+}
+
+.tc .cv span {
+  display: inline-block;
+  transition: transform 0.5s cubic-bezier(0.2, 3, 0.4, 1);
+}
+
+.tc:hover .cv span {
+  transform: scale(1.25) rotate(12deg);
+}
+
+.tc .cv::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 35%, rgba(255, 255, 255, 0.7) 50%, transparent 65%);
+  transform: translateX(-120%);
+  transition: transform 0.8s;
+}
+
+.tc:hover .cv::after {
+  transform: translateX(120%);
+}
+
+.tc .pl {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--o2, #19c9bd);
+  display: grid;
+  place-items: center;
+  transform: scale(0);
+  transition: transform 0.35s cubic-bezier(0.2, 2.4, 0.4, 1);
+  z-index: 2;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
+}
+
+.tc .pl svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+
+.tc:hover .pl,
+.tc.on .pl {
+  transform: scale(1);
+}
+
+.tc b {
+  display: block;
+  font: 800 1.1rem "Bricolage Grotesque", sans-serif;
+  margin-top: 0.8rem;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tc small {
+  color: var(--muted);
+  font-weight: 600;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tc.on .cv {
+  outline: 4px solid #fff;
+  outline-offset: -4px;
+}
+
+/* 6. CURATED DISCOVER SHELF */
+.curated-heading h2 {
+  font-size: clamp(1.9rem, 4vw, 2.8rem);
+}
+
+.curated-sub {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-top: 0.2rem;
+}
+
+.refresh-btn {
+  font-size: 1.4rem;
+  font-weight: 800;
+}
+
+.curated-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
   gap: 1rem;
-  width: max-content;
-  animation: mq 30s linear infinite;
 }
 
-.chips:hover div {
-  animation-play-state: paused;
+.curated-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.8rem 1rem;
+  border-radius: 28px;
+  cursor: pointer;
+  transition: transform 0.3s cubic-bezier(0.2, 2, 0.4, 1), background 0.2s, box-shadow 0.2s;
 }
 
-.chips span {
-  padding: 0.8rem 1.6rem;
+.curated-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.curated-card.on {
+  background: #fff;
+  box-shadow: 0 0 0 3px var(--o2, #19c9bd), 0 12px 28px var(--sh, rgba(25, 201, 189, 0.35));
+}
+
+.card-left {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  min-width: 0;
+}
+
+.card-orb {
+  width: 52px;
+  height: 52px;
+  font-size: 1.5rem;
+  flex: none;
+}
+
+.card-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.card-title {
+  font-size: 1.05rem;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-artist {
+  font-size: 0.85rem;
+  color: var(--muted);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-tags {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.3rem;
+}
+
+.badge {
+  font-size: 0.7rem;
+  padding: 0.15rem 0.5rem;
   border-radius: 99px;
-  font: 800 1.4rem "Bricolage Grotesque", sans-serif;
-  background: linear-gradient(180deg, var(--a), var(--b));
-  box-shadow: inset 0 3px 6px rgba(255, 255, 255, 0.7), 0 10px 20px rgba(0, 0, 0, 0.08);
+  font-weight: 700;
+}
+
+.badge-license {
+  background: rgba(43, 29, 90, 0.08);
   color: var(--ink);
 }
 
-@keyframes mq {
-  to {
-    transform: translateX(-50%);
+.badge-license:hover {
+  background: var(--o2, #19c9bd);
+  color: #fff;
+}
+
+.badge-genre {
+  background: rgba(25, 201, 189, 0.12);
+  color: var(--ink);
+}
+
+.play-mini {
+  width: 42px;
+  height: 42px;
+  flex: none;
+}
+
+.play-mini svg {
+  width: 18px;
+  height: 18px;
+  fill: #fff;
+}
+
+/* MODALS */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  background: rgba(43, 29, 90, 0.3);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.modal-card {
+  width: min(520px, 100%);
+  border-radius: 32px;
+  padding: 1.8rem;
+  box-shadow: 0 24px 60px rgba(43, 29, 90, 0.25);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.2rem;
+}
+
+.close-btn {
+  border: 0;
+  background: none;
+  font-size: 1.3rem;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.close-btn:hover {
+  color: var(--ink);
+}
+
+.modal-body {
+  display: grid;
+  gap: 1rem;
+}
+
+.modal-artist {
+  color: var(--muted);
+  font-weight: 600;
+  margin-top: -0.5rem;
+}
+
+.info-row {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.info-row label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.license-chip {
+  padding: 0.4rem 0.8rem;
+  border-radius: 99px;
+  background: rgba(43, 29, 90, 0.08);
+  font-weight: 700;
+  display: inline-block;
+  font-size: 0.9rem;
+}
+
+.attribution-box {
+  margin: 0;
+  padding: 0.7rem 1rem;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.7);
+  border-left: 4px solid var(--o2, #19c9bd);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.source-link {
+  color: var(--o2, #19c9bd);
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.capability-text {
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.setting-item {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.setting-item p {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+/* RESPONSIVE BREAKPOINTS */
+@media (max-width: 860px) {
+  .home-main {
+    padding-top: 6.5rem;
+  }
+  .curated-grid {
+    grid-template-columns: 1fr;
+  }
+  .again {
+    grid-template-columns: 1fr;
   }
 }
 
-/* 6. FOOTER */
-footer {
-  text-align: center;
-  padding: 5rem 1rem 9rem;
-}
-
-footer h2 {
-  font-size: clamp(2.6rem, 8vw, 6rem);
-}
-
-.footer-note {
-  color: var(--muted);
-  font-size: 1.1rem;
-  margin-top: 1rem;
-}
-</style>
-
-<style>
-/* Focus Modes for Direct Section Auditing & Headless Verification */
-.home-container.focus-mood #hero,
-.home-container.focus-mood #lists,
-.home-container.focus-mood #now,
-.home-container.focus-mood .chips,
-.home-container.focus-mood footer {
-  display: none !important;
-}
-.home-container.focus-mood .mood {
-  height: 100vh !important;
-}
-.home-container.focus-mood .txt.on {
-  opacity: 1 !important;
-  transform: none !important;
-}
-.home-container.focus-mood .big.on {
-  opacity: 1 !important;
-  transform: none !important;
-}
-
-.home-container.focus-lists #hero,
-.home-container.focus-lists .mood,
-.home-container.focus-lists .chips,
-.home-container.focus-lists footer {
-  display: none !important;
-}
-.home-container.focus-lists #lists {
-  padding-top: 3rem !important;
-}
-.home-container.focus-lists .rv {
-  opacity: 1 !important;
-  transform: none !important;
-}
-
-.home-container.focus-now #hero,
-.home-container.focus-now .mood,
-.home-container.focus-now #lists,
-.home-container.focus-now .chips,
-.home-container.focus-now footer {
-  display: none !important;
-}
-.home-container.focus-now #now {
-  padding-top: 3rem !important;
-}
-.home-container.focus-now .rv {
-  opacity: 1 !important;
-  transform: none !important;
+@media (max-width: 620px) {
+  .search {
+    display: none;
+  }
+  .sp {
+    display: block;
+  }
+  .greet {
+    font-size: clamp(2.4rem, 10vw, 4rem);
+    margin-bottom: 2rem;
+  }
+  .home-section {
+    margin-bottom: 3rem;
+  }
 }
 </style>

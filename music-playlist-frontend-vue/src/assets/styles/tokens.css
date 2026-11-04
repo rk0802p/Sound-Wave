@@ -2,9 +2,9 @@
   color-scheme: light;
   --ink: #2b1d5a;
   --muted: #6f63a0;
-  --o1: #ff9bd2;
-  --o2: #ff6fb5;
-  --sh: rgba(255, 111, 181, 0.45);
+  --o1: #7ff0e6;
+  --o2: #19c9bd;
+  --sh: rgba(25, 201, 189, 0.45);
   box-sizing: border-box;
   padding-top: env(safe-area-inset-top, 0px);
   padding-bottom: env(safe-area-inset-bottom, 0px);

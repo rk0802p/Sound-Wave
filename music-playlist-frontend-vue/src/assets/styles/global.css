@@ -57,7 +57,7 @@ a {
   position: fixed;
   inset: 0;
   z-index: -1;
-  background-color: #ffe3f3;
+  background-color: #d8faf6;
   transition: background-color 0.9s cubic-bezier(0.2, 0.8, 0.3, 1);
 }
 
@@ -65,7 +65,53 @@ a {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.82));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.8));
+}
+
+/* Background Drifting Blobs */
+.bgb {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.bgb i {
+  position: absolute;
+  width: 42vmax;
+  height: 42vmax;
+  border-radius: 50%;
+  filter: blur(70px);
+  opacity: 0.5;
+  background: var(--o1);
+  animation: drift 14s ease-in-out infinite alternate;
+  transition: background 0.9s;
+}
+
+.bgb i:nth-child(1) {
+  left: -10vmax;
+  top: -10vmax;
+}
+
+.bgb i:nth-child(2) {
+  right: -12vmax;
+  top: 20vh;
+  background: #ffd7a0;
+  animation-delay: -5s;
+}
+
+.bgb i:nth-child(3) {
+  left: 25vw;
+  bottom: -22vmax;
+  background: #e1d2ff;
+  animation-delay: -9s;
+}
+
+@keyframes drift {
+  to {
+    transform: translate(10vw, 8vh) scale(1.25);
+  }
 }
 
 /* Scroll progress bar */
