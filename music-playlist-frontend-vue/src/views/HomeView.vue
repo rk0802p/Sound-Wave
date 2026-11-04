@@ -84,6 +84,8 @@
       id="drawer"
       :class="{ 'is-open': isDrawerOpen }"
       :inert="!isDrawerOpen ? '' : null"
+      role="dialog"
+      aria-modal="true"
       aria-label="Application Menu"
     >
       <!-- Drawer Header -->
@@ -241,7 +243,7 @@
           :class="{ 'g': wIdx > 0 }"
           :style="{ '--i': wIdx }"
         >
-          {{ word }}&nbsp;
+          {{ word }}
         </span>
         <span class="em" style="--i: 3" aria-hidden="true">🎶</span>
       </h1>
@@ -511,7 +513,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { usePlayerStore } from '../stores/player';
 import { usePlaylistStore } from '../stores/playlist';
@@ -707,7 +709,7 @@ const scrollCarousel = (delta) => {
   }
 };
 
-// Drawer controls
+// Drawer controls & background scroll lock
 const openDrawer = () => {
   isDrawerOpen.value = true;
 };
@@ -715,6 +717,18 @@ const openDrawer = () => {
 const closeDrawer = () => {
   isDrawerOpen.value = false;
 };
+
+watch(isDrawerOpen, (isOpen) => {
+  if (typeof document !== 'undefined') {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none';
+    } else {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+    }
+  }
+});
 
 const handleKeyDown = (e) => {
   if (e.key === 'Escape' && isDrawerOpen.value) {
@@ -870,6 +884,10 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyDown);
+  if (typeof document !== 'undefined') {
+    document.body.style.overflow = '';
+    document.body.style.touchAction = '';
+  }
 });
 </script>
 
@@ -879,10 +897,11 @@ onUnmounted(() => {
   position: relative;
   min-height: 100vh;
   width: 100%;
+  max-width: 100%;
   color: var(--ink);
   font-family: Figtree, system-ui, sans-serif;
   overflow-x: hidden;
-  padding-bottom: 9rem;
+  padding-bottom: 0;
 }
 
 /* 1. TOP FLOATING NAVBAR */
@@ -1055,6 +1074,8 @@ onUnmounted(() => {
   top: calc(0.6rem + env(safe-area-inset-top, 0px));
   bottom: calc(0.6rem + env(safe-area-inset-bottom, 0px));
   width: min(360px, calc(100% - 1.2rem));
+  max-width: calc(100vw - 1.2rem);
+  box-sizing: border-box;
   border-radius: 36px;
   padding: 1.2rem;
   display: flex;
@@ -1063,6 +1084,8 @@ onUnmounted(() => {
   transform: translateX(-115%) rotate(-3deg);
   transition: transform 0.6s cubic-bezier(0.2, 1.4, 0.3, 1);
   overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   box-shadow: 0 20px 50px rgba(43, 29, 90, 0.2);
 }
 
@@ -1329,16 +1352,23 @@ onUnmounted(() => {
 .home-main {
   max-width: 1240px;
   margin: 0 auto;
-  padding: 7.5rem 1.25rem 2rem;
+  padding: 7.5rem 1.25rem 9rem;
 }
 
 /* GREETING */
 .greet {
-  font-size: clamp(2.8rem, 8.5vw, 6.5rem);
-  margin-bottom: 2.5rem;
-  line-height: 1;
+  font-size: clamp(2.1rem, 6.5vw, 5.5rem);
+  margin-bottom: 2.2rem;
+  line-height: 1.05;
   font-family: "Bricolage Grotesque", sans-serif;
   letter-spacing: -0.03em;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.15em 0.3em;
+  max-width: 100%;
+  word-break: normal;
+  overflow-wrap: break-word;
 }
 
 .greet span {
@@ -1360,6 +1390,9 @@ onUnmounted(() => {
 }
 
 .greet .em {
+  display: inline-block;
+  font-size: 0.8em;
+  margin-left: 0.1em;
   animation: pop 0.9s cubic-bezier(0.2, 1.7, 0.3, 1) forwards, bob 2.2s ease-in-out infinite;
   animation-delay: 600ms, 1.5s;
 }
@@ -1414,12 +1447,16 @@ onUnmounted(() => {
 .sh {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
   margin: 0 0 1.2rem;
+  max-width: 100%;
 }
 
 .sh h2 {
-  font-size: clamp(1.9rem, 4vw, 2.8rem);
+  font-size: clamp(1.6rem, 4vw, 2.8rem);
+  min-width: 0;
 }
 
 .section-tag {
@@ -1427,22 +1464,27 @@ onUnmounted(() => {
   color: var(--muted);
   letter-spacing: 0.1em;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 /* 4. "LISTEN AGAIN" GRID */
 .again {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 310px), 1fr));
   gap: 1rem;
+  max-width: 100%;
 }
 
 .song {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.85rem;
   text-align: left;
   width: 100%;
-  padding: 0.7rem 1.2rem 0.7rem 0.7rem;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 0.65rem 1.1rem 0.65rem 0.65rem;
   border-radius: 99px;
   cursor: pointer;
   border: 0;
@@ -1646,6 +1688,12 @@ onUnmounted(() => {
   transform: scale(1);
 }
 
+@media (hover: none) {
+  .tc .pl {
+    transform: scale(1);
+  }
+}
+
 .tc b {
   display: block;
   font: 800 1.1rem "Bricolage Grotesque", sans-serif;
@@ -1688,8 +1736,9 @@ onUnmounted(() => {
 
 .curated-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
   gap: 1rem;
+  max-width: 100%;
 }
 
 .curated-card {
@@ -1699,6 +1748,9 @@ onUnmounted(() => {
   padding: 0.8rem 1rem;
   border-radius: 28px;
   cursor: pointer;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
   transition: transform 0.3s cubic-bezier(0.2, 2, 0.4, 1), background 0.2s, box-shadow 0.2s;
 }
 
@@ -1897,13 +1949,14 @@ onUnmounted(() => {
 /* RESPONSIVE BREAKPOINTS */
 @media (max-width: 860px) {
   .home-main {
-    padding-top: 6.5rem;
+    padding-top: 6.2rem;
+    padding-bottom: 10.5rem;
   }
   .curated-grid {
     grid-template-columns: 1fr;
   }
   .again {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   }
 }
 
@@ -1914,12 +1967,178 @@ onUnmounted(() => {
   .sp {
     display: block;
   }
+  .home-main {
+    padding-top: 5.5rem;
+    padding-left: 0.9rem;
+    padding-right: 0.9rem;
+    padding-bottom: 9.5rem;
+  }
   .greet {
-    font-size: clamp(2.4rem, 10vw, 4rem);
-    margin-bottom: 2rem;
+    font-size: clamp(1.75rem, 8vw, 2.7rem);
+    margin-bottom: 1.8rem;
+    gap: 0.15em 0.28em;
   }
   .home-section {
-    margin-bottom: 3rem;
+    margin-bottom: 2.8rem;
+  }
+  .track {
+    gap: 0.85rem;
+    padding: 0.6rem 0.1rem 1.4rem;
+  }
+  .tc {
+    width: 168px;
+  }
+  .tc .cv {
+    border-radius: 26px;
+    font-size: 3.2rem;
+  }
+  .tc .pl {
+    transform: scale(1);
+    width: 38px;
+    height: 38px;
+    right: 8px;
+    bottom: 8px;
+  }
+  .tc .pl svg {
+    width: 16px;
+    height: 16px;
+  }
+  .tc b {
+    font-size: 0.98rem;
+    margin-top: 0.6rem;
+  }
+  .tc small {
+    font-size: 0.82rem;
+  }
+  .curated-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  .curated-card {
+    padding: 0.65rem 0.85rem;
+    border-radius: 22px;
+  }
+  .card-orb {
+    width: 44px;
+    height: 44px;
+    font-size: 1.25rem;
+  }
+  .card-title {
+    font-size: 0.95rem;
+  }
+  .card-artist {
+    font-size: 0.8rem;
+  }
+  .play-mini {
+    width: 36px;
+    height: 36px;
+  }
+  .play-mini svg {
+    width: 15px;
+    height: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .top {
+    width: calc(100% - 1rem);
+    padding: 0.4rem 0.55rem;
+    gap: 0.45rem;
+  }
+  .ib {
+    width: 38px;
+    height: 38px;
+  }
+  .logo {
+    font-size: 1.15rem;
+    gap: 0.4rem;
+  }
+  .logo .orb {
+    width: 32px;
+    height: 32px;
+    font-size: 1rem;
+  }
+  .home-main {
+    padding-top: 4.8rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    padding-bottom: 9rem;
+  }
+  .again {
+    grid-template-columns: 1fr;
+    gap: 0.65rem;
+  }
+  .song {
+    padding: 0.5rem 0.8rem 0.5rem 0.5rem;
+    gap: 0.65rem;
+    border-radius: 28px;
+  }
+  .song .orb {
+    width: 50px;
+    height: 50px;
+    font-size: 1.4rem;
+  }
+  .song b {
+    font-size: 1rem;
+  }
+  .song small {
+    font-size: 0.82rem;
+  }
+  .sh {
+    margin-bottom: 0.85rem;
+  }
+  .sh h2 {
+    font-size: 1.45rem;
+  }
+  .section-tag {
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+  }
+  .drawer {
+    left: 0.4rem;
+    top: calc(0.4rem + env(safe-area-inset-top, 0px));
+    bottom: calc(0.4rem + env(safe-area-inset-bottom, 0px));
+    width: calc(100vw - 0.8rem);
+    max-width: calc(100vw - 0.8rem);
+    padding: 1rem 0.85rem;
+    border-radius: 28px;
+  }
+}
+
+@media (max-width: 360px) {
+  .greet {
+    font-size: clamp(1.45rem, 7.5vw, 1.95rem);
+    margin-bottom: 1.4rem;
+  }
+  .tc {
+    width: 144px;
+  }
+  .tc .cv {
+    border-radius: 22px;
+    font-size: 2.7rem;
+  }
+  .home-main {
+    padding-top: 4.5rem;
+    padding-left: 0.55rem;
+    padding-right: 0.55rem;
+    padding-bottom: 8.5rem;
+  }
+  .top {
+    width: calc(100% - 0.6rem);
+    padding: 0.35rem 0.45rem;
+  }
+}
+
+@media (max-width: 330px) {
+  .logo span:not(.orb) {
+    display: none;
+  }
+  .drawer {
+    width: 100vw;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    border-radius: 0 24px 24px 0;
   }
 }
 </style>

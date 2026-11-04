@@ -308,6 +308,8 @@ const ICONS = {
   transform: translate(-50%, 0);
   bottom: calc(0.8rem + env(safe-area-inset-bottom, 0px));
   width: min(1240px, calc(100% - 1.5rem));
+  max-width: calc(100vw - 1rem);
+  box-sizing: border-box;
   display: grid;
   grid-template-columns: 1fr minmax(0, 1.5fr) 1fr;
   align-items: center;
@@ -555,37 +557,140 @@ svg {
 @media (max-width: 860px) {
   .dock {
     grid-template-columns: 1fr auto;
-    border-radius: 34px;
-    padding: 0.6rem 0.9rem;
+    grid-template-rows: auto auto;
+    row-gap: 0.3rem;
+    column-gap: 0.5rem;
+    align-items: center;
+    border-radius: 30px;
+    padding: 0.45rem 0.85rem 0.5rem 0.75rem;
+    width: min(720px, calc(100% - 1.2rem));
+    bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
   }
   .ex {
     display: none;
   }
+  .now {
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 0;
+  }
   .ctr {
-    grid-column: 1 / -1;
-    grid-row: 2;
+    display: contents;
+  }
+  .btns {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+    gap: 0.2rem;
   }
   .cb.hm {
     display: none;
+  }
+  .cb {
+    width: 36px;
+    height: 36px;
+  }
+  .cb svg {
+    width: 18px;
+    height: 18px;
+  }
+  .cb.big {
+    width: 44px;
+    height: 44px;
+    margin: 0 0.15rem;
+  }
+  .cb.big svg {
+    width: 20px;
+    height: 20px;
+  }
+  .prog {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    gap: 0.45rem;
+    font-size: 0.75rem;
+    padding: 0 0.2rem;
+  }
+  .vin {
+    width: 44px;
+    height: 44px;
+  }
+  .nm b {
+    font-size: 0.96rem;
+  }
+  .nm small {
+    font-size: 0.78rem;
   }
 }
 
 @media (max-width: 480px) {
   .dock {
-    bottom: calc(0.4rem + env(safe-area-inset-bottom, 0px));
-    width: calc(100% - 1rem);
+    width: calc(100% - 0.9rem);
+    padding: 0.4rem 0.65rem 0.45rem 0.6rem;
+    border-radius: 24px;
+    row-gap: 0.2rem;
+    column-gap: 0.35rem;
+    bottom: calc(0.35rem + env(safe-area-inset-bottom, 0px));
   }
   .vin {
-    width: 48px;
-    height: 48px;
+    width: 38px;
+    height: 38px;
+  }
+  .vin i {
+    font-size: 0.82rem;
+  }
+  .nm b {
+    font-size: 0.86rem;
+  }
+  .nm small {
+    font-size: 0.72rem;
+  }
+  .btns {
+    gap: 0.1rem;
+  }
+  .cb {
+    width: 30px;
+    height: 30px;
+  }
+  .cb svg {
+    width: 15px;
+    height: 15px;
   }
   .cb.big {
-    width: 50px;
-    height: 50px;
+    width: 36px;
+    height: 36px;
+    margin: 0 0.05rem;
   }
   .cb.big svg {
-    width: 22px;
-    height: 22px;
+    width: 17px;
+    height: 17px;
+  }
+  .prog {
+    font-size: 0.7rem;
+    gap: 0.3rem;
+  }
+  input[type="range"] {
+    height: 6px;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    width: 14px;
+    height: 14px;
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+@media (max-width: 340px) {
+  .dock {
+    width: calc(100% - 0.5rem);
+    padding: 0.35rem 0.45rem 0.4rem;
+  }
+  .nm b {
+    max-width: 80px;
+  }
+  .nm small {
+    max-width: 80px;
   }
 }
 
