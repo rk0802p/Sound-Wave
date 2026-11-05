@@ -249,10 +249,7 @@ const pagination = reactive({
 const providers = [
   { id: 'all', name: 'All Networks' },
   { id: 'jamendo', name: 'Jamendo CC' },
-  { id: 'archive', name: 'Internet Archive' },
-  { id: 'audius', name: 'Audius' },
   { id: 'spotify', name: 'Spotify' },
-  { id: 'direct', name: 'Direct' },
 ];
 
 let searchDebounceTimer = null;

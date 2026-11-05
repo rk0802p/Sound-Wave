@@ -9,3 +9,19 @@ coverage/
 server/coverage/
 dist/
 music-playlist-frontend-vue/dist/
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Local environment overrides
+.env.local
+.env.*.local
+
+# Vercel local configuration
+.vercel
+
+# Local credentials and private keys
+*.pem
+*.key

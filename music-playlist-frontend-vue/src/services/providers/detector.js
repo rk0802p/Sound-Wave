@@ -1,51 +1,43 @@
 // Utility to classify provider types and extract media IDs
+
+/**
+ * Validates whether an audio URL belongs to an authorized stream domain
+ * @param {string} url
+ * @returns {boolean}
+ */
+export const isAuthorizedStreamUrl = (url) => {
+  if (!url || typeof url !== 'string') return false;
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return false;
+    const host = parsed.hostname.toLowerCase();
+    // In SOUNDWAVE V2, only Jamendo CDN is conditionally authorized for direct audio streaming
+    return host === 'jamendo.com' || host.endsWith('.jamendo.com');
+  } catch {
+    return false;
+  }
+};
+
 export const detectProviderType = (url) => {
   if (!url || typeof url !== 'string') return 'unknown';
   const clean = url.trim().toLowerCase();
-
-  // YouTube detection
-  if (clean.includes('youtube.com') || clean.includes('youtu.be')) {
-    return 'youtube';
-  }
-
-  // Spotify detection
-  if (clean.includes('spotify.com') || clean.startsWith('spotify:')) {
-    return 'spotify';
-  }
-
-  // Internet Archive detection
-  if (clean.includes('archive.org')) {
-    return 'archive';
-  }
 
   // Jamendo detection
   if (clean.includes('jamendo.com')) {
     return 'jamendo';
   }
 
-  // Audius detection
-  if (clean.includes('audius.co')) {
-    return 'audius';
+  // Spotify detection (for metadata & linking)
+  if (clean.includes('spotify.com') || clean.startsWith('spotify:')) {
+    return 'spotify';
   }
 
-  // Direct playable media extensions
-  if (
-    clean.endsWith('.mp3') ||
-    clean.endsWith('.wav') ||
-    clean.endsWith('.ogg') ||
-    clean.endsWith('.m4a') ||
-    clean.endsWith('.aac') ||
-    clean.endsWith('.flac') ||
-    clean.endsWith('.mp4') ||
-    clean.includes('saavncdn.com') ||
-    clean.startsWith('data:audio/') ||
-    clean.startsWith('blob:') ||
-    (clean.includes('upload.wikimedia.org') && (clean.includes('.ogg') || clean.includes('.mp3')))
-  ) {
+  // Direct playable media on verified Jamendo CDN
+  if (isAuthorizedStreamUrl(url)) {
     return 'direct';
   }
 
-  // Generic external streaming link (SoundCloud, Apple Music, Bandcamp, etc.)
+  // Generic external link (unauthorized for direct playback)
   return 'external';
 };
 
@@ -61,7 +53,7 @@ export const extractSpotifyEmbedUrl = (url) => {
     const parsed = new URL(url);
     const parts = parsed.pathname.split('/').filter(Boolean);
     if (parts.length >= 2) {
-      const type = parts[parts.length - 2]; // 'track' | 'album' | 'playlist'
+      const type = parts[parts.length - 2];
       const id = parts[parts.length - 1];
       return `https://open.spotify.com/embed/${type}/${id}?utm_source=generator&theme=0`;
     }
@@ -72,8 +64,7 @@ export const extractSpotifyEmbedUrl = (url) => {
 };
 
 /**
- * Resolves a direct audio stream URL from various track object formats or strings.
- * Inspects all possible audio stream properties in priority order.
+ * Resolves a direct audio stream URL from track objects
  */
 export const resolvePlayableAudioUrl = (track) => {
   if (!track) return null;

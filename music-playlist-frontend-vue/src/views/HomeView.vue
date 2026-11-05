@@ -234,8 +234,8 @@
       <!-- Drawer Footer Links -->
       <div class="foot">
         <a href="https://github.com/rk0802p/music_playlist" target="_blank" rel="noopener">GitHub</a>
-        <a href="https://archive.org" target="_blank" rel="noopener">Archive</a>
-        <a href="https://audius.co" target="_blank" rel="noopener">Audius</a>
+        <a href="https://www.jamendo.com" target="_blank" rel="noopener">Jamendo</a>
+        <a href="https://creativecommons.org" target="_blank" rel="noopener">Creative Commons</a>
       </div>
     </aside>
 
@@ -548,7 +548,7 @@
           <div class="info-row" v-if="selectedInfoTrack.source?.pageUrl">
             <label>Original Source</label>
             <a :href="selectedInfoTrack.source.pageUrl" target="_blank" rel="noopener" class="source-link">
-              {{ selectedInfoTrack.source.name || 'Internet Archive item page' }} ↗
+              {{ selectedInfoTrack.source.name || 'Original source item page' }} ↗
             </a>
           </div>
 
@@ -585,7 +585,7 @@
         <div class="modal-body">
           <div class="setting-item">
             <strong>Persistent HTML5 Audio Engine</strong>
-            <p>Active driver: <code>DirectAudioProvider</code> (HTML5 Audio, Audius, Internet Archive)</p>
+            <p>Active driver: <code>DirectAudioProvider</code> (HTML5 Audio / Jamendo CC Stream)</p>
           </div>
 
           <div class="setting-item">

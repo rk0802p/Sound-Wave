@@ -6,7 +6,7 @@
 
 const crypto = require('crypto');
 
-const SENSITIVE_KEY_REGEX = /password|token|secret|authorization|cookie|bearer|credential|client_secret|jwt|mongo_uri/i;
+const SENSITIVE_KEY_REGEX = /password|token|secret|authorization|cookie|bearer|credential|client_secret|jwt|mongo_uri|apikey|api_key/i;
 const JWT_REGEX = /eyJ[a-zA-Z0-9_\-]+\.eyJ[a-zA-Z0-9_\-]+\.[a-zA-Z0-9_\-]+/g;
 const BEARER_REGEX = /Bearer\s+[a-zA-Z0-9_\-\.]+/gi;
 const MONGO_URI_CRED_REGEX = /(mongodb(?:\+srv)?:\/\/)([^:]+):([^@]+)@/gi;

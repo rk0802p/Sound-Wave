@@ -22,14 +22,12 @@ export const useSpotifyStore = defineStore('spotify', {
   }),
 
   getters: {
-    canUseWebPlayback: (state) => state.isConnected && state.isEligible,
-    requiresEmbedFallback: (state) => !state.isConnected || !state.isEligible,
+    canUseWebPlayback: () => false, // Playback disabled pending written licensing verification
+    requiresEmbedFallback: () => false,
     statusDescription: (state) => {
       if (!state.isConfigured) return 'Spotify integration unconfigured';
       if (!state.isConnected) return 'Not connected';
-      if (!state.isEligible) return 'Connected (Free - Embed mode)';
-      if (state.isReady) return 'Ready (Premium)';
-      return 'Connected (Premium)';
+      return 'Connected (Playback Pending Verification)';
     },
   },
 

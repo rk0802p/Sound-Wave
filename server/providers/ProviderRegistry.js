@@ -1,8 +1,13 @@
-const ArchiveProvider = require('./ArchiveProvider');
 const JamendoProvider = require('./JamendoProvider');
-const AudiusProvider = require('./AudiusProvider');
-const SaavnProvider = require('./SaavnProvider');
 const CircuitBreaker = require('./CircuitBreaker');
+const {
+  CLASSIFICATIONS,
+  providerPolicy,
+  normalizeProviderName,
+  getProviderPolicy,
+  isProviderPermittedForRegistration,
+  isProviderPermittedForPlayback,
+} = require('../config/providerPolicy');
 
 class ProviderRegistry {
   constructor() {
@@ -17,36 +22,50 @@ class ProviderRegistry {
     this.resolutionCacheTtlMs = 1000 * 60 * 10; // 10 minutes TTL for stream resolutions
     this.activeResolutionPromises = new Map(); // In-flight resolution deduplication
 
-    // Register active provider adapters
-    this.register(new ArchiveProvider());
-    this.register(new JamendoProvider());
-    this.register(new AudiusProvider());
-    this.register(new SaavnProvider());
+    // Only Jamendo is active and permitted for registration in SOUNDWAVE
+    const jamendo = new JamendoProvider();
+    if (isProviderPermittedForRegistration(jamendo.name)) {
+      this.register(jamendo);
+    }
   }
 
   /**
-   * Register a new provider instance
+   * Register a new provider instance if permitted by policy
    * @param {BaseProvider} provider
+   * @returns {boolean}
    */
   register(provider) {
     if (!provider || !provider.name) {
       throw new Error('Invalid provider: missing name');
     }
-    const key = provider.name.toLowerCase();
+    const key = normalizeProviderName(provider.name);
+    const policy = getProviderPolicy(key);
+
+    // Strict policy check: rejected or pending providers cannot be registered
+    if (!isProviderPermittedForRegistration(key)) {
+      console.warn(`[SOUNDWAVE Registry] Registration blocked for provider '${key}' (${policy.classification})`);
+      return false;
+    }
+
     this.providers.set(key, provider);
     if (!this.circuitBreakers.has(key)) {
       this.circuitBreakers.set(key, new CircuitBreaker(key, { failureThreshold: 3, cooldownPeriodMs: 30000 }));
     }
+    return true;
   }
 
   /**
    * Retrieve registered provider by name
+   * Fails closed if provider is not registered or not permitted
    * @param {string} name
    * @returns {BaseProvider|null}
    */
   get(name) {
-    if (!name || typeof name !== 'string') return null;
-    return this.providers.get(name.toLowerCase()) || null;
+    const key = normalizeProviderName(name);
+    if (!key || !isProviderPermittedForRegistration(key)) {
+      return null;
+    }
+    return this.providers.get(key) || null;
   }
 
   /**
@@ -55,12 +74,13 @@ class ProviderRegistry {
    * @returns {CircuitBreaker|null}
    */
   getBreaker(name) {
-    if (!name || typeof name !== 'string') return null;
-    return this.circuitBreakers.get(name.toLowerCase()) || null;
+    const key = normalizeProviderName(name);
+    if (!key) return null;
+    return this.circuitBreakers.get(key) || null;
   }
 
   /**
-   * Reset all circuit breakers (primarily for test suite tear-down)
+   * Reset all circuit breakers and in-memory caches (for testing and lifecycle reset)
    */
   resetCircuitBreakers() {
     for (const breaker of this.circuitBreakers.values()) {
@@ -72,15 +92,18 @@ class ProviderRegistry {
   }
 
   /**
-   * Return list of all registered providers, their current health, and circuit breaker state
+   * Return list of all registered providers, their current health, classification, and circuit breaker state
    */
   getAllStatus() {
     const list = [];
     for (const [key, provider] of this.providers.entries()) {
+      if (!isProviderPermittedForRegistration(key)) continue;
       const health = provider.getHealth();
       const breaker = this.circuitBreakers.get(key);
+      const policy = getProviderPolicy(key);
       list.push({
         ...health,
+        policyClassification: policy.classification,
         circuitBreaker: breaker ? breaker.getStatus() : null,
       });
     }
@@ -88,15 +111,18 @@ class ProviderRegistry {
   }
 
   /**
-   * Return comprehensive non-sensitive telemetry across all providers
+   * Return comprehensive non-sensitive telemetry across registered providers
    */
   getTelemetry() {
     const telemetry = {};
     for (const [key, provider] of this.providers.entries()) {
+      if (!isProviderPermittedForRegistration(key)) continue;
       const breaker = this.circuitBreakers.get(key);
       const breakerStatus = breaker ? breaker.getStatus() : null;
+      const policy = getProviderPolicy(key);
       telemetry[key] = {
         name: provider.displayName,
+        classification: policy.classification,
         status: !provider.isConfigured()
           ? 'unconfigured'
           : breakerStatus?.isOpen
@@ -143,7 +169,7 @@ class ProviderRegistry {
       const normTitle = this.normalizeText(track.title);
       const normArtist = this.normalizeText(track.artist);
 
-      // Distinguish explicit variants (remix, live, cover, acoustic, instrumental, mix, sped up, slowed, tribute, karaoke, orchestral, nightcore, reverb)
+      // Distinguish explicit variants (remix, live, cover, acoustic, instrumental, mix, sped up, slowed)
       const hasVariantModifier = /(remix|live|cover|acoustic|instrumental|edit|dub|mix|sped up|slowed|tribute|karaoke|orchestral|nightcore|reverb)/i.test(track.title);
 
       const key = `${normArtist}:::${normTitle}`;
@@ -231,7 +257,7 @@ class ProviderRegistry {
       if (a.isPlayable) scoreA += 25;
       if (b.isPlayable) scoreB += 25;
 
-      // 5. Short clip penalty (duration under 15s is often a sound effect, unless user searched for that)
+      // 5. Short clip penalty
       if (a.duration && a.duration > 0 && a.duration < 15) scoreA -= 40;
       if (b.duration && b.duration > 0 && b.duration < 15) scoreB -= 40;
 
@@ -257,7 +283,7 @@ class ProviderRegistry {
     }
 
     const requestedProviders = Array.isArray(options.providers) && options.providers.length > 0
-      ? options.providers.map(p => String(p).toLowerCase().trim())
+      ? options.providers.map(p => normalizeProviderName(p)).filter(Boolean)
       : Array.from(this.providers.keys());
 
     const limitPerProvider = Math.min(25, Math.max(1, parseInt(options.limit) || 10));
@@ -273,6 +299,11 @@ class ProviderRegistry {
     const providerMeta = {};
 
     for (const name of requestedProviders) {
+      // Must check if provider is authorized to register and execute
+      if (!isProviderPermittedForRegistration(name)) {
+        continue;
+      }
+
       const provider = this.providers.get(name);
       if (!provider) continue;
 
@@ -286,12 +317,10 @@ class ProviderRegistry {
         error: null,
       };
 
-      // Skip immediately if unconfigured
       if (!provider.isConfigured()) {
         continue;
       }
 
-      // Check circuit breaker state: if OPEN, fast-fail without calling upstream
       if (!breaker.canExecute()) {
         providerMeta[name].status = 'circuit_broken';
         providerMeta[name].error = `Circuit breaker is OPEN for ${provider.displayName} (cooldown active)`;
@@ -301,7 +330,7 @@ class ProviderRegistry {
       providerTasks.push(
         (async () => {
           const controller = new AbortController();
-          const timeoutMs = 4500; // 4.5s bounded budget
+          const timeoutMs = 4500;
           const timer = setTimeout(() => controller.abort(), timeoutMs);
           const t0 = Date.now();
 
@@ -314,7 +343,6 @@ class ProviderRegistry {
             clearTimeout(timer);
             const latencyMs = Date.now() - t0;
 
-            // Record success on circuit breaker if no error returned
             if (!result.error && result.status !== 'unavailable' && result.status !== 'rate_limited') {
               breaker.recordSuccess(latencyMs);
             } else if (result.error) {
@@ -347,9 +375,7 @@ class ProviderRegistry {
       );
     }
 
-    // Execute all providers in parallel using Promise.allSettled for fault isolation
     const settled = await Promise.allSettled(providerTasks);
-
     const aggregatedTracks = [];
 
     for (const item of settled) {
@@ -397,7 +423,7 @@ class ProviderRegistry {
   }
 
   /**
-   * Resolve track on demand from appropriate provider with in-flight deduplication and URL validation
+   * Resolve track on demand with strict provider authorization and URL domain validation
    * @param {string} providerName
    * @param {string} trackId
    * @returns {Promise<{ streamUrl: string|null, metadata: object|null, error: string|null, code?: string }>}
@@ -412,9 +438,39 @@ class ProviderRegistry {
       };
     }
 
-    const key = providerName.toLowerCase().trim();
+    const key = normalizeProviderName(providerName);
     const cleanTrackId = trackId.trim();
+    const policy = getProviderPolicy(key);
 
+    // Step 1: Authoritative policy enforcement
+    if (policy.classification === CLASSIFICATIONS.REJECTED) {
+      return {
+        streamUrl: null,
+        metadata: null,
+        error: `Provider '${providerName}' is rejected and cannot be used for playback in any environment`,
+        code: 'PROVIDER_REJECTED',
+      };
+    }
+
+    if (policy.classification === CLASSIFICATIONS.PENDING_VERIFICATION) {
+      return {
+        streamUrl: null,
+        metadata: null,
+        error: `Provider '${providerName}' is pending authorization verification and cannot resolve playback`,
+        code: 'PROVIDER_PENDING_VERIFICATION',
+      };
+    }
+
+    if (!isProviderPermittedForPlayback(key)) {
+      return {
+        streamUrl: null,
+        metadata: null,
+        error: `Provider '${providerName}' is unauthorized for playback`,
+        code: 'PROVIDER_UNAUTHORIZED',
+      };
+    }
+
+    // Step 2: Check provider instance
     const provider = this.get(key);
     if (!provider) {
       return {
@@ -452,14 +508,39 @@ class ProviderRegistry {
         const result = await provider.resolveTrack(cleanTrackId);
 
         if (result && result.streamUrl) {
-          const isValidUrl = typeof result.streamUrl === 'string' && /^https?:\/\//i.test(result.streamUrl);
-          if (!isValidUrl) {
+          let parsedUrl;
+          try {
+            parsedUrl = new URL(result.streamUrl);
+          } catch {
+            return {
+              streamUrl: null,
+              metadata: result.metadata || null,
+              error: 'Provider returned an invalid stream URL',
+              code: 'INVALID_STREAM_URL',
+            };
+          }
+
+          if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
             return {
               streamUrl: null,
               metadata: result.metadata || null,
               error: 'Provider returned an invalid stream URL protocol',
               code: 'INVALID_STREAM_URL',
             };
+          }
+
+          // Host domain validation: Jamendo tracks must resolve to *.jamendo.com
+          if (key === 'jamendo') {
+            const host = parsedUrl.hostname.toLowerCase();
+            const isJamendoDomain = host === 'jamendo.com' || host.endsWith('.jamendo.com');
+            if (!isJamendoDomain) {
+              return {
+                streamUrl: null,
+                metadata: result.metadata || null,
+                error: `Resolved stream host '${host}' is not an authorized Jamendo domain`,
+                code: 'UNAUTHORIZED_STREAM_DOMAIN',
+              };
+            }
           }
 
           const payload = {

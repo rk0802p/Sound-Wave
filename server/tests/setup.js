@@ -12,6 +12,7 @@ process.env.MONGOMS_DOWNLOAD_DIR = path.join(__dirname, "../node_modules/.cache/
 const connectTestDB = async () => {
   mongoServer = await MongoMemoryServer.create();
   const uri = mongoServer.getUri();
+  process.env.MONGO_URI = uri;
   await mongoose.connect(uri);
 };
 

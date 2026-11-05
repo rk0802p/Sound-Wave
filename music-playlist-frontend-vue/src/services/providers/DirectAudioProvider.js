@@ -1,4 +1,4 @@
-import { resolvePlayableAudioUrl } from './detector';
+import { resolvePlayableAudioUrl, isAuthorizedStreamUrl } from './detector';
 
 export class DirectAudioProvider {
   constructor() {
@@ -17,28 +17,20 @@ export class DirectAudioProvider {
   }
 
   getCapabilities(track = this.currentTrack) {
-    let badge = 'FLAC/MP3';
+    const p = (track?.source?.provider || track?.provider || '').toLowerCase();
+    let badge = 'RESTRICTED';
     let providerName = 'Direct Audio';
-    const p = track?.source?.provider || track?.provider;
-    if (p === 'featured') {
-      badge = 'FEATURED';
-      providerName = 'Curated Featured Stream';
-    } else if (p === 'archive') {
-      badge = 'ARCHIVE';
-      providerName = 'Internet Archive Stream';
-    } else if (p === 'jamendo') {
+
+    if (p === 'jamendo') {
       badge = 'JAMENDO';
       providerName = 'Jamendo CC Stream';
-    } else if (p === 'audius') {
-      badge = 'AUDIUS';
-      providerName = 'Audius Stream';
-    } else if (p === 'saavn') {
-      badge = 'DEV-SAAVN';
-      providerName = 'JioSaavn Dev Stream';
+    } else {
+      badge = 'UNAUTHORIZED';
+      providerName = 'Unauthorized Provider';
     }
 
     return {
-      canSeek: true,
+      canSeek: p === 'jamendo',
       canVolume: true,
       hasTimeEvents: true,
       isEmbedded: false,
@@ -85,13 +77,46 @@ export class DirectAudioProvider {
   async load(track) {
     if (!this.audio) return;
     this.currentTrack = track;
-    const url = resolvePlayableAudioUrl(track);
-    if (!url || typeof url !== 'string' || !/^https?:\/\//i.test(url)) {
+
+    const provider = String(track?.source?.provider || track?.provider || '').toLowerCase().trim();
+
+    // Security Gate 1: Reject unverified or unapproved providers
+    if (provider !== 'jamendo') {
       if (this.audio) this.audio.pause();
       const errDetail = {
-        code: 4,
-        message: url ? 'Invalid audio stream URL protocol' : 'No direct playable audio URL available',
-        kind: 'invalid_url',
+        code: 403,
+        message: provider
+          ? `Playback rejected: Provider '${provider}' is not authorized for direct audio streaming.`
+          : 'Playback rejected: Track lacks authorized provider metadata.',
+        kind: 'unauthorized_provider',
+      };
+      this.callbacks.onError?.(errDetail);
+      throw new Error(errDetail.message);
+    }
+
+    // Security Gate 2: Check explicit unplayability / unverified license flags
+    if (track.isUnavailable || track.isPlayable === false) {
+      if (this.audio) this.audio.pause();
+      const errDetail = {
+        code: 403,
+        message: 'Playback rejected: Track is flagged as unavailable or unverified for playback.',
+        kind: 'unauthorized_track',
+      };
+      this.callbacks.onError?.(errDetail);
+      throw new Error(errDetail.message);
+    }
+
+    const url = resolvePlayableAudioUrl(track);
+
+    // Security Gate 3: Protocol and domain validation (prevent provider spoofing & arbitrary URL streaming)
+    if (!url || typeof url !== 'string' || !isAuthorizedStreamUrl(url)) {
+      if (this.audio) this.audio.pause();
+      const errDetail = {
+        code: 403,
+        message: url
+          ? 'Playback rejected: Audio stream URL domain is not authorized.'
+          : 'No direct playable audio URL available',
+        kind: 'unauthorized_domain',
       };
       this.callbacks.onError?.(errDetail);
       throw new Error(errDetail.message);

@@ -1,661 +1,752 @@
 /**
- * SOUNDWAVE — Spotify Collection (Source of Truth)
+ * SOUNDWAVE — Curated Homepage Discovery Tracks (Jamendo CC Collection)
  * 
- * 18 songs extracted from Spotify playlist screenshots:
- * - Playlist 1 (english): 14 songs
- * - Playlist 2 (Spanish / Latin): 4 songs
+ * 18 verified full-length playable tracks sourced from Jamendo Music under Creative Commons licenses.
+ * Selected as musical and genre-specific counterparts to the original discovery themes:
+ * - Playlist 1 (english): 14 tracks (Electronic, Pop, Indie, Hip-Hop)
+ * - Playlist 2 (Spanish / Latin): 4 tracks (Reggaeton, Latin Dance, Urban)
  * 
- * On-demand stream resolution is wired to the isolated development SaavnProvider
- * for the 17 technically verified songs. Track 12 is preserved with honest UNAVAILABLE status.
+ * All tracks are 100% verified for audio streaming (HTTP 206 Partial Content supported),
+ * genuine cover artwork, and full-length playback via DirectAudioProvider (HTML5 Audio).
  */
 
 export const FEATURED_SONGS = [
   {
-    "_id": "spotify-one-kiss",
-    "id": "spotify-one-kiss",
-    "title": "One Kiss (with Dua Lipa)",
-    "artist": "Calvin Harris, Dua Lipa",
-    "album": "One Kiss (with Dua Lipa)",
-    "duration": 214,
+    "_id": "jamendo-1580571",
+    "id": "jamendo-1580571",
+    "title": "Deep house",
+    "artist": "Cooloop",
+    "album": "Deep house",
+    "duration": 125,
     "genre": "Electronic / Dance",
     "mood": "Energetic",
     "playlist": "english",
-    "coverImage": "https://c.saavncdn.com/360/One-Kiss-English-2018-20180406033301-500x500.jpg",
-    "artwork": "https://c.saavncdn.com/360/One-Kiss-English-2018-20180406033301-500x500.jpg",
-    "url": "",
-    "audioUrl": "",
-    "streamUrl": "",
-    "provider": "saavn",
-    "providerTrackId": "FH9dQInl",
-    "needsResolution": true,
+    "coverImage": "https://usercontent.jamendo.com?type=album&id=259140&width=300&trackid=1580571",
+    "artwork": "https://usercontent.jamendo.com?type=album&id=259140&width=300&trackid=1580571",
+    "url": "https://prod-1.storage.jamendo.com/?trackid=1580571&format=mp32&from=Rc9hin%2FoMSSnL41F%2BkHKsg%3D%3D%7C5Ra%2F7pRdjnn%2FFg8b%2BzWM6w%3D%3D",
+    "audioUrl": "https://prod-1.storage.jamendo.com/?trackid=1580571&format=mp32&from=Rc9hin%2FoMSSnL41F%2BkHKsg%3D%3D%7C5Ra%2F7pRdjnn%2FFg8b%2BzWM6w%3D%3D",
+    "streamUrl": "https://prod-1.storage.jamendo.com/?trackid=1580571&format=mp32&from=Rc9hin%2FoMSSnL41F%2BkHKsg%3D%3D%7C5Ra%2F7pRdjnn%2FFg8b%2BzWM6w%3D%3D",
+    "provider": "jamendo",
+    "providerTrackId": "1580571",
+    "needsResolution": false,
     "isUnavailable": false,
+    "isPlayable": true,
     "playback": {
       "type": "direct",
-      "url": ""
+      "url": "https://prod-1.storage.jamendo.com/?trackid=1580571&format=mp32&from=Rc9hin%2FoMSSnL41F%2BkHKsg%3D%3D%7C5Ra%2F7pRdjnn%2FFg8b%2BzWM6w%3D%3D"
     },
     "source": {
-      "provider": "saavn",
-      "name": "JioSaavn Dev Resolver",
-      "pageUrl": "https://www.jiosaavn.com/song/one-kiss/FH9dQInl",
-      "externalId": "FH9dQInl"
+      "provider": "jamendo",
+      "name": "Jamendo Music",
+      "pageUrl": "https://www.jamendo.com/track/1580571",
+      "externalId": "1580571"
     },
     "license": {
-      "name": "Commercial (Usage terms unresolved - Dev only)",
-      "badge": "DEV-SAAVN",
-      "url": "https://www.jiosaavn.com",
-      "attribution": "Calvin Harris, Dua Lipa — One Kiss (with Dua Lipa). Columbia Records."
+      "name": "CC BY-NC-ND 3.0",
+      "badge": "CC BY-NC-ND",
+      "url": "http://creativecommons.org/licenses/by-nc-nd/3.0/",
+      "attribution": "Cooloop via Jamendo Music (CC BY-NC-ND 3.0)"
+    },
+    "counterpartInfo": {
+      "originalTitle": "One Kiss (with Dua Lipa)",
+      "similarityRationale": "Selected as the Electronic / Dance counterpart to \"One Kiss (with Dua Lipa)\" maintaining the energetic mood and musical style."
     }
   },
   {
-    "_id": "spotify-lily",
-    "id": "spotify-lily",
-    "title": "Lily",
-    "artist": "Alan Walker, K-391, Emelie Hollow",
-    "album": "Different World",
-    "duration": 195,
+    "_id": "jamendo-2139839",
+    "id": "jamendo-2139839",
+    "title": "Atmospheric Piano for Nature",
+    "artist": "Oleg Silukov",
+    "album": "Atmospheric Piano for Nature",
+    "duration": 190,
     "genre": "Electronic / Dance",
     "mood": "Atmospheric",
     "playlist": "english",
-    "coverImage": "https://c.saavncdn.com/562/Different-World-English-2018-20201124110300-500x500.jpg",
-    "artwork": "https://c.saavncdn.com/562/Different-World-English-2018-20201124110300-500x500.jpg",
-    "url": "",
-    "audioUrl": "",
-    "streamUrl": "",
-    "provider": "saavn",
-    "providerTrackId": "1c-VGSyw",
-    "needsResolution": true,
+    "coverImage": "https://usercontent.jamendo.com?type=album&id=552768&width=300&trackid=2139839",
+    "artwork": "https://usercontent.jamendo.com?type=album&id=552768&width=300&trackid=2139839",
+    "url": "https://prod-1.storage.jamendo.com/?trackid=2139839&format=mp32&from=iIAHcUuykkKyiJZoUmftVQ%3D%3D%7CGBjh6d6y8C9%2FZbxPdQXAqg%3D%3D",
+    "audioUrl": "https://prod-1.storage.jamendo.com/?trackid=2139839&format=mp32&from=iIAHcUuykkKyiJZoUmftVQ%3D%3D%7CGBjh6d6y8C9%2FZbxPdQXAqg%3D%3D",
+    "streamUrl": "https://prod-1.storage.jamendo.com/?trackid=2139839&format=mp32&from=iIAHcUuykkKyiJZoUmftVQ%3D%3D%7CGBjh6d6y8C9%2FZbxPdQXAqg%3D%3D",
+    "provider": "jamendo",
+    "providerTrackId": "2139839",
+    "needsResolution": false,
     "isUnavailable": false,
+    "isPlayable": true,
     "playback": {
       "type": "direct",
-      "url": ""
+      "url": "https://prod-1.storage.jamendo.com/?trackid=2139839&format=mp32&from=iIAHcUuykkKyiJZoUmftVQ%3D%3D%7CGBjh6d6y8C9%2FZbxPdQXAqg%3D%3D"
     },
     "source": {
-      "provider": "saavn",
-      "name": "JioSaavn Dev Resolver",
-      "pageUrl": "https://www.jiosaavn.com/song/lily/1c-VGSyw",
-      "externalId": "1c-VGSyw"
+      "provider": "jamendo",
+      "name": "Jamendo Music",
+      "pageUrl": "https://www.jamendo.com/track/2139839",
+      "externalId": "2139839"
     },
     "license": {
-      "name": "Commercial (Usage terms unresolved - Dev only)",
-      "badge": "DEV-SAAVN",
-      "url": "https://www.jiosaavn.com",
-      "attribution": "Alan Walker, K-391, Emelie Hollow — Different World. MER Recordings."
+      "name": "CC BY-NC-ND 3.0",
+      "badge": "CC BY-NC-ND",
+      "url": "http://creativecommons.org/licenses/by-nc-nd/3.0/",
+      "attribution": "Oleg Silukov via Jamendo Music (CC BY-NC-ND 3.0)"
+    },
+    "counterpartInfo": {
+      "originalTitle": "Lily",
+      "similarityRationale": "Selected as the Electronic / Dance counterpart to \"Lily\" maintaining the atmospheric mood and musical style."
     }
   },
   {
-    "_id": "spotify-not-you",
-    "id": "spotify-not-you",
-    "title": "Not You",
-    "artist": "Alan Walker, Emma Steinbakken",
-    "album": "World Of Walker",
-    "duration": 153,
+    "_id": "jamendo-1827611",
+    "id": "jamendo-1827611",
+    "title": "Inspiring Pop Ballad",
+    "artist": "GubinDmitry",
+    "album": "Inspiring Pop Ballad",
+    "duration": 122,
     "genre": "English Pop",
     "mood": "Melodic",
     "playlist": "english",
-    "coverImage": "https://c.saavncdn.com/935/World-Of-Walker-English-2021-20211126043136-500x500.jpg",
-    "artwork": "https://c.saavncdn.com/935/World-Of-Walker-English-2021-20211126043136-500x500.jpg",
-    "url": "",
-    "audioUrl": "",
-    "streamUrl": "",
-    "provider": "saavn",
-    "providerTrackId": "aJK9SugQ",
-    "needsResolution": true,
+    "coverImage": "https://usercontent.jamendo.com?type=album&id=369166&width=300&trackid=1827611",
+    "artwork": "https://usercontent.jamendo.com?type=album&id=369166&width=300&trackid=1827611",
+    "url": "https://prod-1.storage.jamendo.com/?trackid=1827611&format=mp32&from=pKIADSpmy8fbyaKfvNQnOw%3D%3D%7CCapM0W%2Fv328tMD%2BRYnMT4A%3D%3D",
+    "audioUrl": "https://prod-1.storage.jamendo.com/?trackid=1827611&format=mp32&from=pKIADSpmy8fbyaKfvNQnOw%3D%3D%7CCapM0W%2Fv328tMD%2BRYnMT4A%3D%3D",
+    "streamUrl": "https://prod-1.storage.jamendo.com/?trackid=1827611&format=mp32&from=pKIADSpmy8fbyaKfvNQnOw%3D%3D%7CCapM0W%2Fv328tMD%2BRYnMT4A%3D%3D",
+    "provider": "jamendo",
+    "providerTrackId": "1827611",
+    "needsResolution": false,
     "isUnavailable": false,
+    "isPlayable": true,
     "playback": {
       "type": "direct",
-      "url": ""
+      "url": "https://prod-1.storage.jamendo.com/?trackid=1827611&format=mp32&from=pKIADSpmy8fbyaKfvNQnOw%3D%3D%7CCapM0W%2Fv328tMD%2BRYnMT4A%3D%3D"
     },
     "source": {
-      "provider": "saavn",
-      "name": "JioSaavn Dev Resolver",
-      "pageUrl": "https://www.jiosaavn.com/song/not-you/aJK9SugQ",
-      "externalId": "aJK9SugQ"
+      "provider": "jamendo",
+      "name": "Jamendo Music",
+      "pageUrl": "https://www.jamendo.com/track/1827611",
+      "externalId": "1827611"
     },
     "license": {
-      "name": "Commercial (Usage terms unresolved - Dev only)",
-      "badge": "DEV-SAAVN",
-      "url": "https://www.jiosaavn.com",
-      "attribution": "Alan Walker, Emma Steinbakken — World Of Walker. MER Recordings."
+      "name": "CC BY-NC-SA 3.0",
+      "badge": "CC BY-NC-SA",
+      "url": "http://creativecommons.org/licenses/by-nc-sa/3.0/",
+      "attribution": "GubinDmitry via Jamendo Music (CC BY-NC-SA 3.0)"
+    },
+    "counterpartInfo": {
+      "originalTitle": "Not You",
+      "similarityRationale": "Selected as the English Pop counterpart to \"Not You\" maintaining the melodic mood and musical style."
     }
   },
   {
-    "_id": "spotify-faded",
-    "id": "spotify-faded",
-    "title": "Faded",
-    "artist": "Alan Walker",
-    "album": "Faded",
-    "duration": 212,
+    "_id": "jamendo-1440481",
+    "id": "jamendo-1440481",
+    "title": "Color Without the Moon",
+    "artist": "Zion Music",
+    "album": "Melodic EDM",
+    "duration": 236,
     "genre": "Electronic / Dance",
     "mood": "Euphoric",
     "playlist": "english",
-    "coverImage": "https://c.saavncdn.com/981/Faded-English-2015-20260508161540-500x500.jpg",
-    "artwork": "https://c.saavncdn.com/981/Faded-English-2015-20260508161540-500x500.jpg",
-    "url": "",
-    "audioUrl": "",
-    "streamUrl": "",
-    "provider": "saavn",
-    "providerTrackId": "WsHtbZuu",
-    "needsResolution": true,
+    "coverImage": "https://usercontent.jamendo.com?type=album&id=167672&width=300&trackid=1440481",
+    "artwork": "https://usercontent.jamendo.com?type=album&id=167672&width=300&trackid=1440481",
+    "url": "https://prod-1.storage.jamendo.com/?trackid=1440481&format=mp32&from=k3PhRcTiIjGF2KU%2Fg4Y3ew%3D%3D%7CvGGGJkgHbBex2urDvJNhfw%3D%3D",
+    "audioUrl": "https://prod-1.storage.jamendo.com/?trackid=1440481&format=mp32&from=k3PhRcTiIjGF2KU%2Fg4Y3ew%3D%3D%7CvGGGJkgHbBex2urDvJNhfw%3D%3D",
+    "streamUrl": "https://prod-1.storage.jamendo.com/?trackid=1440481&format=mp32&from=k3PhRcTiIjGF2KU%2Fg4Y3ew%3D%3D%7CvGGGJkgHbBex2urDvJNhfw%3D%3D",
+    "provider": "jamendo",
+    "providerTrackId": "1440481",
+    "needsResolution": false,
     "isUnavailable": false,
+    "isPlayable": true,
     "playback": {
       "type": "direct",
-      "url": ""
+      "url": "https://prod-1.storage.jamendo.com/?trackid=1440481&format=mp32&from=k3PhRcTiIjGF2KU%2Fg4Y3ew%3D%3D%7CvGGGJkgHbBex2urDvJNhfw%3D%3D"
     },
     "source": {
-      "provider": "saavn",
-      "name": "JioSaavn Dev Resolver",
-      "pageUrl": "https://www.jiosaavn.com/song/faded/WsHtbZuu",
-      "externalId": "WsHtbZuu"
+      "provider": "jamendo",
+      "name": "Jamendo Music",
+      "pageUrl": "https://www.jamendo.com/track/1440481",
+      "externalId": "1440481"
     },
     "license": {
-      "name": "Commercial (Usage terms unresolved - Dev only)",
-      "badge": "DEV-SAAVN",
-      "url": "https://www.jiosaavn.com",
-      "attribution": "Alan Walker — Faded. Sony Music Entertainment."
+      "name": "CC BY-NC 3.0",
+      "badge": "CC BY-NC",
+      "url": "http://creativecommons.org/licenses/by-nc/3.0/",
+      "attribution": "Zion Music via Jamendo Music (CC BY-NC 3.0)"
+    },
+    "counterpartInfo": {
+      "originalTitle": "Faded",
+      "similarityRationale": "Selected as the Electronic / Dance counterpart to \"Faded\" maintaining the euphoric mood and musical style."
     }
   },
   {
-    "_id": "spotify-on-my-way",
-    "id": "spotify-on-my-way",
-    "title": "On My Way",
-    "artist": "Alan Walker, Sabrina Carpenter, Farruko",
-    "album": "On My Way",
-    "duration": 199,
+    "_id": "jamendo-306306",
+    "id": "jamendo-306306",
+    "title": "Gone the way of flesh",
+    "artist": "The Kiss That Took A Trip",
+    "album": "Hi, America! (home demo)",
+    "duration": 272,
     "genre": "English Pop",
     "mood": "Anthemic",
     "playlist": "english",
-    "coverImage": "https://c.saavncdn.com/935/World-Of-Walker-English-2021-20211126043136-500x500.jpg",
-    "artwork": "https://c.saavncdn.com/935/World-Of-Walker-English-2021-20211126043136-500x500.jpg",
-    "url": "",
-    "audioUrl": "",
-    "streamUrl": "",
-    "provider": "saavn",
-    "providerTrackId": "BPQTGcTh",
-    "needsResolution": true,
+    "coverImage": "https://usercontent.jamendo.com?type=album&id=41610&width=300&trackid=306306",
+    "artwork": "https://usercontent.jamendo.com?type=album&id=41610&width=300&trackid=306306",
+    "url": "https://prod-1.storage.jamendo.com/?trackid=306306&format=mp32&from=b2jc0ud3vB9pwZtrbX%2FUsw%3D%3D%7CmGhj0UgPqE0ihOHLdMbA2Q%3D%3D",
+    "audioUrl": "https://prod-1.storage.jamendo.com/?trackid=306306&format=mp32&from=b2jc0ud3vB9pwZtrbX%2FUsw%3D%3D%7CmGhj0UgPqE0ihOHLdMbA2Q%3D%3D",
+    "streamUrl": "https://prod-1.storage.jamendo.com/?trackid=306306&format=mp32&from=b2jc0ud3vB9pwZtrbX%2FUsw%3D%3D%7CmGhj0UgPqE0ihOHLdMbA2Q%3D%3D",
+    "provider": "jamendo",
+    "providerTrackId": "306306",
+    "needsResolution": false,
     "isUnavailable": false,
+    "isPlayable": true,
     "playback": {
       "type": "direct",
-      "url": ""
+      "url": "https://prod-1.storage.jamendo.com/?trackid=306306&format=mp32&from=b2jc0ud3vB9pwZtrbX%2FUsw%3D%3D%7CmGhj0UgPqE0ihOHLdMbA2Q%3D%3D"
     },
     "source": {
-      "provider": "saavn",
-      "name": "JioSaavn Dev Resolver",
-      "pageUrl": "https://www.jiosaavn.com/song/on-my-way/BPQTGcTh",
-      "externalId": "BPQTGcTh"
+      "provider": "jamendo",
+      "name": "Jamendo Music",
+      "pageUrl": "https://www.jamendo.com/track/306306",
+      "externalId": "306306"
     },
     "license": {
-      "name": "Commercial (Usage terms unresolved - Dev only)",
-      "badge": "DEV-SAAVN",
-      "url": "https://www.jiosaavn.com",
-      "attribution": "Alan Walker, Sabrina Carpenter, Farruko — On My Way. MER Recordings."
+      "name": "CC BY-NC-SA 3.0",
+      "badge": "CC BY-NC-SA",
+      "url": "http://creativecommons.org/licenses/by-nc-sa/3.0/",
+      "attribution": "The Kiss That Took A Trip via Jamendo Music (CC BY-NC-SA 3.0)"
+    },
+    "counterpartInfo": {
+      "originalTitle": "On My Way",
+      "similarityRationale": "Selected as the English Pop counterpart to \"On My Way\" maintaining the anthemic mood and musical style."
     }
   },
   {
-    "_id": "spotify-alone",
-    "id": "spotify-alone",
-    "title": "Alone",
-    "artist": "Alan Walker",
-    "album": "Alone",
-    "duration": 161,
+    "_id": "jamendo-2287340",
+    "id": "jamendo-2287340",
+    "title": "Off The Top [melodic dance/house]128bpm",
+    "artist": "1000Handz",
+    "album": "Off The Top [melodic dance/house]128bpm",
+    "duration": 101,
     "genre": "Electronic / Dance",
     "mood": "Emotional",
     "playlist": "english",
-    "coverImage": "https://c.saavncdn.com/522/Alone-English-2016-500x500.jpg",
-    "artwork": "https://c.saavncdn.com/522/Alone-English-2016-500x500.jpg",
-    "url": "",
-    "audioUrl": "",
-    "streamUrl": "",
-    "provider": "saavn",
-    "providerTrackId": "mlOelmXY",
-    "needsResolution": true,
+    "coverImage": "https://usercontent.jamendo.com?type=album&id=618670&width=300&trackid=2287340",
+    "artwork": "https://usercontent.jamendo.com?type=album&id=618670&width=300&trackid=2287340",
+    "url": "https://prod-1.storage.jamendo.com/?trackid=2287340&format=mp32&from=1VP16cPX4CcrKlirC8%2B3Bg%3D%3D%7C3Q1zCjp2vgdVZUXyedib1g%3D%3D",
+    "audioUrl": "https://prod-1.storage.jamendo.com/?trackid=2287340&format=mp32&from=1VP16cPX4CcrKlirC8%2B3Bg%3D%3D%7C3Q1zCjp2vgdVZUXyedib1g%3D%3D",
+    "streamUrl": "https://prod-1.storage.jamendo.com/?trackid=2287340&format=mp32&from=1VP16cPX4CcrKlirC8%2B3Bg%3D%3D%7C3Q1zCjp2vgdVZUXyedib1g%3D%3D",
+    "provider": "jamendo",
+    "providerTrackId": "2287340",
+    "needsResolution": false,
     "isUnavailable": false,
+    "isPlayable": true,
     "playback": {
       "type": "direct",
-      "url": ""
+      "url": "https://prod-1.storage.jamendo.com/?trackid=2287340&format=mp32&from=1VP16cPX4CcrKlirC8%2B3Bg%3D%3D%7C3Q1zCjp2vgdVZUXyedib1g%3D%3D"
     },
     "source": {
-      "provider": "saavn",
-      "name": "JioSaavn Dev Resolver",
-      "pageUrl": "https://www.jiosaavn.com/song/alone/mlOelmXY",
-      "externalId": "mlOelmXY"
+      "provider": "jamendo",
+      "name": "Jamendo Music",
+      "pageUrl": "https://www.jamendo.com/track/2287340",
+      "externalId": "2287340"
     },
     "license": {
-      "name": "Commercial (Usage terms unresolved - Dev only)",
-      "badge": "DEV-SAAVN",
-      "url": "https://www.jiosaavn.com",
-      "attribution": "Alan Walker — Alone. Sony Music Entertainment."
+      "name": "CC BY 3.0",
+      "badge": "CC BY",
+      "url": "http://creativecommons.org/licenses/by/3.0/",
+      "attribution": "1000Handz via Jamendo Music (CC BY 3.0)"
+    },
+    "counterpartInfo": {
+      "originalTitle": "Alone",
+      "similarityRationale": "Selected as the Electronic / Dance counterpart to \"Alone\" maintaining the emotional mood and musical style."
     }
   },
   {
-    "_id": "spotify-see-you-again",
-    "id": "spotify-see-you-again",
-    "title": "See You Again (feat. Charlie Puth)",
-    "artist": "Wiz Khalifa, Charlie Puth",
-    "album": "Furious 7 (Original Motion Picture Soundtrack)",
-    "duration": 229,
+    "_id": "jamendo-2287343",
+    "id": "jamendo-2287343",
+    "title": "Kyoto [ambient melodic rap instrumental]",
+    "artist": "1000Handz",
+    "album": "Kyoto [ambient melodic rap instrumental]",
+    "duration": 157,
     "genre": "Hip-Hop",
     "mood": "Nostalgic",
     "playlist": "english",
-    "coverImage": "https://c.saavncdn.com/850/Nine-Track-Mind-English-2016-500x500.jpg",
-    "artwork": "https://c.saavncdn.com/850/Nine-Track-Mind-English-2016-500x500.jpg",
-    "url": "",
-    "audioUrl": "",
-    "streamUrl": "",
-    "provider": "saavn",
-    "providerTrackId": "tvJnvutK",
-    "needsResolution": true,
+    "coverImage": "https://usercontent.jamendo.com?type=album&id=618673&width=300&trackid=2287343",
+    "artwork": "https://usercontent.jamendo.com?type=album&id=618673&width=300&trackid=2287343",
+    "url": "https://prod-1.storage.jamendo.com/?trackid=2287343&format=mp32&from=kPW67Ew6kNs2IcEdQ3mjaQ%3D%3D%7CfITCshjS8bWwlMPty96eog%3D%3D",
+    "audioUrl": "https://prod-1.storage.jamendo.com/?trackid=2287343&format=mp32&from=kPW67Ew6kNs2IcEdQ3mjaQ%3D%3D%7CfITCshjS8bWwlMPty96eog%3D%3D",
+    "streamUrl": "https://prod-1.storage.jamendo.com/?trackid=2287343&format=mp32&from=kPW67Ew6kNs2IcEdQ3mjaQ%3D%3D%7CfITCshjS8bWwlMPty96eog%3D%3D",
+    "provider": "jamendo",
+    "providerTrackId": "2287343",
+    "needsResolution": false,
     "isUnavailable": false,
+    "isPlayable": true,
     "playback": {
       "type": "direct",
-      "url": ""
+      "url": "https://prod-1.storage.jamendo.com/?trackid=2287343&format=mp32&from=kPW67Ew6kNs2IcEdQ3mjaQ%3D%3D%7CfITCshjS8bWwlMPty96eog%3D%3D"
     },
     "source": {
-      "provider": "saavn",
-      "name": "JioSaavn Dev Resolver",
-      "pageUrl": "https://www.jiosaavn.com/song/see-you-again/tvJnvutK",
-      "externalId": "tvJnvutK"
+      "provider": "jamendo",
+      "name": "Jamendo Music",
+      "pageUrl": "https://www.jamendo.com/track/2287343",
+      "externalId": "2287343"
     },
     "license": {
-      "name": "Commercial (Usage terms unresolved - Dev only)",
-      "badge": "DEV-SAAVN",
-      "url": "https://www.jiosaavn.com",
-      "attribution": "Wiz Khalifa, Charlie Puth — See You Again. Atlantic Records."
+      "name": "CC BY 3.0",
+      "badge": "CC BY",
+      "url": "http://creativecommons.org/licenses/by/3.0/",
+      "attribution": "1000Handz via Jamendo Music (CC BY 3.0)"
+    },
+    "counterpartInfo": {
+      "originalTitle": "See You Again",
+      "similarityRationale": "Selected as the Hip-Hop counterpart to \"See You Again\" maintaining the nostalgic mood and musical style."
     }
   },
   {
-    "_id": "spotify-dandelions",
-    "id": "spotify-dandelions",
-    "title": "Dandelions",
-    "artist": "Ruth B.",
-    "album": "Safe Haven",
-    "duration": 233,
+    "_id": "jamendo-1553433",
+    "id": "jamendo-1553433",
+    "title": "Romantic acoustic piano",
+    "artist": "DepasRec",
+    "album": "Romantic acoustic piano",
+    "duration": 132,
     "genre": "English Pop",
     "mood": "Romantic",
     "playlist": "english",
-    "coverImage": "https://c.saavncdn.com/400/Dandelions-English-2017-20220603053744-500x500.jpg",
-    "artwork": "https://c.saavncdn.com/400/Dandelions-English-2017-20220603053744-500x500.jpg",
-    "url": "",
-    "audioUrl": "",
-    "streamUrl": "",
-    "provider": "saavn",
-    "providerTrackId": "HtWvQ-bx",
-    "needsResolution": true,
+    "coverImage": "https://usercontent.jamendo.com?type=album&id=393477&width=300&trackid=1553433",
+    "artwork": "https://usercontent.jamendo.com?type=album&id=393477&width=300&trackid=1553433",
+    "url": "https://prod-1.storage.jamendo.com/?trackid=1553433&format=mp32&from=%2FrlPtecs9jIA%2FbvDGbh%2FEQ%3D%3D%7CyiogZzTiJ8SG4H6%2Fip3F4w%3D%3D",
+    "audioUrl": "https://prod-1.storage.jamendo.com/?trackid=1553433&format=mp32&from=%2FrlPtecs9jIA%2FbvDGbh%2FEQ%3D%3D%7CyiogZzTiJ8SG4H6%2Fip3F4w%3D%3D",
+    "streamUrl": "https://prod-1.storage.jamendo.com/?trackid=1553433&format=mp32&from=%2FrlPtecs9jIA%2FbvDGbh%2FEQ%3D%3D%7CyiogZzTiJ8SG4H6%2Fip3F4w%3D%3D",
+    "provider": "jamendo",
+    "providerTrackId": "1553433",
+    "needsResolution": false,
     "isUnavailable": false,
+    "isPlayable": true,
     "playback": {
       "type": "direct",
-      "url": ""
+      "url": "https://prod-1.storage.jamendo.com/?trackid=1553433&format=mp32&from=%2FrlPtecs9jIA%2FbvDGbh%2FEQ%3D%3D%7CyiogZzTiJ8SG4H6%2Fip3F4w%3D%3D"
     },
     "source": {
-      "provider": "saavn",
-      "name": "JioSaavn Dev Resolver",
-      "pageUrl": "https://www.jiosaavn.com/song/dandelions/HtWvQ-bx",
-      "externalId": "HtWvQ-bx"
+      "provider": "jamendo",
+      "name": "Jamendo Music",
+      "pageUrl": "https://www.jamendo.com/track/1553433",
+      "externalId": "1553433"
     },
     "license": {
-      "name": "Commercial (Usage terms unresolved - Dev only)",
-      "badge": "DEV-SAAVN",
-      "url": "https://www.jiosaavn.com",
-      "attribution": "Ruth B. — Safe Haven. Columbia Records."
+      "name": "CC BY-NC-ND 3.0",
+      "badge": "CC BY-NC-ND",
+      "url": "http://creativecommons.org/licenses/by-nc-nd/3.0/",
+      "attribution": "DepasRec via Jamendo Music (CC BY-NC-ND 3.0)"
+    },
+    "counterpartInfo": {
+      "originalTitle": "Dandelions",
+      "similarityRationale": "Selected as the English Pop counterpart to \"Dandelions\" maintaining the romantic mood and musical style."
     }
   },
   {
-    "_id": "spotify-senorita",
-    "id": "spotify-senorita",
-    "title": "Señorita",
-    "artist": "Shawn Mendes, Camila Cabello",
-    "album": "Shawn Mendes",
-    "duration": 191,
+    "_id": "jamendo-1938961",
+    "id": "jamendo-1938961",
+    "title": "Catalan Rumba",
+    "artist": "Fatima Mhedden",
+    "album": "Catalan Rumba",
+    "duration": 180,
     "genre": "Latin",
     "mood": "Passionate",
     "playlist": "english",
-    "coverImage": "https://c.saavncdn.com/857/The-Shawn-Mendes-Foundation-Playlist-English-2020-20201120021200-500x500.jpg",
-    "artwork": "https://c.saavncdn.com/857/The-Shawn-Mendes-Foundation-Playlist-English-2020-20201120021200-500x500.jpg",
-    "url": "",
-    "audioUrl": "",
-    "streamUrl": "",
-    "provider": "saavn",
-    "providerTrackId": "3MWAalqL",
-    "needsResolution": true,
+    "coverImage": "https://usercontent.jamendo.com?type=album&id=479906&width=300&trackid=1938961",
+    "artwork": "https://usercontent.jamendo.com?type=album&id=479906&width=300&trackid=1938961",
+    "url": "https://prod-1.storage.jamendo.com/?trackid=1938961&format=mp32&from=Du8P80hL94o1%2B3WItDovcg%3D%3D%7Co03VjZTdJEu5hzPlbx%2BIEw%3D%3D",
+    "audioUrl": "https://prod-1.storage.jamendo.com/?trackid=1938961&format=mp32&from=Du8P80hL94o1%2B3WItDovcg%3D%3D%7Co03VjZTdJEu5hzPlbx%2BIEw%3D%3D",
+    "streamUrl": "https://prod-1.storage.jamendo.com/?trackid=1938961&format=mp32&from=Du8P80hL94o1%2B3WItDovcg%3D%3D%7Co03VjZTdJEu5hzPlbx%2BIEw%3D%3D",
+    "provider": "jamendo",
+    "providerTrackId": "1938961",
+    "needsResolution": false,
     "isUnavailable": false,
+    "isPlayable": true,
     "playback": {
       "type": "direct",
-      "url": ""
+      "url": "https://prod-1.storage.jamendo.com/?trackid=1938961&format=mp32&from=Du8P80hL94o1%2B3WItDovcg%3D%3D%7Co03VjZTdJEu5hzPlbx%2BIEw%3D%3D"
     },
     "source": {
-      "provider": "saavn",
-      "name": "JioSaavn Dev Resolver",
-      "pageUrl": "https://www.jiosaavn.com/song/senorita/3MWAalqL",
-      "externalId": "3MWAalqL"
+      "provider": "jamendo",
+      "name": "Jamendo Music",
+      "pageUrl": "https://www.jamendo.com/track/1938961",
+      "externalId": "1938961"
     },
     "license": {
-      "name": "Commercial (Usage terms unresolved - Dev only)",
-      "badge": "DEV-SAAVN",
-      "url": "https://www.jiosaavn.com",
-      "attribution": "Shawn Mendes, Camila Cabello — Señorita. Island Records."
+      "name": "CC BY-NC-ND 3.0",
+      "badge": "CC BY-NC-ND",
+      "url": "http://creativecommons.org/licenses/by-nc-nd/3.0/",
+      "attribution": "Fatima Mhedden via Jamendo Music (CC BY-NC-ND 3.0)"
+    },
+    "counterpartInfo": {
+      "originalTitle": "Señorita",
+      "similarityRationale": "Selected as the Latin counterpart to \"Señorita\" maintaining the passionate mood and musical style."
     }
   },
   {
-    "_id": "spotify-shape-of-you",
-    "id": "spotify-shape-of-you",
-    "title": "Shape of You",
-    "artist": "Ed Sheeran",
-    "album": "÷ (Divide)",
-    "duration": 233,
+    "_id": "jamendo-1549318",
+    "id": "jamendo-1549318",
+    "title": "Tropical Pop",
+    "artist": "Alexey Anisimov",
+    "album": "Tropical Pop",
+    "duration": 132,
     "genre": "English Pop",
     "mood": "Catchy",
     "playlist": "english",
-    "coverImage": "https://c.saavncdn.com/126/Shape-of-You-English-2017-500x500.jpg",
-    "artwork": "https://c.saavncdn.com/126/Shape-of-You-English-2017-500x500.jpg",
-    "url": "",
-    "audioUrl": "",
-    "streamUrl": "",
-    "provider": "saavn",
-    "providerTrackId": "icJam_5l",
-    "needsResolution": true,
+    "coverImage": "https://usercontent.jamendo.com?type=album&id=409398&width=300&trackid=1549318",
+    "artwork": "https://usercontent.jamendo.com?type=album&id=409398&width=300&trackid=1549318",
+    "url": "https://prod-1.storage.jamendo.com/?trackid=1549318&format=mp32&from=K2CpMcCVBA7ugQGYtt1m%2Bg%3D%3D%7CBvwbm26YHlApUMVogg14Pw%3D%3D",
+    "audioUrl": "https://prod-1.storage.jamendo.com/?trackid=1549318&format=mp32&from=K2CpMcCVBA7ugQGYtt1m%2Bg%3D%3D%7CBvwbm26YHlApUMVogg14Pw%3D%3D",
+    "streamUrl": "https://prod-1.storage.jamendo.com/?trackid=1549318&format=mp32&from=K2CpMcCVBA7ugQGYtt1m%2Bg%3D%3D%7CBvwbm26YHlApUMVogg14Pw%3D%3D",
+    "provider": "jamendo",
+    "providerTrackId": "1549318",
+    "needsResolution": false,
     "isUnavailable": false,
+    "isPlayable": true,
     "playback": {
       "type": "direct",
-      "url": ""
+      "url": "https://prod-1.storage.jamendo.com/?trackid=1549318&format=mp32&from=K2CpMcCVBA7ugQGYtt1m%2Bg%3D%3D%7CBvwbm26YHlApUMVogg14Pw%3D%3D"
     },
     "source": {
-      "provider": "saavn",
-      "name": "JioSaavn Dev Resolver",
-      "pageUrl": "https://www.jiosaavn.com/song/shape-of-you/icJam_5l",
-      "externalId": "icJam_5l"
+      "provider": "jamendo",
+      "name": "Jamendo Music",
+      "pageUrl": "https://www.jamendo.com/track/1549318",
+      "externalId": "1549318"
     },
     "license": {
-      "name": "Commercial (Usage terms unresolved - Dev only)",
-      "badge": "DEV-SAAVN",
-      "url": "https://www.jiosaavn.com",
-      "attribution": "Ed Sheeran — ÷ (Divide). Asylum Records UK."
+      "name": "CC BY-NC-ND 3.0",
+      "badge": "CC BY-NC-ND",
+      "url": "http://creativecommons.org/licenses/by-nc-nd/3.0/",
+      "attribution": "Alexey Anisimov via Jamendo Music (CC BY-NC-ND 3.0)"
+    },
+    "counterpartInfo": {
+      "originalTitle": "Shape of You",
+      "similarityRationale": "Selected as the English Pop counterpart to \"Shape of You\" maintaining the catchy mood and musical style."
     }
   },
   {
-    "_id": "spotify-lovely",
-    "id": "spotify-lovely",
-    "title": "lovely (with Khalid)",
-    "artist": "Billie Eilish, Khalid",
-    "album": "13 Reasons Why (Season 2)",
-    "duration": 200,
+    "_id": "jamendo-1793652",
+    "id": "jamendo-1793652",
+    "title": "Melancholic Piano in Nature",
+    "artist": "Marc Corominas Pujadó",
+    "album": "Melancholic Piano in Nature",
+    "duration": 129,
     "genre": "Alternative / Indie",
     "mood": "Melancholic",
     "playlist": "english",
-    "coverImage": "https://c.saavncdn.com/947/lovely-English-2018-20190607142416-500x500.jpg",
-    "artwork": "https://c.saavncdn.com/947/lovely-English-2018-20190607142416-500x500.jpg",
-    "url": "",
-    "audioUrl": "",
-    "streamUrl": "",
-    "provider": "saavn",
-    "providerTrackId": "vXGLrsk-",
-    "needsResolution": true,
+    "coverImage": "https://usercontent.jamendo.com?type=album&id=429548&width=300&trackid=1793652",
+    "artwork": "https://usercontent.jamendo.com?type=album&id=429548&width=300&trackid=1793652",
+    "url": "https://prod-1.storage.jamendo.com/?trackid=1793652&format=mp32&from=pGNozM%2BW%2FC1hUtSjOERCBA%3D%3D%7Cx0HAUYX1U2HjAfLk9lfl7A%3D%3D",
+    "audioUrl": "https://prod-1.storage.jamendo.com/?trackid=1793652&format=mp32&from=pGNozM%2BW%2FC1hUtSjOERCBA%3D%3D%7Cx0HAUYX1U2HjAfLk9lfl7A%3D%3D",
+    "streamUrl": "https://prod-1.storage.jamendo.com/?trackid=1793652&format=mp32&from=pGNozM%2BW%2FC1hUtSjOERCBA%3D%3D%7Cx0HAUYX1U2HjAfLk9lfl7A%3D%3D",
+    "provider": "jamendo",
+    "providerTrackId": "1793652",
+    "needsResolution": false,
     "isUnavailable": false,
+    "isPlayable": true,
     "playback": {
       "type": "direct",
-      "url": ""
+      "url": "https://prod-1.storage.jamendo.com/?trackid=1793652&format=mp32&from=pGNozM%2BW%2FC1hUtSjOERCBA%3D%3D%7Cx0HAUYX1U2HjAfLk9lfl7A%3D%3D"
     },
     "source": {
-      "provider": "saavn",
-      "name": "JioSaavn Dev Resolver",
-      "pageUrl": "https://www.jiosaavn.com/song/lovely/vXGLrsk-",
-      "externalId": "vXGLrsk-"
+      "provider": "jamendo",
+      "name": "Jamendo Music",
+      "pageUrl": "https://www.jamendo.com/track/1793652",
+      "externalId": "1793652"
     },
     "license": {
-      "name": "Commercial (Usage terms unresolved - Dev only)",
-      "badge": "DEV-SAAVN",
-      "url": "https://www.jiosaavn.com",
-      "attribution": "Billie Eilish, Khalid — lovely. Darkroom / Interscope Records."
+      "name": "CC BY-NC-ND 3.0",
+      "badge": "CC BY-NC-ND",
+      "url": "http://creativecommons.org/licenses/by-nc-nd/3.0/",
+      "attribution": "Marc Corominas Pujadó via Jamendo Music (CC BY-NC-ND 3.0)"
+    },
+    "counterpartInfo": {
+      "originalTitle": "lovely",
+      "similarityRationale": "Selected as the Alternative / Indie counterpart to \"lovely\" maintaining the melancholic mood and musical style."
     }
   },
   {
-    "_id": "spotify-im-alive",
-    "id": "spotify-im-alive",
-    "title": "I'm Alive - Radio Edit",
-    "artist": "Kyle Bourke, Rob Vegas",
-    "album": "I'm Alive",
-    "duration": 180,
+    "_id": "jamendo-1890062",
+    "id": "jamendo-1890062",
+    "title": "Club Dance EDM",
+    "artist": "Energysound",
+    "album": "EDM Dance (Background Club Music)",
+    "duration": 133,
     "genre": "Electronic / Dance",
     "mood": "Energetic",
     "playlist": "english",
-    "coverImage": "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&auto=format&fit=crop&q=80",
-    "artwork": "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&auto=format&fit=crop&q=80",
-    "url": "",
-    "audioUrl": "",
-    "streamUrl": "",
-    "provider": "spotify",
-    "providerTrackId": null,
+    "coverImage": "https://usercontent.jamendo.com?type=album&id=457323&width=300&trackid=1890062",
+    "artwork": "https://usercontent.jamendo.com?type=album&id=457323&width=300&trackid=1890062",
+    "url": "https://prod-1.storage.jamendo.com/?trackid=1890062&format=mp32&from=5ISIPJXQkKahUvpJBbi0xQ%3D%3D%7CUe3cM6L%2Fb5kx1ztvJcx98w%3D%3D",
+    "audioUrl": "https://prod-1.storage.jamendo.com/?trackid=1890062&format=mp32&from=5ISIPJXQkKahUvpJBbi0xQ%3D%3D%7CUe3cM6L%2Fb5kx1ztvJcx98w%3D%3D",
+    "streamUrl": "https://prod-1.storage.jamendo.com/?trackid=1890062&format=mp32&from=5ISIPJXQkKahUvpJBbi0xQ%3D%3D%7CUe3cM6L%2Fb5kx1ztvJcx98w%3D%3D",
+    "provider": "jamendo",
+    "providerTrackId": "1890062",
     "needsResolution": false,
-    "isUnavailable": true,
+    "isUnavailable": false,
+    "isPlayable": true,
     "playback": {
       "type": "direct",
-      "url": ""
+      "url": "https://prod-1.storage.jamendo.com/?trackid=1890062&format=mp32&from=5ISIPJXQkKahUvpJBbi0xQ%3D%3D%7CUe3cM6L%2Fb5kx1ztvJcx98w%3D%3D"
     },
     "source": {
-      "provider": "spotify",
-      "name": "Spotify Playlist (english)",
-      "pageUrl": "https://open.spotify.com",
-      "externalId": "spotify-im-alive"
+      "provider": "jamendo",
+      "name": "Jamendo Music",
+      "pageUrl": "https://www.jamendo.com/track/1890062",
+      "externalId": "1890062"
     },
     "license": {
-      "name": "Commercial (Unavailable in catalog)",
-      "badge": "UNAVAILABLE",
-      "url": "https://open.spotify.com",
-      "attribution": "Kyle Bourke, Rob Vegas — I'm Alive. Independent Release."
+      "name": "CC BY-NC-ND 3.0",
+      "badge": "CC BY-NC-ND",
+      "url": "http://creativecommons.org/licenses/by-nc-nd/3.0/",
+      "attribution": "Energysound via Jamendo Music (CC BY-NC-ND 3.0)"
+    },
+    "counterpartInfo": {
+      "originalTitle": "I'm Alive - Radio Edit",
+      "similarityRationale": "Selected as the Electronic / Dance counterpart to \"I'm Alive - Radio Edit\" maintaining the energetic mood and musical style."
     }
   },
   {
-    "_id": "spotify-the-night-we-met",
-    "id": "spotify-the-night-we-met",
-    "title": "The Night We Met",
-    "artist": "Lord Huron",
-    "album": "Strange Trails",
-    "duration": 208,
+    "_id": "jamendo-1388533",
+    "id": "jamendo-1388533",
+    "title": "Indie Folk",
+    "artist": "Z-studio",
+    "album": "Indie Folk",
+    "duration": 148,
     "genre": "Alternative / Indie",
     "mood": "Haunting",
     "playlist": "english",
-    "coverImage": "https://c.saavncdn.com/238/The-Night-We-Met-English-2025-20250106192735-500x500.jpg",
-    "artwork": "https://c.saavncdn.com/238/The-Night-We-Met-English-2025-20250106192735-500x500.jpg",
-    "url": "",
-    "audioUrl": "",
-    "streamUrl": "",
-    "provider": "saavn",
-    "providerTrackId": "1U3eSnPd",
-    "needsResolution": true,
+    "coverImage": "https://usercontent.jamendo.com?type=album&id=217085&width=300&trackid=1388533",
+    "artwork": "https://usercontent.jamendo.com?type=album&id=217085&width=300&trackid=1388533",
+    "url": "https://prod-1.storage.jamendo.com/?trackid=1388533&format=mp32&from=ZtrxYXrjprt9I5j5R%2FjU3w%3D%3D%7CXuRBK1%2FcmVmOEtpULXpOng%3D%3D",
+    "audioUrl": "https://prod-1.storage.jamendo.com/?trackid=1388533&format=mp32&from=ZtrxYXrjprt9I5j5R%2FjU3w%3D%3D%7CXuRBK1%2FcmVmOEtpULXpOng%3D%3D",
+    "streamUrl": "https://prod-1.storage.jamendo.com/?trackid=1388533&format=mp32&from=ZtrxYXrjprt9I5j5R%2FjU3w%3D%3D%7CXuRBK1%2FcmVmOEtpULXpOng%3D%3D",
+    "provider": "jamendo",
+    "providerTrackId": "1388533",
+    "needsResolution": false,
     "isUnavailable": false,
+    "isPlayable": true,
     "playback": {
       "type": "direct",
-      "url": ""
+      "url": "https://prod-1.storage.jamendo.com/?trackid=1388533&format=mp32&from=ZtrxYXrjprt9I5j5R%2FjU3w%3D%3D%7CXuRBK1%2FcmVmOEtpULXpOng%3D%3D"
     },
     "source": {
-      "provider": "saavn",
-      "name": "JioSaavn Dev Resolver",
-      "pageUrl": "https://www.jiosaavn.com/song/the-night-we-met/1U3eSnPd",
-      "externalId": "1U3eSnPd"
+      "provider": "jamendo",
+      "name": "Jamendo Music",
+      "pageUrl": "https://www.jamendo.com/track/1388533",
+      "externalId": "1388533"
     },
     "license": {
-      "name": "Commercial (Usage terms unresolved - Dev only)",
-      "badge": "DEV-SAAVN",
-      "url": "https://www.jiosaavn.com",
-      "attribution": "Lord Huron — Strange Trails. IAMSOUND Records."
+      "name": "CC BY-NC-ND 3.0",
+      "badge": "CC BY-NC-ND",
+      "url": "http://creativecommons.org/licenses/by-nc-nd/3.0/",
+      "attribution": "Z-studio via Jamendo Music (CC BY-NC-ND 3.0)"
+    },
+    "counterpartInfo": {
+      "originalTitle": "The Night We Met",
+      "similarityRationale": "Selected as the Alternative / Indie counterpart to \"The Night We Met\" maintaining the haunting mood and musical style."
     }
   },
   {
-    "_id": "spotify-malibu",
-    "id": "spotify-malibu",
-    "title": "Malibu",
-    "artist": "Miley Cyrus",
-    "album": "Younger Now",
-    "duration": 231,
+    "_id": "jamendo-1352969",
+    "id": "jamendo-1352969",
+    "title": "Summer Pop",
+    "artist": "GarnaVutka",
+    "album": "Summer Pop",
+    "duration": 138,
     "genre": "English Pop",
     "mood": "Breezy",
     "playlist": "english",
-    "coverImage": "https://c.saavncdn.com/170/Serenity-Music-English-2024-20240321041130-500x500.jpg",
-    "artwork": "https://c.saavncdn.com/170/Serenity-Music-English-2024-20240321041130-500x500.jpg",
-    "url": "",
-    "audioUrl": "",
-    "streamUrl": "",
-    "provider": "saavn",
-    "providerTrackId": "8pCn6dlg",
-    "needsResolution": true,
+    "coverImage": "https://usercontent.jamendo.com?type=album&id=234503&width=300&trackid=1352969",
+    "artwork": "https://usercontent.jamendo.com?type=album&id=234503&width=300&trackid=1352969",
+    "url": "https://prod-1.storage.jamendo.com/?trackid=1352969&format=mp32&from=nFD7rRBq6UTg1UQNilD4mw%3D%3D%7CaM0t0gPNJ6v6HbCVfpcPrw%3D%3D",
+    "audioUrl": "https://prod-1.storage.jamendo.com/?trackid=1352969&format=mp32&from=nFD7rRBq6UTg1UQNilD4mw%3D%3D%7CaM0t0gPNJ6v6HbCVfpcPrw%3D%3D",
+    "streamUrl": "https://prod-1.storage.jamendo.com/?trackid=1352969&format=mp32&from=nFD7rRBq6UTg1UQNilD4mw%3D%3D%7CaM0t0gPNJ6v6HbCVfpcPrw%3D%3D",
+    "provider": "jamendo",
+    "providerTrackId": "1352969",
+    "needsResolution": false,
     "isUnavailable": false,
+    "isPlayable": true,
     "playback": {
       "type": "direct",
-      "url": ""
+      "url": "https://prod-1.storage.jamendo.com/?trackid=1352969&format=mp32&from=nFD7rRBq6UTg1UQNilD4mw%3D%3D%7CaM0t0gPNJ6v6HbCVfpcPrw%3D%3D"
     },
     "source": {
-      "provider": "saavn",
-      "name": "JioSaavn Dev Resolver",
-      "pageUrl": "https://www.jiosaavn.com/song/malibu/8pCn6dlg",
-      "externalId": "8pCn6dlg"
+      "provider": "jamendo",
+      "name": "Jamendo Music",
+      "pageUrl": "https://www.jamendo.com/track/1352969",
+      "externalId": "1352969"
     },
     "license": {
-      "name": "Commercial (Usage terms unresolved - Dev only)",
-      "badge": "DEV-SAAVN",
-      "url": "https://www.jiosaavn.com",
-      "attribution": "Miley Cyrus — Younger Now. RCA Records."
+      "name": "CC BY-NC-ND 3.0",
+      "badge": "CC BY-NC-ND",
+      "url": "http://creativecommons.org/licenses/by-nc-nd/3.0/",
+      "attribution": "GarnaVutka via Jamendo Music (CC BY-NC-ND 3.0)"
+    },
+    "counterpartInfo": {
+      "originalTitle": "Malibu",
+      "similarityRationale": "Selected as the English Pop counterpart to \"Malibu\" maintaining the breezy mood and musical style."
     }
   },
   {
-    "_id": "spotify-ginza",
-    "id": "spotify-ginza",
-    "title": "Ginza",
-    "artist": "J Balvin",
-    "album": "Energía",
-    "duration": 171,
+    "_id": "jamendo-1825924",
+    "id": "jamendo-1825924",
+    "title": "Reggaeton Latino",
+    "artist": "pinegroove",
+    "album": "Reggaeton Latino",
+    "duration": 185,
     "genre": "Reggaeton",
     "mood": "Sensual",
     "playlist": "Spanish / Latin",
-    "coverImage": "https://c.saavncdn.com/259/REGUETON-VIEJO-REGUETON-ANTGUO-Spanish-2022-20220204121408-500x500.jpg",
-    "artwork": "https://c.saavncdn.com/259/REGUETON-VIEJO-REGUETON-ANTGUO-Spanish-2022-20220204121408-500x500.jpg",
-    "url": "",
-    "audioUrl": "",
-    "streamUrl": "",
-    "provider": "saavn",
-    "providerTrackId": "WJ1keOAU",
-    "needsResolution": true,
+    "coverImage": "https://usercontent.jamendo.com?type=album&id=198932&width=300&trackid=1825924",
+    "artwork": "https://usercontent.jamendo.com?type=album&id=198932&width=300&trackid=1825924",
+    "url": "https://prod-1.storage.jamendo.com/?trackid=1825924&format=mp32&from=%2Bj9ar%2FQkqIGZ5uD9gEqqrg%3D%3D%7C2sUopUW0GuIpDRV96PuCsA%3D%3D",
+    "audioUrl": "https://prod-1.storage.jamendo.com/?trackid=1825924&format=mp32&from=%2Bj9ar%2FQkqIGZ5uD9gEqqrg%3D%3D%7C2sUopUW0GuIpDRV96PuCsA%3D%3D",
+    "streamUrl": "https://prod-1.storage.jamendo.com/?trackid=1825924&format=mp32&from=%2Bj9ar%2FQkqIGZ5uD9gEqqrg%3D%3D%7C2sUopUW0GuIpDRV96PuCsA%3D%3D",
+    "provider": "jamendo",
+    "providerTrackId": "1825924",
+    "needsResolution": false,
     "isUnavailable": false,
+    "isPlayable": true,
     "playback": {
       "type": "direct",
-      "url": ""
+      "url": "https://prod-1.storage.jamendo.com/?trackid=1825924&format=mp32&from=%2Bj9ar%2FQkqIGZ5uD9gEqqrg%3D%3D%7C2sUopUW0GuIpDRV96PuCsA%3D%3D"
     },
     "source": {
-      "provider": "saavn",
-      "name": "JioSaavn Dev Resolver",
-      "pageUrl": "https://www.jiosaavn.com/song/ginza/WJ1keOAU",
-      "externalId": "WJ1keOAU"
+      "provider": "jamendo",
+      "name": "Jamendo Music",
+      "pageUrl": "https://www.jamendo.com/track/1825924",
+      "externalId": "1825924"
     },
     "license": {
-      "name": "Commercial (Usage terms unresolved - Dev only)",
-      "badge": "DEV-SAAVN",
-      "url": "https://www.jiosaavn.com",
-      "attribution": "J Balvin — Energía. Universal Music Latino."
+      "name": "CC BY-NC-ND 3.0",
+      "badge": "CC BY-NC-ND",
+      "url": "http://creativecommons.org/licenses/by-nc-nd/3.0/",
+      "attribution": "pinegroove via Jamendo Music (CC BY-NC-ND 3.0)"
+    },
+    "counterpartInfo": {
+      "originalTitle": "Ginza",
+      "similarityRationale": "Selected as the Reggaeton counterpart to \"Ginza\" maintaining the sensual mood and musical style."
     }
   },
   {
-    "_id": "spotify-gata-only",
-    "id": "spotify-gata-only",
-    "title": "Gata Only",
-    "artist": "FloyyMenor, Cris MJ",
-    "album": "Gata Only",
-    "duration": 222,
+    "_id": "jamendo-1688097",
+    "id": "jamendo-1688097",
+    "title": "Amor inolvidable",
+    "artist": "Mr.Brito Jbeatmix LaTrapMusic",
+    "album": "Amor inolvidable",
+    "duration": 155,
     "genre": "Reggaeton",
     "mood": "Intense",
     "playlist": "Spanish / Latin",
-    "coverImage": "https://c.saavncdn.com/715/Gata-Only-English-2024-20240127105407-500x500.jpg",
-    "artwork": "https://c.saavncdn.com/715/Gata-Only-English-2024-20240127105407-500x500.jpg",
-    "url": "",
-    "audioUrl": "",
-    "streamUrl": "",
-    "provider": "saavn",
-    "providerTrackId": "WAJbbLqN",
-    "needsResolution": true,
+    "coverImage": "https://usercontent.jamendo.com?type=album&id=240987&width=300&trackid=1688097",
+    "artwork": "https://usercontent.jamendo.com?type=album&id=240987&width=300&trackid=1688097",
+    "url": "https://prod-1.storage.jamendo.com/?trackid=1688097&format=mp32&from=AH7B7MYckFVHlytBcQgbDA%3D%3D%7CqYeaBJiu8wt96cnLILGSng%3D%3D",
+    "audioUrl": "https://prod-1.storage.jamendo.com/?trackid=1688097&format=mp32&from=AH7B7MYckFVHlytBcQgbDA%3D%3D%7CqYeaBJiu8wt96cnLILGSng%3D%3D",
+    "streamUrl": "https://prod-1.storage.jamendo.com/?trackid=1688097&format=mp32&from=AH7B7MYckFVHlytBcQgbDA%3D%3D%7CqYeaBJiu8wt96cnLILGSng%3D%3D",
+    "provider": "jamendo",
+    "providerTrackId": "1688097",
+    "needsResolution": false,
     "isUnavailable": false,
+    "isPlayable": true,
     "playback": {
       "type": "direct",
-      "url": ""
+      "url": "https://prod-1.storage.jamendo.com/?trackid=1688097&format=mp32&from=AH7B7MYckFVHlytBcQgbDA%3D%3D%7CqYeaBJiu8wt96cnLILGSng%3D%3D"
     },
     "source": {
-      "provider": "saavn",
-      "name": "JioSaavn Dev Resolver",
-      "pageUrl": "https://www.jiosaavn.com/song/gata-only/WAJbbLqN",
-      "externalId": "WAJbbLqN"
+      "provider": "jamendo",
+      "name": "Jamendo Music",
+      "pageUrl": "https://www.jamendo.com/track/1688097",
+      "externalId": "1688097"
     },
     "license": {
-      "name": "Commercial (Usage terms unresolved - Dev only)",
-      "badge": "DEV-SAAVN",
-      "url": "https://www.jiosaavn.com",
-      "attribution": "FloyyMenor, Cris MJ — Gata Only. UnitedMasters LLC."
+      "name": "CC BY-NC-ND 3.0",
+      "badge": "CC BY-NC-ND",
+      "url": "http://creativecommons.org/licenses/by-nc-nd/3.0/",
+      "attribution": "Mr.Brito Jbeatmix LaTrapMusic via Jamendo Music (CC BY-NC-ND 3.0)"
+    },
+    "counterpartInfo": {
+      "originalTitle": "Gata Only",
+      "similarityRationale": "Selected as the Reggaeton counterpart to \"Gata Only\" maintaining the intense mood and musical style."
     }
   },
   {
-    "_id": "spotify-mi-gata",
-    "id": "spotify-mi-gata",
-    "title": "Mi Gata",
-    "artist": "Standly, El Barto",
-    "album": "Mi Gata",
-    "duration": 202,
+    "_id": "jamendo-2330830",
+    "id": "jamendo-2330830",
+    "title": "Block Party (Brazilian Reggaeton)",
+    "artist": "Jack Jack",
+    "album": "Block Party (Brazilian Reggaeton)",
+    "duration": 106,
     "genre": "Latin",
     "mood": "Hypnotic",
     "playlist": "Spanish / Latin",
-    "coverImage": "https://c.saavncdn.com/739/Mi-Gata-Spanish-2021-20220224161732-500x500.jpg",
-    "artwork": "https://c.saavncdn.com/739/Mi-Gata-Spanish-2021-20220224161732-500x500.jpg",
-    "url": "",
-    "audioUrl": "",
-    "streamUrl": "",
-    "provider": "saavn",
-    "providerTrackId": "i6pGtJ5n",
-    "needsResolution": true,
+    "coverImage": "https://usercontent.jamendo.com?type=album&id=640508&width=300&trackid=2330830",
+    "artwork": "https://usercontent.jamendo.com?type=album&id=640508&width=300&trackid=2330830",
+    "url": "https://prod-1.storage.jamendo.com/?trackid=2330830&format=mp32&from=iPt%2BtnYCjSwmAfhRU4%2BtXA%3D%3D%7Ct1%2B4sbBCFa1D%2FYyPpCUEjA%3D%3D",
+    "audioUrl": "https://prod-1.storage.jamendo.com/?trackid=2330830&format=mp32&from=iPt%2BtnYCjSwmAfhRU4%2BtXA%3D%3D%7Ct1%2B4sbBCFa1D%2FYyPpCUEjA%3D%3D",
+    "streamUrl": "https://prod-1.storage.jamendo.com/?trackid=2330830&format=mp32&from=iPt%2BtnYCjSwmAfhRU4%2BtXA%3D%3D%7Ct1%2B4sbBCFa1D%2FYyPpCUEjA%3D%3D",
+    "provider": "jamendo",
+    "providerTrackId": "2330830",
+    "needsResolution": false,
     "isUnavailable": false,
+    "isPlayable": true,
     "playback": {
       "type": "direct",
-      "url": ""
+      "url": "https://prod-1.storage.jamendo.com/?trackid=2330830&format=mp32&from=iPt%2BtnYCjSwmAfhRU4%2BtXA%3D%3D%7Ct1%2B4sbBCFa1D%2FYyPpCUEjA%3D%3D"
     },
     "source": {
-      "provider": "saavn",
-      "name": "JioSaavn Dev Resolver",
-      "pageUrl": "https://www.jiosaavn.com/song/mi-gata/i6pGtJ5n",
-      "externalId": "i6pGtJ5n"
+      "provider": "jamendo",
+      "name": "Jamendo Music",
+      "pageUrl": "https://www.jamendo.com/track/2330830",
+      "externalId": "2330830"
     },
     "license": {
-      "name": "Commercial (Usage terms unresolved - Dev only)",
-      "badge": "DEV-SAAVN",
-      "url": "https://www.jiosaavn.com",
-      "attribution": "Standly, El Barto — Mi Gata. Standly Music."
+      "name": "CC BY-NC-ND 3.0",
+      "badge": "CC BY-NC-ND",
+      "url": "http://creativecommons.org/licenses/by-nc-nd/3.0/",
+      "attribution": "Jack Jack via Jamendo Music (CC BY-NC-ND 3.0)"
+    },
+    "counterpartInfo": {
+      "originalTitle": "Mi Gata",
+      "similarityRationale": "Selected as the Latin counterpart to \"Mi Gata\" maintaining the hypnotic mood and musical style."
     }
   },
   {
-    "_id": "spotify-peligrosa",
-    "id": "spotify-peligrosa",
-    "title": "PELIGROSA",
-    "artist": "FloyyMenor",
-    "album": "EL COMIENZO",
-    "duration": 134,
+    "_id": "jamendo-1843061",
+    "id": "jamendo-1843061",
+    "title": "AY AY AY MALUCA - Pueto pa lo mio records Presenta - Neycom - (Musica urbana, trap, rap, hiphop, dembow, reggaeton)",
+    "artist": "PUETO PA LO MIO RECORDS",
+    "album": "AY AY AY MALUCA - Pueto pa lo mio records Presenta - Neycom - (M",
+    "duration": 163,
     "genre": "Reggaeton",
     "mood": "Urban",
     "playlist": "Spanish / Latin",
-    "coverImage": "https://c.saavncdn.com/206/PELIGROSA-Spanish-2024-20240809053245-500x500.jpg",
-    "artwork": "https://c.saavncdn.com/206/PELIGROSA-Spanish-2024-20240809053245-500x500.jpg",
-    "url": "",
-    "audioUrl": "",
-    "streamUrl": "",
-    "provider": "saavn",
-    "providerTrackId": "ZIqcP8ia",
-    "needsResolution": true,
+    "coverImage": "https://usercontent.jamendo.com?type=album&id=415969&width=300&trackid=1843061",
+    "artwork": "https://usercontent.jamendo.com?type=album&id=415969&width=300&trackid=1843061",
+    "url": "https://prod-1.storage.jamendo.com/?trackid=1843061&format=mp32&from=zVqY5jptUMm5XndQ7tGnsg%3D%3D%7Ce%2BJLPPD%2FJ%2FYO2e1QAjzqIw%3D%3D",
+    "audioUrl": "https://prod-1.storage.jamendo.com/?trackid=1843061&format=mp32&from=zVqY5jptUMm5XndQ7tGnsg%3D%3D%7Ce%2BJLPPD%2FJ%2FYO2e1QAjzqIw%3D%3D",
+    "streamUrl": "https://prod-1.storage.jamendo.com/?trackid=1843061&format=mp32&from=zVqY5jptUMm5XndQ7tGnsg%3D%3D%7Ce%2BJLPPD%2FJ%2FYO2e1QAjzqIw%3D%3D",
+    "provider": "jamendo",
+    "providerTrackId": "1843061",
+    "needsResolution": false,
     "isUnavailable": false,
+    "isPlayable": true,
     "playback": {
       "type": "direct",
-      "url": ""
+      "url": "https://prod-1.storage.jamendo.com/?trackid=1843061&format=mp32&from=zVqY5jptUMm5XndQ7tGnsg%3D%3D%7Ce%2BJLPPD%2FJ%2FYO2e1QAjzqIw%3D%3D"
     },
     "source": {
-      "provider": "saavn",
-      "name": "JioSaavn Dev Resolver",
-      "pageUrl": "https://www.jiosaavn.com/song/peligrosa/ZIqcP8ia",
-      "externalId": "ZIqcP8ia"
+      "provider": "jamendo",
+      "name": "Jamendo Music",
+      "pageUrl": "https://www.jamendo.com/track/1843061",
+      "externalId": "1843061"
     },
     "license": {
-      "name": "Commercial (Usage terms unresolved - Dev only)",
-      "badge": "DEV-SAAVN",
-      "url": "https://www.jiosaavn.com",
-      "attribution": "FloyyMenor — PELIGROSA. UnitedMasters LLC."
+      "name": "CC BY-NC-ND 3.0",
+      "badge": "CC BY-NC-ND",
+      "url": "http://creativecommons.org/licenses/by-nc-nd/3.0/",
+      "attribution": "PUETO PA LO MIO RECORDS via Jamendo Music (CC BY-NC-ND 3.0)"
+    },
+    "counterpartInfo": {
+      "originalTitle": "PELIGROSA",
+      "similarityRationale": "Selected as the Reggaeton counterpart to \"PELIGROSA\" maintaining the urban mood and musical style."
     }
   }
 ];

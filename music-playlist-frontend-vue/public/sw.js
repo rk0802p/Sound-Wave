@@ -60,27 +60,40 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 3. API requests: Network-first with offline JSON fallback
+  // 3. API requests:
+  // - Never intercept cross-origin API requests (e.g. to deployed backend or Vercel preview backends)
+  // - Never convert real network failures or protected responses into a synthetic 503 if online
+  // - Network-first with offline cache fallback only when truly offline or cached
   if (url.pathname.startsWith('/api/')) {
+    // Pass cross-origin API requests directly to the network without SW interference
+    if (url.origin !== self.location.origin) {
+      return;
+    }
+
     event.respondWith(
-      fetch(req).catch(async () => {
+      fetch(req).catch(async (networkErr) => {
         // If offline and request is in cache, return cached response
         const cached = await caches.match(req);
         if (cached) return cached;
 
-        // Return a clean offline JSON response
-        return new Response(
-          JSON.stringify({
-            offline: true,
-            message: 'You are currently offline. Displaying cached metadata where available.',
-            items: []
-          }),
-          {
-            status: 503,
-            statusText: 'Service Unavailable (Offline)',
-            headers: { 'Content-Type': 'application/json' }
-          }
-        );
+        // If explicitly offline, return structured offline fallback
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+          return new Response(
+            JSON.stringify({
+              offline: true,
+              message: 'You are currently offline. Displaying cached metadata where available.',
+              items: []
+            }),
+            {
+              status: 503,
+              statusText: 'Service Unavailable (Offline)',
+              headers: { 'Content-Type': 'application/json' }
+            }
+          );
+        }
+
+        // Otherwise propagate the real network error so client interceptors receive accurate diagnostics
+        throw networkErr;
       })
     );
     return;

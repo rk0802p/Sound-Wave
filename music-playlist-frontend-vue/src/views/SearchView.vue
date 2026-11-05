@@ -148,31 +148,10 @@
             <div class="provider-status-strip font-mono">
               <span
                 class="status-indicator"
-                :class="getProviderStatusClass('archive')"
-                title="Internet Archive Audio Network"
-              >
-                ARCHIVE: {{ getProviderStatusLabel('archive') }}
-              </span>
-              <span
-                class="status-indicator"
                 :class="getProviderStatusClass('jamendo')"
                 title="Jamendo Creative Commons Catalog"
               >
                 JAMENDO: {{ getProviderStatusLabel('jamendo') }}
-              </span>
-              <span
-                class="status-indicator"
-                :class="getProviderStatusClass('audius')"
-                title="Audius Decentralized Music Network"
-              >
-                AUDIUS: {{ getProviderStatusLabel('audius') }}
-              </span>
-              <span
-                class="status-indicator"
-                :class="getProviderStatusClass('saavn')"
-                title="JioSaavn Development Provider (Experimental PoC)"
-              >
-                DEV-SAAVN: {{ getProviderStatusLabel('saavn') }}
               </span>
             </div>
           </div>
@@ -631,9 +610,7 @@ const getTrackSourceUrl = (t) => {
 
 const getProviderStatusLabel = (name) => {
   const prov = providerStatuses.value[name];
-  if (!prov) return name === 'saavn' ? 'OFF' : 'ACTIVE';
-  if (prov.status === 'unconfigured' || prov.isConfigured === false) return 'OFF';
-  if (prov.status === 'unconfigured') return 'OFF';
+  if (!prov || prov.status === 'unconfigured' || prov.isConfigured === false) return 'OFF';
   if (prov.status === 'rate_limited') return 'LIMIT';
   if (prov.status === 'circuit_broken') return 'COOLDOWN';
   if (prov.status === 'unavailable' || prov.status === 'down') return 'DOWN';
@@ -642,8 +619,8 @@ const getProviderStatusLabel = (name) => {
 
 const getProviderStatusClass = (name) => {
   const prov = providerStatuses.value[name];
-  if (!prov || prov.status === 'available') return 'status-online';
-  if (prov.status === 'unconfigured') return 'status-unconfigured';
+  if (!prov || prov.status === 'unconfigured' || prov.isConfigured === false) return 'status-unconfigured';
+  if (prov.status === 'available') return 'status-online';
   if (prov.status === 'rate_limited' || prov.status === 'circuit_broken') return 'status-limited';
   return 'status-down';
 };

@@ -94,10 +94,10 @@
             <input
               v-model="form.url"
               type="text"
-              placeholder="Direct MP3 URL, Internet Archive link, or Spotify link"
+              placeholder="Jamendo track link, Spotify link, or YouTube link"
               class="sw-field"
             />
-            <span class="field-hint">Direct .mp3 audio streams play natively in the persistent player; Spotify streams play via the integrated Spotify player.</span>
+            <span class="field-hint">Jamendo streams play natively; Spotify and YouTube links resolve metadata for playlist organization.</span>
           </div>
 
           <div class="form-group">

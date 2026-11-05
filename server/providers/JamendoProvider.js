@@ -1,9 +1,13 @@
 const BaseProvider = require('./BaseProvider');
+const { getProviderPolicy } = require('../config/providerPolicy');
 
 class JamendoProvider extends BaseProvider {
   constructor() {
     super('jamendo', 'Jamendo Music');
     this.baseUrl = 'https://api.jamendo.com/v3.0';
+    this.metadataCache = new Map();
+    this.cacheMax = 100;
+    this.cacheTtlMs = 1000 * 60 * 5; // 5-minute bounded TTL
   }
 
   isConfigured() {
@@ -15,6 +19,7 @@ class JamendoProvider extends BaseProvider {
   }
 
   getCapabilities() {
+    const policy = getProviderPolicy('jamendo');
     return {
       supportsSearch: true,
       supportsDirectStream: true,
@@ -22,7 +27,8 @@ class JamendoProvider extends BaseProvider {
       isTemporaryUrl: false,
       authRequired: true,
       environmentRestrictions: 'configured_only',
-      authorizationStatus: 'verified_public',
+      authorizationStatus: policy.classification,
+      policyClassification: policy.classification,
     };
   }
 
@@ -31,9 +37,10 @@ class JamendoProvider extends BaseProvider {
    * e.g. "http://creativecommons.org/licenses/by-nc-sa/3.0/" -> "CC BY-NC-SA 3.0"
    * @param {string} licenseCcUrl
    * @returns {{
-   *   name: string,
+   *   licenseStatus: 'verified'|'unknown',
+   *   name: string|null,
    *   code: string,
-   *   url: string,
+   *   url: string|null,
    *   attributionRequired: boolean,
    *   hasCommercialRestriction: boolean,
    *   hasDerivativeRestriction: boolean,
@@ -190,6 +197,12 @@ class JamendoProvider extends BaseProvider {
       const results = rawTracks.map((item) => {
         const licenseMeta = this.parseLicense(item.license_ccurl);
         const shareUrl = item.shareurl || `https://www.jamendo.com/track/${item.id}`;
+
+        // Strict compliance check: only tracks with verified CC licenses and valid audio streams are playable
+        const isLicenseVerified = licenseMeta && licenseMeta.licenseStatus === 'verified';
+        const isPlayable = Boolean(item.audio) && isLicenseVerified;
+        const streamUrl = isPlayable ? item.audio : null;
+
         return {
           id: `jamendo:${item.id}`,
           title: item.name || 'Untitled Jamendo Track',
@@ -200,11 +213,11 @@ class JamendoProvider extends BaseProvider {
           provider: 'jamendo',
           providerTrackId: String(item.id),
           providerTrackUrl: shareUrl,
-          url: item.audio || '',
-          streamUrl: item.audio || '',
-          isPlayable: Boolean(item.audio),
+          url: streamUrl || '',
+          streamUrl: streamUrl || '',
+          isPlayable,
           needsResolution: false,
-          license: licenseMeta.name,
+          license: licenseMeta.name || 'Unknown License',
           licenseCode: licenseMeta.code,
           licenseUrl: licenseMeta.url,
           licenseMeta: licenseMeta,
@@ -212,11 +225,14 @@ class JamendoProvider extends BaseProvider {
             ? `${item.artist_name || 'Artist'} via Jamendo Music (${licenseMeta.name})`
             : `${item.artist_name || 'Artist'} via Jamendo Music`,
           playbackCapabilities: {
-            canSeek: true,
+            canSeek: isPlayable,
             canVolume: true,
             hasTimeEvents: true,
             isEmbedded: false,
-            playbackType: 'direct',
+            playbackType: isPlayable ? 'direct' : 'unsupported',
+            restrictionReason: isPlayable
+              ? null
+              : (!isLicenseVerified ? 'Unverified or unsupported license metadata' : 'Missing audio stream'),
           },
         };
       });
@@ -246,11 +262,11 @@ class JamendoProvider extends BaseProvider {
   /**
    * Resolve track by Jamendo ID
    * @param {string} trackId
-   * @returns {Promise<{ streamUrl: string|null, metadata: object|null, error: string|null }>}
+   * @returns {Promise<{ streamUrl: string|null, metadata: object|null, error: string|null, code?: string }>}
    */
   async resolveTrack(trackId) {
     if (!this.isConfigured()) {
-      return { streamUrl: null, metadata: null, error: 'Jamendo is unconfigured' };
+      return { streamUrl: null, metadata: null, error: 'Jamendo is unconfigured', code: 'PROVIDER_UNCONFIGURED' };
     }
 
     try {
@@ -259,20 +275,66 @@ class JamendoProvider extends BaseProvider {
       const res = await this.fetchWithTimeout(url, {}, 4000);
 
       if (!res.ok) {
-        return { streamUrl: null, metadata: null, error: `Jamendo track fetch failed (${res.status})` };
+        return {
+          streamUrl: null,
+          metadata: null,
+          error: `Jamendo track fetch failed (${res.status})`,
+          code: 'RESOLUTION_FAILED',
+        };
       }
 
       const data = await res.json();
       const track = data.results?.[0];
       if (!track) {
-        return { streamUrl: null, metadata: null, error: 'Track not found on Jamendo' };
+        return {
+          streamUrl: null,
+          metadata: null,
+          error: 'Track not found on Jamendo',
+          code: 'NOT_FOUND',
+        };
       }
 
       const licenseMeta = this.parseLicense(track.license_ccurl);
       const shareUrl = track.shareurl || `https://www.jamendo.com/track/${track.id}`;
 
+      // Strict enforcement: if license is unverified, reject playback resolution
+      if (!licenseMeta || licenseMeta.licenseStatus !== 'verified') {
+        return {
+          streamUrl: null,
+          metadata: {
+            id: `jamendo:${track.id}`,
+            title: track.name || 'Untitled Jamendo Track',
+            artist: track.artist_name || 'Jamendo Artist',
+            album: track.album_name || '',
+            artwork: track.image || track.album_image || '',
+            duration: track.duration || 0,
+            provider: 'jamendo',
+            providerTrackId: String(track.id),
+            providerTrackUrl: shareUrl,
+            streamUrl: null,
+            isPlayable: false,
+            license: licenseMeta?.name || 'Unknown License',
+            licenseCode: licenseMeta?.code || 'UNKNOWN',
+            licenseUrl: licenseMeta?.url || null,
+            licenseMeta,
+            restrictionReason: 'Track license could not be verified or is not supported for streaming',
+          },
+          error: 'Playback unavailable: Track license could not be verified or is not supported for streaming',
+          code: 'LICENSE_UNVERIFIED',
+        };
+      }
+
+      if (!track.audio) {
+        return {
+          streamUrl: null,
+          metadata: null,
+          error: 'No audio stream available for this track on Jamendo',
+          code: 'STREAM_UNAVAILABLE',
+        };
+      }
+
       return {
-        streamUrl: track.audio || null,
+        streamUrl: track.audio,
         metadata: {
           id: `jamendo:${track.id}`,
           title: track.name || 'Untitled Jamendo Track',
@@ -283,21 +345,19 @@ class JamendoProvider extends BaseProvider {
           provider: 'jamendo',
           providerTrackId: String(track.id),
           providerTrackUrl: shareUrl,
-          streamUrl: track.audio || '',
-          isPlayable: Boolean(track.audio),
+          streamUrl: track.audio,
+          isPlayable: true,
           needsResolution: false,
           license: licenseMeta.name,
           licenseCode: licenseMeta.code,
           licenseUrl: licenseMeta.url,
           licenseMeta: licenseMeta,
-          attribution: licenseMeta.name
-            ? `${track.artist_name || 'Artist'} via Jamendo Music (${licenseMeta.name})`
-            : `${track.artist_name || 'Artist'} via Jamendo Music`,
+          attribution: `${track.artist_name || 'Artist'} via Jamendo Music (${licenseMeta.name})`,
         },
         error: null,
       };
     } catch (err) {
-      return { streamUrl: null, metadata: null, error: err.message };
+      return { streamUrl: null, metadata: null, error: err.message, code: 'RESOLUTION_ERROR' };
     }
   }
 }

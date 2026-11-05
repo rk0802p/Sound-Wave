@@ -145,9 +145,9 @@
               </a>
             </div>
             <div class="detail-row">
-              <span class="label">ARCHIVE SOURCE:</span>
+              <span class="label">SOURCE:</span>
               <a :href="selectedLicenseTrack.source?.pageUrl" target="_blank" rel="noopener noreferrer" class="link">
-                {{ selectedLicenseTrack.source?.name || 'Internet Archive' }} ↗
+                {{ selectedLicenseTrack.source?.name || 'Jamendo Music' }} ↗
               </a>
             </div>
             <div class="detail-row">

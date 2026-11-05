@@ -5,7 +5,7 @@ import { resolvePlayableAudioUrl } from '../services/providers/detector';
 import { searchApi } from '../api/search';
 // Module-scoped in-flight deduplication and provider environment status cache
 const activeResolutions = new Map();
-const blockedProviders = new Set();
+const blockedProviders = new Set(['saavn', 'archive', 'audius', 'spotify', 'youtube', 'direct']);
 const loggedBlockedProviders = new Set();
 
 const resolveWithDedup = async (provider, providerTrackId) => {
@@ -248,7 +248,7 @@ export const usePlayerStore = defineStore('player', {
         let streamUrl = alt.streamUrl;
         if (!streamUrl && alt.needsResolution && alt.provider && alt.providerTrackId) {
           try {
-            if (blockedProviders.has(alt.provider)) continue;
+            if (blockedProviders.has(alt.provider) || alt.provider !== 'jamendo') continue;
             const resolved = await resolveWithDedup(alt.provider, alt.providerTrackId);
             if (this.playRequestId !== reqId) return false;
             if (resolved?.streamUrl) {
@@ -312,7 +312,22 @@ export const usePlayerStore = defineStore('player', {
       this.playRequestId = (this.playRequestId || 0) + 1;
       const reqId = this.playRequestId;
 
-      const provider = track.provider || track.source?.provider;
+      const rawProvider = track.provider || track.source?.provider || '';
+      const provider = String(rawProvider).toLowerCase().trim();
+
+      // Policy Gate: Non-Jamendo providers are rejected or pending verification
+      if (provider && provider !== 'jamendo') {
+        soundController.pause();
+        this.isPlaying = false;
+        this.isLoading = false;
+        this.playbackState = 'unavailable';
+        this.currentTime = 0;
+        this.error = 'Playback unavailable: ' + provider.toUpperCase() + ' provider is disabled or pending verification.';
+        if (typeof document !== 'undefined') {
+          document.body.classList.remove('playing');
+        }
+        return;
+      }
       const providerTrackId = track.providerTrackId || track.source?.externalId;
       let audioUrl = resolvePlayableAudioUrl(track);
 

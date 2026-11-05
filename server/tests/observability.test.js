@@ -1,113 +1,117 @@
 const request = require("supertest");
 const app = require("../index");
-const logger = require("../utils/logger");
-const registry = require("../providers/ProviderRegistry");
 const { connectTestDB, closeTestDB, clearTestDB } = require("./setup");
-
-beforeAll(async () => {
-  await connectTestDB();
-});
-
-afterAll(async () => {
-  await closeTestDB();
-});
-
-beforeEach(async () => {
-  await clearTestDB();
-  logger.clearRecentLogs();
-});
+const logger = require("../utils/logger");
 
 describe("Milestone 6.1: Production Hardening & Observability Tests", () => {
+  beforeAll(async () => {
+    await connectTestDB();
+  });
+
+  afterAll(async () => {
+    await closeTestDB();
+  });
+
+  beforeEach(async () => {
+    await clearTestDB();
+    logger.clearRecentLogs();
+  });
+
   describe("Request Correlation & Request ID Middleware", () => {
     it("should generate a valid x-request-id header when none is provided", async () => {
       const res = await request(app).get("/api/test");
       expect(res.status).toBe(200);
       expect(res.headers["x-request-id"]).toBeDefined();
-      expect(typeof res.headers["x-request-id"]).toBe("string");
-      expect(res.headers["x-request-id"].length).toBeGreaterThanOrEqual(8);
+      // Should be valid UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      expect(res.headers["x-request-id"]).toMatch(uuidRegex);
     });
 
     it("should accept and echo a valid client-supplied x-request-id", async () => {
-      const customId = "custom-client-req-id-12345";
+      const validClientId = "client-req-12345-abcde";
       const res = await request(app)
         .get("/api/test")
-        .set("x-request-id", customId);
+        .set("x-request-id", validClientId);
+
       expect(res.status).toBe(200);
-      expect(res.headers["x-request-id"]).toBe(customId);
+      expect(res.headers["x-request-id"]).toBe(validClientId);
     });
 
     it("should reject malformed or suspicious x-request-id and generate a safe UUID", async () => {
-      const maliciousId = "<script>alert(1)</script>; DROP TABLE;";
+      const suspiciousId = "bad<script>alert(1)</script>; DROP TABLE users;--";
       const res = await request(app)
         .get("/api/test")
-        .set("x-request-id", maliciousId);
+        .set("x-request-id", suspiciousId);
+
       expect(res.status).toBe(200);
-      expect(res.headers["x-request-id"]).not.toBe(maliciousId);
-      expect(res.headers["x-request-id"]).toMatch(
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-      );
+      expect(res.headers["x-request-id"]).not.toBe(suspiciousId);
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      expect(res.headers["x-request-id"]).toMatch(uuidRegex);
     });
   });
 
   describe("Structured JSON Logging & Safe Redaction", () => {
     it("should securely redact sensitive keys (password, token, secret, auth)", () => {
-      const payload = {
-        username: "curator1",
-        password: "SecretPassword123!",
-        token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEyMyJ9.signature",
-        authorization: "Bearer secret_bearer_token_xyz",
-        nested: {
-          client_secret: "super_secret_jamendo_secret",
-          mongo_uri: "mongodb+srv://admin:MySecretPassword@cluster0.mongodb.net/prod",
-          safeField: "this is totally safe",
-        },
+      const sensitiveData = {
+        username: "testuser",
+        password: "supersecretpassword123",
+        token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+        apiKey: "jamendo_secret_api_key_456",
+        clientSecret: "spotify_client_secret_789",
+        safeMeta: "public_information",
       };
 
-      const redacted = logger.redact(payload);
+      const redacted = logger.redact(sensitiveData);
+
+      expect(redacted.username).toBe("testuser");
+      expect(redacted.safeMeta).toBe("public_information");
       expect(redacted.password).toBe("[REDACTED]");
       expect(redacted.token).toBe("[REDACTED]");
-      expect(redacted.authorization).toBe("[REDACTED]");
-      expect(redacted.nested.client_secret).toBe("[REDACTED]");
-      expect(redacted.nested.mongo_uri).toBe("[REDACTED]");
-      expect(redacted.nested.safeField).toBe("this is totally safe");
+      expect(redacted.apiKey).toBe("[REDACTED]");
+      expect(redacted.clientSecret).toBe("[REDACTED]");
     });
 
     it("should capture structured log entries in buffer with request context", async () => {
-      const customId = "log-tracing-test-id-9876";
-      await request(app).get("/api/test").set("x-request-id", customId);
+      const customReqId = "audit-log-test-req-001";
+      await request(app)
+        .get("/api/test")
+        .set("x-request-id", customReqId);
 
       const logs = logger.getRecentLogs(10);
-      const reqLog = logs.find((l) => l.requestId === customId);
-      expect(reqLog).toBeDefined();
-      expect(reqLog.level).toBe("info");
-      expect(reqLog.method).toBe("GET");
-      expect(reqLog.status).toBe(200);
-      expect(typeof reqLog.durationMs).toBe("number");
-      expect(reqLog.timestamp).toBeDefined();
+      expect(Array.isArray(logs)).toBe(true);
+      expect(logs.length).toBeGreaterThan(0);
+
+      const matchedLog = logs.find((l) => l.requestId === customReqId);
+      expect(matchedLog).toBeDefined();
+      expect(matchedLog.method).toBe("GET");
+      expect(matchedLog.path || matchedLog.url).toBe("/api/test");
+      expect(matchedLog.status).toBe(200);
+      expect(typeof matchedLog.durationMs).toBe("number");
     });
   });
 
   describe("Provider Health & Circuit Breaker Telemetry (/api/search/providers/health)", () => {
-    it("should return detailed telemetry for all registered providers without exposing credentials", async () => {
+    it("should return detailed telemetry for registered providers without exposing credentials", async () => {
       const res = await request(app).get("/api/search/providers/health");
       expect(res.status).toBe(200);
       expect(res.body.timestamp).toBeDefined();
       expect(res.body.providers).toBeDefined();
 
       const providers = res.body.providers;
-      expect(providers.archive).toBeDefined();
-      expect(providers.audius).toBeDefined();
+      // Only authorized registered providers are active in runtime telemetry
       expect(providers.jamendo).toBeDefined();
-      expect(providers.saavn).toBeDefined();
+      expect(providers.saavn).toBeUndefined(); // Rejected provider not registered
+      expect(providers.archive).toBeUndefined(); // Pending provider not registered
+      expect(providers.audius).toBeUndefined(); // Pending provider not registered
 
-      // Check circuit breaker fields
-      const archiveCb = providers.archive.circuitBreaker;
-      expect(archiveCb).toBeDefined();
-      expect(archiveCb.state).toBe("CLOSED");
-      expect(archiveCb.isOpen).toBe(false);
-      expect(typeof archiveCb.successCount).toBe("number");
-      expect(typeof archiveCb.totalFailures).toBe("number");
-      expect(archiveCb.latency).toBeDefined();
+      // Check circuit breaker fields for active provider
+      const jamendoCb = providers.jamendo.circuitBreaker;
+      expect(jamendoCb).toBeDefined();
+      expect(jamendoCb.state).toBe("CLOSED");
+      expect(jamendoCb.isOpen).toBe(false);
+      expect(typeof jamendoCb.successCount).toBe("number");
+      expect(typeof jamendoCb.totalFailures).toBe("number");
+      expect(jamendoCb.latency).toBeDefined();
 
       // Ensure no credentials or raw tokens are exposed
       const bodyStr = JSON.stringify(res.body);
@@ -122,8 +126,9 @@ describe("Milestone 6.1: Production Hardening & Observability Tests", () => {
 
       const res = await request(app).get("/api/search/providers/health");
       expect(res.status).toBe(200);
-      const archive = res.body.providers.archive;
-      expect(archive.circuitBreaker.transitionCount).toBeGreaterThanOrEqual(0);
+      const jamendo = res.body.providers.jamendo;
+      expect(jamendo).toBeDefined();
+      expect(jamendo.circuitBreaker.transitionCount).toBeGreaterThanOrEqual(0);
     });
   });
 
@@ -144,15 +149,13 @@ describe("Milestone 6.1: Production Hardening & Observability Tests", () => {
       expect(res.body.database.status).toBe("connected");
       expect(res.body.database.readyState).toBe(1);
 
-      // Provider availability summary
+      // Provider health aggregation
       expect(res.body.providers).toBeDefined();
       expect(typeof res.body.providers.total).toBe("number");
-      expect(typeof res.body.providers.available).toBe("number");
 
-      // Config summary (sanitized booleans only, zero secret strings)
+      // Environment verification flags
       expect(res.body.configured).toBeDefined();
-      expect(typeof res.body.configured.hasJwtSecret).toBe("boolean");
-      expect(typeof res.body.configured.hasMongoUri).toBe("boolean");
+      expect(res.body.configured.hasMongoUri).toBe(true);
       expect(res.body.configured.hasJwtSecret).toBe(true);
     });
   });

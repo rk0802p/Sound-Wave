@@ -165,23 +165,9 @@
                   ↗ JAMENDO
                 </a>
                 <span
-                  v-else-if="getProviderName(track) === 'archive'"
-                  class="source-badge badge-archive"
-                  title="Internet Archive Audio"
-                >
-                  ARCHIVE
-                </span>
-                <span
-                  v-else-if="getProviderName(track) === 'audius'"
-                  class="source-badge badge-audius"
-                  title="Audius Music"
-                >
-                  AUDIUS
-                </span>
-                <span
                   v-else-if="getProviderName(track) === 'spotify'"
                   class="source-badge badge-spotify"
-                  title="Spotify Preview"
+                  title="Spotify Track (Metadata)"
                 >
                   SPOTIFY
                 </span>
