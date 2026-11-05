@@ -1290,6 +1290,8 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  flex-shrink: 0; /* prevent collapse */
+  min-height: 80px; /* ensure space for audio settings */
 }
 
 .jb-support-btn {
