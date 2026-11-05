@@ -6,8 +6,8 @@
 
 class BaseProvider {
   /**
-   * @param {string} name - Unique provider identifier (e.g. 'archive', 'jamendo', 'audius')
-   * @param {string} displayName - Human-readable label (e.g. 'Internet Archive')
+   * @param {string} name - Unique provider identifier (e.g. 'jamendo')
+   * @param {string} displayName - Human-readable label (e.g. 'Jamendo Music')
    */
   constructor(name, displayName) {
     this.name = name;
