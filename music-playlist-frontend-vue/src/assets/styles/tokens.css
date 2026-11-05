@@ -44,3 +44,17 @@
   --sw-transition-fast: 0.2s ease;
   --sw-transition-normal: 0.3s ease;
 }
+
+
+/* PAGE ACCENT SYSTEM */
+[data-accent=blue] { --accent: #4D6BFF; }
+[data-accent=coral] { --accent: #FF6B5E; }
+[data-accent=lime] { --accent: #B8F23C; }
+[data-accent=lavender] { --accent: #B9A6FF; }
+[data-accent=sun] { --accent: #FFD84A; }
+[data-accent=pink] { --accent: #FF8AD0; }
+[data-accent=mint] { --accent: #5DE3A6; }
+[data-accent=orange] { --accent: #FFA23A; }
+[data-accent=cyan] { --accent: #3FD8EA; }
+[data-accent=neutral] { --accent: #111111; }
+:root { --accent: var(--yellow); --on-accent: #111111; }

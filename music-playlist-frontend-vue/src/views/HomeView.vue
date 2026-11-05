@@ -1,528 +1,557 @@
 <template>
-  <div class="soundwave-home" :class="{ 'playing': playerStore.isPlaying, 'drawer-open': isDrawerOpen }">
-    <!-- Fixed Background Wash with Dynamic Tint Transition -->
-    <div class="wash" id="wash" :style="{ backgroundColor: currentWashColor }"></div>
-
-    <!-- Background Drifting Pastel Blobs -->
-    <div class="bgb" aria-hidden="true">
-      <i :style="{ background: currentPalette.o1 }"></i>
-      <i :style="{ background: '#ffd7a0' }"></i>
-      <i :style="{ background: '#e1d2ff' }"></i>
-    </div>
-
-    <!-- 1. FLOATING PILL TOP NAVIGATION BAR -->
-    <header class="top glass" role="banner">
-      <!-- Menu Drawer Toggle -->
-      <button
-        class="ib orb"
-        id="menu"
-        aria-label="Open navigation drawer"
-        title="Open navigation menu"
-        @click="openDrawer"
-      >
-        <svg viewBox="0 0 24 24"><path :d="ICONS.menu" /></svg>
-      </button>
-
-      <!-- Brand Logo with Bouncing Orb -->
-      <router-link to="/" class="logo" title="Soundwave Music">
-        <span class="orb" aria-hidden="true">🎧</span>
-        <span>Soundwave</span>
-      </router-link>
-
-      <div class="sp"></div>
-
-      <!-- Expandable Glass Search Pill -->
-      <label class="search" :class="{ 'is-focused': isSearchFocused }">
-        <span class="search-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><path :d="ICONS.search" /></svg>
-        </span>
-        <input
-          id="q"
-          ref="searchInputRef"
-          v-model="searchQuery"
-          type="search"
-          placeholder="Search catalog, tracks, artists..."
-          aria-label="Search tracks"
-          @focus="isSearchFocused = true"
-          @blur="isSearchFocused = false"
-          @input="handleSearchInput"
-          @keydown.enter="handleSearchSubmit"
-        />
+  <div class="jb-app-shell">
+    <!-- LEFT PERSISTENT NEO-BRUTALIST SIDEBAR -->
+    <aside class="jb-sidebar" :class="{ 'collapsed': isSidebarCollapsed }">
+      <!-- Sidebar Header / Brand -->
+      <div class="jb-sidebar-header">
+        <router-link to="/" class="jb-brand">
+          <div class="jb-logo-grid" aria-hidden="true">
+            <span class="sq sq-blue"></span>
+            <span class="sq sq-coral"></span>
+            <span class="sq sq-sun"></span>
+            <span class="sq sq-lime"></span>
+          </div>
+          <span v-if="!isSidebarCollapsed" class="jb-brand-text font-display">SOUNDWAVE</span>
+        </router-link>
         <button
-          v-if="searchQuery"
-          class="clear-btn"
-          aria-label="Clear search query"
-          @click="searchQuery = ''"
+          class="jb-collapse-toggle font-mono"
+          @click="isSidebarCollapsed = !isSidebarCollapsed"
+          :title="isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'"
+          :aria-label="isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'"
         >
-          ✕
+          {{ isSidebarCollapsed ? '»' : '«' }}
         </button>
-      </label>
-
-      <!-- Notification Bell with Pulsing Dot -->
-      <button
-        class="ib glass bell-btn"
-        id="bell"
-        aria-label="Notifications"
-        title="Notifications"
-        @click="handleBellClick($event)"
-      >
-        <svg viewBox="0 0 24 24"><path :d="ICONS.bell" /></svg>
-        <i v-if="hasUnreadNotification" class="dot" id="dot"></i>
-      </button>
-    </header>
-
-    <!-- 2. SLIDING NAVIGATION DRAWER & SCRIM -->
-    <div
-      class="scrim"
-      :class="{ 'is-open': isDrawerOpen }"
-      aria-hidden="true"
-      @click="closeDrawer"
-    ></div>
-
-    <aside
-      class="drawer glass"
-      id="drawer"
-      :class="{ 'is-open': isDrawerOpen }"
-      :inert="!isDrawerOpen ? '' : null"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Application Menu"
-    >
-      <!-- Drawer Header -->
-      <div class="dh">
-        <button
-          class="ib orb"
-          id="menu2"
-          aria-label="Close navigation drawer"
-          title="Close menu"
-          @click="closeDrawer"
-        >
-          <svg viewBox="0 0 24 24"><path :d="ICONS.menu" /></svg>
-        </button>
-        <div class="logo">
-          <span class="orb" aria-hidden="true">🎧</span>
-          <span>Soundwave</span>
-        </div>
       </div>
 
-      <!-- User Auth State -->
-      <div class="drawer-auth">
-        <template v-if="authStore.isAuthenticated">
-          <div class="user-pill glass">
-            <span class="user-avatar orb">{{ userInitial }}</span>
-            <div class="user-info">
-              <strong>{{ authStore.username || 'Curator' }}</strong>
-              <small>{{ authStore.user?.email || 'Logged in' }}</small>
-            </div>
-          </div>
-          <button class="btn s logout-btn" @click="handleLogout">
-            Sign out
-          </button>
-        </template>
-        <template v-else>
-          <div class="auth">
-            <router-link to="/login" class="btn p" @click="closeDrawer">Log in</router-link>
-            <router-link to="/signup" class="btn s" @click="closeDrawer">Sign up</router-link>
-          </div>
-        </template>
+      <!-- Search in Sidebar -->
+      <div class="jb-search-box-wrap">
+        <div class="jb-search-box" :class="{ 'collapsed': isSidebarCollapsed }">
+          <svg class="jb-search-icon" viewBox="0 0 24 24"><path :d="ICONS.search" /></svg>
+          <input
+            v-if="!isSidebarCollapsed"
+            v-model="searchQuery"
+            type="search"
+            placeholder="Search tracks, artists..."
+            @input="handleSearchInput"
+            @keydown.enter="handleSearchSubmit"
+            class="jb-search-input font-mono"
+          />
+          <span v-if="!isSidebarCollapsed && !searchQuery" class="jb-key-cap font-mono">⌘K</span>
+          <button v-if="!isSidebarCollapsed && searchQuery" class="jb-clear-search font-mono" @click="searchQuery = ''">✕</button>
+        </div>
       </div>
 
       <!-- Navigation Links -->
-      <div class="drawer-nav-group">
-        <!-- Favourites Filter -->
+      <div class="jb-sidebar-nav">
+        <router-link to="/" class="jb-nav-item" :class="{ 'active': activeFilter === '' && !selectedGenreFilter && !activePlaylist }">
+          <span class="jb-nav-tile tile-blue">⌂</span>
+          <span v-if="!isSidebarCollapsed" class="jb-nav-label">Home</span>
+        </router-link>
+
+        <router-link to="/explore" class="jb-nav-item">
+          <span class="jb-nav-tile tile-coral">🌐</span>
+          <span v-if="!isSidebarCollapsed" class="jb-nav-label">Explore Mixtapes</span>
+        </router-link>
+
         <button
-          class="nav"
-          :class="{ 'is-active': activeFilter === 'favorites' }"
+          class="jb-nav-item"
+          :class="{ 'active': activeFilter === 'favorites' }"
           @click="handleFilterFavorites"
         >
-          <span class="orb" style="--o1:#ffa6d4;--o2:#ff4f9a">
-            <svg viewBox="0 0 24 24"><path :d="ICONS.heart" /></svg>
-          </span>
-          <span>Favourites ({{ favoritesList.length }})</span>
+          <span class="jb-nav-tile tile-pink">♥</span>
+          <span v-if="!isSidebarCollapsed" class="jb-nav-label">Liked Tracks</span>
+          <span v-if="!isSidebarCollapsed && favoritesList.length" class="jb-nav-count font-mono">{{ favoritesList.length }}</span>
         </button>
 
-        <!-- Library Link -->
-        <router-link to="/library" class="nav" @click="closeDrawer">
-          <span class="orb" style="--o1:#8ff2d3;--o2:#2fd3a2">📚</span>
-          <span>My Library</span>
-        </router-link>
-
-        <!-- Search Link -->
-        <router-link to="/search" class="nav" @click="closeDrawer">
-          <span class="orb" style="--o1:#9ad8ff;--o2:#3fa7ff">🔍</span>
-          <span>Search Catalog</span>
-        </router-link>
-
-        <!-- Social Mixtape Explore Link -->
-        <router-link to="/explore" class="nav" @click="closeDrawer">
-          <span class="orb" style="--o1:#ffb86c;--o2:#ff79c6">🌐</span>
-          <span>Explore Mixtapes</span>
+        <router-link to="/search" class="jb-nav-item">
+          <span class="jb-nav-tile tile-sun">🔍</span>
+          <span v-if="!isSidebarCollapsed" class="jb-nav-label">Search Catalog</span>
         </router-link>
       </div>
 
-      <!-- Playlists Section -->
-      <div class="drawer-section">
-        <div class="lab">
-          <span>Playlists ({{ playlistStore.playlists.length }})</span>
-          <button id="newpl" @click="openCreateModal">+ New</button>
-        </div>
-
-        <div v-if="playlistStore.playlists.length > 0" class="pls" id="pls">
-          <router-link
-            v-for="(p, idx) in playlistStore.playlists"
-            :key="p._id || idx"
-            :to="getPlaylistLink(p)"
-            class="nav pl-item"
-            @click="closeDrawer"
+      <!-- GENRE / COLLECTIONS SECTION -->
+      <div class="jb-sidebar-section">
+        <div v-if="!isSidebarCollapsed" class="jb-section-label font-mono">COLLECTIONS</div>
+        <div class="jb-collections-list">
+          <button
+            v-for="(genre, idx) in availableGenres"
+            :key="genre.name"
+            class="jb-collection-row"
+            :class="{ 'active': selectedGenreFilter === genre.name }"
+            @click="handleSelectGenre(genre.name)"
+            :title="genre.name"
           >
-            <span
-              class="orb"
-              :style="{
-                '--o1': getPalette(idx).o1,
-                '--o2': getPalette(idx).o2,
-                '--sh': getPalette(idx).o2 + '88',
-              }"
-            >
-              🎵
-            </span>
-            <span class="pl-name">{{ p.name }}</span>
-          </router-link>
-        </div>
-        <div v-else class="empty" id="empty">
-          <p>No playlists yet</p>
-          <button id="create" @click="openCreateModal">+ Create playlist</button>
+            <span class="jb-nav-tile" :style="{ backgroundColor: genre.color }">{{ genre.icon }}</span>
+            <span v-if="!isSidebarCollapsed" class="jb-collection-name">{{ genre.name }}</span>
+            <span v-if="!isSidebarCollapsed" class="jb-collection-count font-mono">{{ genre.count }}</span>
+          </button>
         </div>
       </div>
 
-      <!-- Mood & Genre Filter Accordion -->
-      <div id="langs" class="drawer-section">
+      <!-- PLAYLISTS SECTION -->
+      <div class="jb-sidebar-section">
+        <div v-if="!isSidebarCollapsed" class="jb-section-label font-mono jb-split-label">
+          <span>PLAYLISTS ({{ playlistStore.playlists.length }})</span>
+          <button class="jb-mini-add-btn font-mono" @click="openCreateModal" title="New playlist">+ NEW</button>
+        </div>
+        <div class="jb-playlists-list">
+          <button
+            v-for="p in playlistStore.playlists"
+            :key="p._id || p.id"
+            class="jb-playlist-row"
+            :class="{ 'active': activePlaylist && (activePlaylist._id === p._id || activePlaylist.id === p.id) }"
+            @click="handleSelectPlaylist(p)"
+            :title="p.name"
+          >
+            <span class="jb-nav-tile tile-lavender">🎵</span>
+            <span v-if="!isSidebarCollapsed" class="jb-playlist-name">{{ p.name }}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- SIDEBAR FOOTER -->
+      <div class="jb-sidebar-footer">
         <button
-          class="lab accordion-header"
-          id="langbtn"
-          :class="{ on: isMoodAccordionOpen }"
-          :aria-expanded="isMoodAccordionOpen ? 'true' : 'false'"
-          @click="isMoodAccordionOpen = !isMoodAccordionOpen"
+          v-if="!isSidebarCollapsed"
+          class="jb-support-btn font-mono"
+          @click="showSettingsModal = true"
         >
-          <span id="langt">Moods & Genres ({{ selectedGenreFilter || 'All' }})</span>
-          <span class="chev" id="ic-c">
-            <svg viewBox="0 0 24 24"><path :d="ICONS.chev" /></svg>
-          </span>
+          ⚙️ AUDIO SETTINGS
         </button>
-        <div class="acc" :class="{ on: isMoodAccordionOpen }" id="acc">
-          <div>
-            <div class="chips" id="chips">
-              <button
-                v-for="chip in genreChips"
-                :key="chip"
-                class="chip"
-                :aria-pressed="selectedGenreFilter === chip ? 'true' : 'false'"
-                @click="handleSelectGenre(chip)"
-              >
-                {{ chip }}
-              </button>
-            </div>
+
+        <div v-if="!isSidebarCollapsed && authStore.isAuthenticated" class="jb-user-card font-mono">
+          <div class="jb-user-info">
+            <span class="jb-user-avatar">{{ userInitial }}</span>
+            <span class="jb-username">{{ authStore.username }}</span>
           </div>
+          <button class="jb-signout-btn font-mono" @click="handleLogout">EXIT</button>
         </div>
-      </div>
-
-      <!-- Settings / Audio Engine Info -->
-      <button class="nav" @click="showSettingsModal = true">
-        <span class="orb" style="--o1:#c9b6ff;--o2:#8a68ff">⚙️</span>
-        <span>Settings & Audio</span>
-      </button>
-
-      <!-- Drawer Footer Links -->
-      <div class="foot">
-        <a href="https://github.com/rk0802p/music_playlist" target="_blank" rel="noopener">GitHub</a>
-        <a href="https://www.jamendo.com" target="_blank" rel="noopener">Jamendo</a>
-        <a href="https://creativecommons.org" target="_blank" rel="noopener">Creative Commons</a>
+        <div v-else-if="!isSidebarCollapsed" class="jb-auth-box">
+          <router-link to="/login" class="jb-auth-pill font-mono">LOG IN</router-link>
+          <router-link to="/signup" class="jb-auth-pill fill font-mono">SIGN UP</router-link>
+        </div>
       </div>
     </aside>
 
-    <!-- 3. MAIN HOMEPAGE CONTENT -->
-    <main class="home-main">
-      <!-- Animated Staggered Hero Greeting -->
-      <h1 class="greet" id="greet" aria-live="polite">
-        <span
-          v-for="(word, wIdx) in greetingWords"
-          :key="wIdx"
-          :class="{ 'g': wIdx > 0 }"
-          :style="{ '--i': wIdx }"
-        >
-          {{ word }}
-        </span>
-        <span class="em" style="--i: 3" aria-hidden="true">🎶</span>
-      </h1>
-
-      <!-- Active Filter Banner (When searching or filtering by genre/favourite) -->
-      <div v-if="activeFilterBadge" class="filter-banner glass">
-        <span>Filtering by: <strong>{{ activeFilterBadge }}</strong></span>
-        <button class="filter-clear" @click="clearAllFilters">✕ Reset Filter</button>
-      </div>
-
-      <!-- 4. "LISTEN AGAIN" SECTION -->
-      <section class="home-section" aria-label="Listen Again">
-        <div class="sh">
-          <h2 class="rv in">Listen again</h2>
-          <span class="section-tag font-mono">POPULAR ROTATION</span>
+    <!-- RIGHT MAIN WORKSPACE -->
+    <div class="jb-main-container">
+      <!-- TOP STATUS / BREADCRUMB BAR -->
+      <header class="jb-topbar">
+        <div class="jb-topbar-left font-mono">
+          <span class="jb-breadcrumb-root">SOUNDWAVE</span>
+          <span class="jb-breadcrumb-sep">/</span>
+          <span class="jb-breadcrumb-active">{{ activeBreadcrumb }}</span>
         </div>
 
-        <div class="again" id="again">
+        <div class="jb-topbar-right">
           <button
-            v-for="(track, idx) in displayedListenAgainTracks"
-            :key="track.id || track._id"
-            class="song glass rv in"
-            :class="{
-              'on': isCurrentTrack(track),
-              'is-active': isCurrentTrack(track),
-            }"
-            :style="{
-              '--d': idx * 80 + 'ms',
-              '--o1': track.palette?.o1 || '#7ff0e6',
-              '--o2': track.palette?.o2 || '#19c9bd',
-              '--sh': (track.palette?.o2 || '#19c9bd') + '88',
-            }"
-            :data-id="track.id || track._id"
-            @click="handlePlayTrack(track, displayedListenAgainTracks, idx, $event)"
+            class="jb-queue-toggle-btn font-mono"
+            @click="handleToggleQueue"
+            :title="`Up Next Queue (${playerStore.queue?.length || 0} tracks)`"
           >
-            <!-- Squishy Glossy Orb with Emoji or Album Art -->
-            <span class="orb" aria-hidden="true">
-              {{ track.emoji }}
-            </span>
-
-            <!-- Track Metadata -->
-            <span class="mt">
-              <b>{{ track.title }}</b>
-              <small>{{ track.artist }}</small>
-            </span>
-
-            <!-- 3-Bar Live Equalizer Visualizer (Active when Playing) -->
-            <span class="eq" aria-hidden="true">
-              <b></b><b></b><b></b>
-            </span>
+            QUEUE ({{ playerStore.queue?.length || 0 }})
           </button>
-        </div>
-      </section>
-
-      <!-- 5. "TRENDING" HORIZONTAL CAROUSEL SECTION -->
-      <section class="home-section" aria-label="Trending Tracks">
-        <div class="sh">
-          <h2 class="rv in">Trending</h2>
-          <div class="arrows">
-            <button
-              class="ib"
-              id="lt"
-              aria-label="Scroll trending carousel left"
-              title="Scroll left"
-              @click="scrollCarousel(-460)"
-            >
-              <svg viewBox="0 0 24 24"><path :d="ICONS.l" /></svg>
-            </button>
-            <button
-              class="ib"
-              id="rt"
-              aria-label="Scroll trending carousel right"
-              title="Scroll right"
-              @click="scrollCarousel(460)"
-            >
-              <svg viewBox="0 0 24 24"><path :d="ICONS.r" /></svg>
-            </button>
+          
+          <div class="jb-status-chip font-mono">
+            <span class="jb-status-dot"></span>
+            <span>JAMENDO CC</span>
           </div>
         </div>
+      </header>
 
-        <!-- Horizontal Track Carousel -->
-        <div class="track" id="track" ref="trackCarouselRef">
-          <button
-            v-for="(track, idx) in displayedTrendingTracks"
-            :key="track.id || track._id"
-            class="tc rv in"
-            :class="{ 'on': isCurrentTrack(track) }"
-            :style="{
-              '--d': idx * 70 + 'ms',
-              '--o1': track.palette?.o1 || '#ffd27a',
-              '--o2': track.palette?.o2 || '#ffa24c',
-              '--sh': (track.palette?.o2 || '#ffa24c') + '88',
-            }"
-            :data-id="track.id || track._id"
-            @click="handlePlayTrack(track, displayedTrendingTracks, idx, $event)"
-          >
-            <!-- Large Glossy Cover with 3D Radial Shine & Sheen Sweep -->
-            <div class="cv">
-              <span>{{ track.emoji }}</span>
-              <span class="pl" aria-hidden="true">
-                <svg viewBox="0 0 24 24">
-                  <path v-if="isCurrentTrack(track) && playerStore.isPlaying" :d="ICONS.pause" />
-                  <path v-else :d="ICONS.play" />
-                </svg>
-              </span>
+      <!-- SCROLLABLE PAGE BODY -->
+      <main class="jb-content-stage">
+        <!-- FILTER NOTICE BANNER -->
+        <div v-if="activeFilterBadge" class="jb-filter-banner font-mono">
+          <span>ACTIVE FILTER: <strong>{{ activeFilterBadge }}</strong></span>
+          <button class="jb-filter-clear-btn" @click="clearAllFilters">✕ RESET</button>
+        </div>
+
+        <!-- 1. JELLYKIT-INSPIRED CATEGORY HERO -->
+        <section class="jb-hero-card" :style="{ backgroundColor: currentCategoryHeroColor }">
+          <div class="jb-hero-meta">
+            <div class="jb-hero-badge-row font-mono">
+              <span class="jb-num-badge">{{ activePlaylist ? 'PLAYLIST' : selectedGenreFilter ? 'COLLECTION' : '01' }}</span>
+              <span class="jb-cat-label">{{ activePlaylist ? 'CURATED PLAYLIST' : selectedGenreFilter ? selectedGenreFilter.toUpperCase() : 'VERIFIED AUDIO ARCHIVE' }}</span>
             </div>
-            <b>{{ track.title }}</b>
-            <small>{{ track.artist }}</small>
-          </button>
-        </div>
-      </section>
 
-      <!-- 6. CURATED DISCOVER SHELF (Zero-API High-Availability Collection) -->
-      <section class="home-section" aria-label="Curated Discover Collection">
-        <div class="sh">
-          <div class="curated-heading">
-            <h2 class="rv in">{{ activeFilter === 'playlist' && activePlaylist ? activePlaylist.name : 'Curated Discover' }}</h2>
-            <p class="curated-sub font-mono">
-              {{ activeFilter === 'playlist' && activePlaylist ? (activePlaylist.description || (activePlaylist.songs?.length || 0) + ' tracks in this playlist') : '18 tracks from your curated Jamendo collection' }}
+            <h1 class="jb-hero-title font-display">
+              {{ activePlaylist ? activePlaylist.name : selectedGenreFilter ? selectedGenreFilter.toUpperCase() : 'SOUNDWAVE' }}
+            </h1>
+
+            <p class="jb-hero-tagline">
+              {{ activePlaylist ? (activePlaylist.description || 'Custom curated music collection.') : selectedGenreFilter ? `Explore curated ${selectedGenreFilter} audio streams.` : 'Open music discovery powered by Jamendo. Fully authorized Creative Commons streaming.' }}
             </p>
-          </div>
-          <div class="curated-actions-row">
-            <button
-              v-if="activeFilter === 'playlist' && activePlaylist && !isMoodPlaylist(activePlaylist)"
-              class="ib glass font-mono delete-playlist-btn"
-              title="Delete this playlist"
-              @click="handleDeleteActivePlaylist"
-            >
-              🗑️
-            </button>
-            <button class="ib glass font-mono refresh-btn" title="Shuffle pick" @click="handleShuffleCurated($event)">
-              ↺
-            </button>
-          </div>
-        </div>
 
-        <div class="curated-grid">
-          <div
-            v-for="(track, idx) in displayedCuratedTracks"
-            :key="track._id || track.id"
-            class="curated-card glass"
-            :class="{ 'on': isCurrentTrack(track) }"
-            :style="{
-              '--o1': track.palette?.o1 || '#7ff0e6',
-              '--o2': track.palette?.o2 || '#19c9bd',
-              '--sh': (track.palette?.o2 || '#19c9bd') + '88',
-            }"
-            @click="handlePlayTrack(track, displayedCuratedTracks, idx, $event)"
-          >
-            <div class="card-left">
-              <span class="orb card-orb">{{ track.emoji }}</span>
-              <div class="card-text">
-                <strong class="card-title">{{ track.title }}</strong>
-                <span class="card-artist">{{ track.artist }}</span>
-                <div class="card-tags">
-                  <span class="badge badge-license font-mono" @click.stop="openLicenseModal(track)">
-                    {{ track.license?.badge || 'CC' }}
+            <div class="jb-hero-foot-row font-mono">
+              <span class="jb-dark-pill">{{ displayedTracks.length }} TRACKS</span>
+              <span class="jb-live-tag">● ZERO-PIRACY CC STREAMING</span>
+              <button
+                v-if="activePlaylist && !isMoodPlaylist(activePlaylist)"
+                class="jb-hero-del-btn font-mono"
+                @click="handleDeleteActivePlaylist"
+                title="Delete this playlist"
+              >
+                🗑️ DELETE PLAYLIST
+              </button>
+            </div>
+          </div>
+
+          <div class="jb-hero-watermark" aria-hidden="true">
+            {{ heroWatermarkGlyph }}
+          </div>
+        </section>
+
+        <!-- 2. FEATURED AUDIO RELEASES (3-UP) -->
+        <section v-if="featuredSpotlightTracks.length && !selectedGenreFilter && !activePlaylist" class="jb-section">
+          <div class="jb-section-head">
+            <h2 class="jb-section-title font-display">FEATURED SPOTLIGHT</h2>
+            <div class="jb-section-line"></div>
+          </div>
+
+          <div class="jb-featured-grid">
+            <article
+              v-for="(track, idx) in featuredSpotlightTracks"
+              :key="track._id || track.id"
+              class="jb-featured-card"
+              :class="{ 'is-active': isCurrentTrack(track) }"
+            >
+              <div class="jb-card-eyebrow font-mono">
+                <span>{{ (track.genre || 'ELECTRONIC').toUpperCase() }}</span>
+                <span class="accent-mono">SPOTLIGHT {{ idx + 1 }}</span>
+              </div>
+
+              <!-- Striped Art Box -->
+              <div class="jb-card-art-box" @click="handlePlayTrack(track, featuredSpotlightTracks, idx, $event)">
+                <img
+                  v-if="track.coverImage || track.artwork"
+                  :src="track.coverImage || track.artwork"
+                  :alt="track.title"
+                  class="jb-card-cover"
+                />
+                <div v-else class="jb-art-fallback font-display">
+                  {{ track.title.substring(0, 2).toUpperCase() }}
+                </div>
+                
+                <button
+                  class="jb-art-play-btn"
+                  :title="isCurrentTrack(track) && playerStore.isPlaying ? 'Pause' : 'Play ' + track.title"
+                >
+                  {{ isCurrentTrack(track) && playerStore.isPlaying ? '❚❚' : '▶' }}
+                </button>
+              </div>
+
+              <div class="jb-card-body">
+                <h3 class="jb-card-title font-display" :title="track.title">{{ track.title }}</h3>
+                <p class="jb-card-artist">{{ track.artist }}</p>
+
+                <div class="jb-card-meta-row font-mono">
+                  <span class="jb-mono-chip" @click="openLicenseModal(track)">{{ track.license?.badge || 'CC BY' }}</span>
+                  <button
+                    class="jb-open-action font-mono"
+                    @click="handlePlayTrack(track, featuredSpotlightTracks, idx, $event)"
+                  >
+                    {{ isCurrentTrack(track) && playerStore.isPlaying ? 'PAUSE ❚❚' : 'PLAY →' }}
+                  </button>
+                </div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <!-- 3. MOST PLAYED / POPULAR COMPACT TRACKS -->
+        <section v-if="popularTracks.length && !selectedGenreFilter && !activePlaylist" class="jb-section">
+          <div class="jb-section-head">
+            <h2 class="jb-section-title font-display">POPULAR ROTATION</h2>
+            <div class="jb-section-line"></div>
+          </div>
+
+          <div class="jb-popular-grid">
+            <div
+              v-for="(track, idx) in popularTracks"
+              :key="track._id || track.id"
+              class="jb-popular-row"
+              :class="{ 'is-active': isCurrentTrack(track) }"
+              @click="handlePlayTrack(track, popularTracks, idx, $event)"
+            >
+              <div class="jb-pop-tile" :style="{ backgroundColor: getGenreColor(track.genre) }">
+                <span v-if="isCurrentTrack(track) && playerStore.isPlaying">❚❚</span>
+                <span v-else>▶</span>
+              </div>
+              <div class="jb-pop-info">
+                <span class="jb-pop-title font-display">{{ track.title }}</span>
+                <span class="jb-pop-artist font-mono">{{ track.artist }} · {{ formatDuration(track.duration) }}</span>
+              </div>
+              <span class="jb-pop-badge font-mono">{{ (track.genre || 'JAMENDO').toUpperCase() }}</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 4. ALL TRACKS CATALOG GRID WITH FILTERS & SORT CHIPS -->
+        <section class="jb-section">
+          <div class="jb-section-head">
+            <div class="jb-head-left">
+              <h2 class="jb-section-title font-display">{{ activePlaylist ? activePlaylist.name.toUpperCase() : selectedGenreFilter ? selectedGenreFilter.toUpperCase() : 'ALL TRACKS' }}</h2>
+              <span class="jb-head-count font-mono">({{ displayedTracks.length }})</span>
+            </div>
+            <div class="jb-section-line"></div>
+          </div>
+
+          <!-- Sort & Filter Chips Row -->
+          <div class="jb-chips-bar font-mono">
+            <div class="jb-chips-group">
+              <span class="jb-chips-label">SORT:</span>
+              <button
+                class="jb-filter-chip"
+                :class="{ 'active': sortBy === 'default' }"
+                @click="sortBy = 'default'"
+              >
+                CURATED
+              </button>
+              <button
+                class="jb-filter-chip"
+                :class="{ 'active': sortBy === 'title' }"
+                @click="sortBy = 'title'"
+              >
+                A–Z
+              </button>
+              <button
+                class="jb-filter-chip"
+                :class="{ 'active': sortBy === 'duration' }"
+                @click="sortBy = 'duration'"
+              >
+                SHORTEST
+              </button>
+            </div>
+
+            <div class="jb-chips-group">
+              <span class="jb-chips-label">GENRES:</span>
+              <button
+                class="jb-filter-chip"
+                :class="{ 'active': selectedGenreFilter === '' }"
+                @click="handleSelectGenre('')"
+              >
+                ALL ({{ allCuratedTracks.length }})
+              </button>
+              <button
+                v-for="g in availableGenres.slice(0, 4)"
+                :key="g.name"
+                class="jb-filter-chip"
+                :class="{ 'active': selectedGenreFilter === g.name }"
+                @click="handleSelectGenre(g.name)"
+              >
+                {{ g.name.toUpperCase() }} ({{ g.count }})
+              </button>
+            </div>
+          </div>
+
+          <!-- EMPTY STATE -->
+          <div v-if="displayedTracks.length === 0" class="jb-empty-box font-mono">
+            <div class="jb-empty-glyph font-display">Ø</div>
+            <h3 class="jb-empty-title font-display">NO AUDIO FREQUENCIES FOUND</h3>
+            <p class="jb-empty-desc">No tracks match your current filter or search criteria.</p>
+            <button class="jb-empty-btn font-mono" @click="clearAllFilters">RESET ALL FILTERS</button>
+          </div>
+
+          <!-- 4-COLUMN NEO-BRUTALIST CARDS GRID -->
+          <div v-else class="jb-cards-grid">
+            <article
+              v-for="(track, idx) in displayedTracks"
+              :key="track._id || track.id"
+              class="jb-track-card"
+              :class="{ 'is-active': isCurrentTrack(track) }"
+            >
+              <div class="jb-tc-top">
+                <div class="jb-tc-art-wrap" @click="handlePlayTrack(track, displayedTracks, idx, $event)">
+                  <img
+                    v-if="track.coverImage || track.artwork"
+                    :src="track.coverImage || track.artwork"
+                    :alt="track.title"
+                    class="jb-tc-img"
+                    loading="lazy"
+                  />
+                  <div v-else class="jb-tc-fallback font-display">
+                    {{ track.title.substring(0, 2).toUpperCase() }}
+                  </div>
+                  <div class="jb-tc-hover-play">
+                    {{ isCurrentTrack(track) && playerStore.isPlaying ? '❚❚' : '▶' }}
+                  </div>
+                </div>
+
+                <div class="jb-tc-badge-column font-mono">
+                  <span class="jb-tc-badge" :style="{ backgroundColor: getGenreColor(track.genre) }">
+                    {{ (track.genre || 'AUDIO').split('/')[0].trim().toUpperCase() }}
                   </span>
-                  <span class="badge badge-genre font-mono">{{ track.genre }}</span>
+                  <span class="jb-tc-time">{{ formatDuration(track.duration) }}</span>
+                </div>
+              </div>
+
+              <div class="jb-tc-body">
+                <h4 class="jb-tc-title font-display" :title="track.title">{{ track.title }}</h4>
+                <p class="jb-tc-artist" :title="track.artist">{{ track.artist }}</p>
+              </div>
+
+              <div class="jb-tc-footer font-mono">
+                <button
+                  class="jb-tc-action-btn"
+                  @click="handlePlayTrack(track, displayedTracks, idx, $event)"
+                >
+                  {{ isCurrentTrack(track) && playerStore.isPlaying ? 'PAUSE' : 'PLAY ▶' }}
+                </button>
+
+                <div class="jb-tc-meta-cluster">
+                  <button
+                    class="jb-tc-fav-btn"
+                    :class="{ 'active': favoritesList.includes(track.id || track._id) }"
+                    @click.stop="toggleFavorite(track, $event)"
+                    title="Favorite track"
+                  >
+                    ♥
+                  </button>
+
+                  <button
+                    v-if="activePlaylist && !isMoodPlaylist(activePlaylist)"
+                    class="jb-tc-del-btn"
+                    @click.stop="handleRemoveSongFromActivePlaylist(track)"
+                    title="Remove from playlist"
+                  >
+                    ✕
+                  </button>
+
                   <a
                     v-if="isJamendoTrack(track) && getTrackSourceUrl(track)"
                     :href="getTrackSourceUrl(track)"
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="badge badge-jamendo-link font-mono"
+                    class="jb-tc-jamendo-link"
                     title="Open on Jamendo"
                     @click.stop
                   >
-                    ↗ JAMENDO
+                    ↗
                   </a>
                 </div>
               </div>
-            </div>
+            </article>
+          </div>
+        </section>
+      </main>
 
-            <div class="card-right-actions">
-              <button
-                v-if="activeFilter === 'playlist' && activePlaylist && !isMoodPlaylist(activePlaylist)"
-                class="ib remove-song-mini"
-                title="Remove song from playlist"
-                @click.stop="handleRemoveSongFromActivePlaylist(track)"
-              >
-                ✕
-              </button>
-
-              <button
-                class="ib orb play-mini"
-                :aria-label="isCurrentTrack(track) && playerStore.isPlaying ? 'Pause' : 'Play ' + track.title"
-              >
-                <svg viewBox="0 0 24 24">
-                  <path v-if="isCurrentTrack(track) && playerStore.isPlaying" :d="ICONS.pause" />
-                  <path v-else :d="ICONS.play" />
-                </svg>
-              </button>
+      <!-- JELLYKIT NEO-BRUTALIST BOTTOM PERSISTENT PLAYER BAR -->
+      <footer class="jb-player-bar font-mono" role="region" aria-label="Persistent Audio Player">
+        <!-- Left: Track info -->
+        <div class="jb-pb-track">
+          <div class="jb-pb-art">
+            <img
+              v-if="currentTrackArtwork"
+              :src="currentTrackArtwork"
+              :alt="currentTrackTitle"
+              class="jb-pb-cover"
+            />
+            <div v-else class="jb-pb-fallback font-display">
+              {{ currentTrackTitle.substring(0, 2).toUpperCase() }}
             </div>
+          </div>
+          <div class="jb-pb-text">
+            <div class="jb-pb-title font-display" :title="currentTrackTitle">{{ currentTrackTitle }}</div>
+            <div class="jb-pb-artist" :title="currentTrackArtist">{{ currentTrackArtist }}</div>
+          </div>
+          <button
+            class="jb-pb-fav font-mono"
+            :class="{ 'active': isFavorite }"
+            @click="toggleFavorite(playerStore.currentTrack, $event)"
+            title="Like track"
+          >
+            ♥
+          </button>
+        </div>
+
+        <!-- Center: Controls & Progress -->
+        <div class="jb-pb-controls">
+          <div class="jb-pb-buttons">
+            <button
+              class="jb-btn-icon"
+              @click="playerStore.cycleRepeat()"
+              :title="'Repeat: ' + playerStore.repeat"
+              :class="{ 'on': playerStore.repeat !== 'off' }"
+            >
+              🔁
+            </button>
+            <button class="jb-btn-icon" @click="playerStore.prevTrack()" title="Previous track">
+              ⏮
+            </button>
+            <button class="jb-btn-play font-display" @click="handleTogglePlay($event)" title="Play / Pause">
+              {{ playerStore.isPlaying ? '❚❚' : '▶' }}
+            </button>
+            <button class="jb-btn-icon" @click="playerStore.nextTrack()" title="Next track">
+              ⏭
+            </button>
+            <button
+              class="jb-btn-icon"
+              @click="playerStore.toggleShuffle()"
+              :title="'Shuffle: ' + (playerStore.shuffle ? 'On' : 'Off')"
+              :class="{ 'on': playerStore.shuffle }"
+            >
+              🔀
+            </button>
+          </div>
+
+          <div class="jb-pb-timeline">
+            <span class="jb-pb-time">{{ formatDuration(playerStore.currentTime) }}</span>
+            <div class="jb-pb-trackbar" @click="handleSeekClick($event)">
+              <div class="jb-pb-fill" :style="{ width: playerStore.progressPercentage + '%' }"></div>
+            </div>
+            <span class="jb-pb-time">{{ formatDuration(playerStore.duration) }}</span>
           </div>
         </div>
 
-        <div v-if="displayedCuratedTracks.length === 0 && activeFilter === 'playlist'" class="empty-curated-search glass">
-          <p>This playlist bubble has no tracks yet.</p>
-          <router-link to="/search" class="btn p font-mono">
-            Discover & Add Tracks →
-          </router-link>
+        <!-- Right: Volume & Queue -->
+        <div class="jb-pb-extras">
+          <button class="jb-btn-icon" @click="playerStore.setMuted(!playerStore.muted)" title="Mute toggle">
+            {{ playerStore.muted ? '🔇' : '🔊' }}
+          </button>
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            :value="playerStore.muted ? 0 : playerStore.volume"
+            @input="playerStore.setVolume(Number($event.target.value))"
+            class="jb-vol-slider"
+            title="Volume"
+          />
+          <button class="jb-queue-pill font-mono" @click="handleToggleQueue">
+            ≡ {{ playerStore.queue?.length || 0 }}
+          </button>
+        </div>
+      </footer>
+    </div>
+
+    <!-- UP NEXT QUEUE DRAWER (NEO-BRUTALIST) -->
+    <div v-if="isQueueOpen" class="jb-modal-backdrop" @click.self="isQueueOpen = false">
+      <aside class="jb-queue-drawer font-mono">
+        <div class="jb-drawer-head">
+          <h3 class="jb-drawer-title font-display">UP NEXT QUEUE</h3>
+          <button class="jb-drawer-close" @click="isQueueOpen = false">✕</button>
         </div>
 
-        <div v-if="displayedCuratedTracks.length === 0 && searchQuery.trim()" class="empty-curated-search glass">
-          <p>No homepage tracks match "{{ searchQuery.trim() }}".</p>
-          <router-link :to="{ path: '/search', query: { q: searchQuery.trim() } }" class="btn p font-mono">
-            Search Online Multi-Source Catalog →
-          </router-link>
-        </div>
-      </section>
-    </main>
-
-    <!-- 7. FLOATING BOTTOM GLASS PLAYER DOCK -->
-    <FloatingPlayerDock
-      @open-info="openLicenseModal"
-      @toggle-queue="handleToggleQueue"
-      @bubble-pop="handleBubblePop"
-    />
-
-    <!-- Up Next Queue Drawer Overlay -->
-    <div
-      v-if="isQueueOpen"
-      class="queue-drawer-overlay"
-      @click.self="isQueueOpen = false"
-    >
-      <aside class="queue-drawer-panel glass" role="dialog" aria-label="Up Next Queue">
-        <div class="queue-drawer-header">
-          <div class="queue-title-wrap">
-            <h3 class="queue-title font-display">Up Next Queue</h3>
-            <span class="queue-badge font-mono">{{ playerStore.queue?.length || 0 }} TRACKS</span>
-          </div>
-          <button class="queue-close-btn font-mono" @click="isQueueOpen = false">✕</button>
+        <div v-if="!playerStore.queue || playerStore.queue.length === 0" class="jb-empty-queue">
+          NO TRACKS IN QUEUE.
         </div>
 
-        <div v-if="!playerStore.queue || playerStore.queue.length === 0" class="queue-empty font-mono">
-          Queue is empty. Select tracks to play.
-        </div>
-
-        <div v-else class="queue-track-list">
+        <div v-else class="jb-queue-items">
           <div
             v-for="(t, qIdx) in playerStore.queue"
             :key="t._id || t.id || qIdx"
-            class="queue-track-row"
-            :class="{ 'is-active': playerStore.trackIndex === qIdx }"
+            class="jb-queue-row"
+            :class="{ 'is-current': playerStore.trackIndex === qIdx }"
             @click="handlePlayQueueItem(qIdx)"
           >
-            <span class="queue-track-idx font-mono">{{ qIdx + 1 }}</span>
-            <div class="queue-track-meta">
-              <span class="queue-track-name font-display">{{ t.title || t[0] }}</span>
-              <span class="queue-track-sub font-mono">{{ t.artist || t[1] }}</span>
+            <span class="jb-qr-num">{{ qIdx + 1 }}</span>
+            <div class="jb-qr-info">
+              <span class="jb-qr-title font-display">{{ t.title || t[0] }}</span>
+              <span class="jb-qr-artist">{{ t.artist || t[1] }}</span>
             </div>
-            <span v-if="t.provider || t.source?.provider" class="queue-track-prov font-mono">
-              <a
-                v-if="isJamendoTrack(t) && getTrackSourceUrl(t)"
-                :href="getTrackSourceUrl(t)"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="queue-track-jamendo-link font-mono"
-                title="Open track on Jamendo"
-                @click.stop
-              >
-                ↗ JAMENDO
-              </a>
-              <template v-else>
-                {{ (t.provider || t.source?.provider || '').toUpperCase() }}
-              </template>
-            </span>
-            <button
-              class="queue-remove-btn font-mono"
-              @click.stop="playerStore.removeFromQueue(qIdx)"
-              title="Remove from queue"
-            >
+            <button class="jb-qr-del" @click.stop="playerStore.removeFromQueue(qIdx)" title="Remove from queue">
               ✕
             </button>
           </div>
@@ -537,103 +566,56 @@
       @created="handlePlaylistCreated"
     />
 
-    <!-- MODAL: TRACK LICENSE & ATTRIBUTION -->
-    <div
-      v-if="selectedInfoTrack"
-      class="modal-backdrop"
-      @click.self="selectedInfoTrack = null"
-      role="dialog"
-      aria-modal="true"
-    >
-      <div class="modal-card glass">
-        <div class="modal-header">
-          <div class="logo">
-            <span class="orb">{{ selectedInfoTrack.emoji || '📜' }}</span>
-            <span>License & Attribution</span>
-          </div>
-          <button class="close-btn" @click="selectedInfoTrack = null" aria-label="Close dialog">✕</button>
+    <!-- MODAL: LICENSE & ATTRIBUTION -->
+    <div v-if="selectedInfoTrack" class="jb-modal-backdrop" @click.self="selectedInfoTrack = null">
+      <div class="jb-dialog font-mono">
+        <div class="jb-dialog-header">
+          <span class="jb-dialog-tag">LEGAL & ATTRIBUTION</span>
+          <button class="jb-dialog-close" @click="selectedInfoTrack = null">✕</button>
         </div>
+        <div class="jb-dialog-body">
+          <h3 class="font-display jb-dialog-title">{{ selectedInfoTrack.title }}</h3>
+          <p class="jb-dialog-sub">By {{ selectedInfoTrack.artist }}</p>
 
-        <div class="modal-body">
-          <h3>{{ selectedInfoTrack.title }}</h3>
-          <p class="modal-artist">{{ selectedInfoTrack.artist }}</p>
+          <div class="jb-dialog-field">
+            <label>LICENSE</label>
+            <div class="jb-dialog-val">{{ selectedInfoTrack.license?.name || 'Creative Commons' }}</div>
+          </div>
 
-          <div class="info-row">
-            <label>License</label>
-            <a
-              v-if="selectedInfoTrack.license?.url"
-              :href="selectedInfoTrack.license.url"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="license-chip license-link"
-              title="View Creative Commons license deed"
-            >
-              {{ selectedInfoTrack.license?.name || 'Creative Commons' }} ↗
+          <div class="jb-dialog-field" v-if="selectedInfoTrack.license?.attribution">
+            <label>ATTRIBUTION</label>
+            <div class="jb-dialog-val quote">{{ selectedInfoTrack.license.attribution }}</div>
+          </div>
+
+          <div class="jb-dialog-field" v-if="selectedInfoTrack.source?.pageUrl">
+            <label>JAMENDO VERIFICATION</label>
+            <a :href="selectedInfoTrack.source.pageUrl" target="_blank" rel="noopener" class="jb-dialog-link">
+              {{ selectedInfoTrack.source.pageUrl }} ↗
             </a>
-            <div v-else class="license-chip">{{ selectedInfoTrack.license?.name || 'Creative Commons / Public Domain' }}</div>
-          </div>
-
-          <div class="info-row" v-if="selectedInfoTrack.license?.attribution">
-            <label>Attribution</label>
-            <blockquote class="attribution-box">{{ selectedInfoTrack.license.attribution }}</blockquote>
-          </div>
-
-          <div class="info-row" v-if="selectedInfoTrack.source?.pageUrl">
-            <label>Original Source</label>
-            <a :href="selectedInfoTrack.source.pageUrl" target="_blank" rel="noopener" class="source-link">
-              {{ selectedInfoTrack.source.name || 'Original source item page' }} ↗
-            </a>
-          </div>
-
-          <div class="info-row">
-            <label>Streaming Capability</label>
-            <p class="capability-text" v-if="selectedInfoTrack.audioUrl || selectedInfoTrack.streamUrl">
-              Direct high-availability MP3 audio streamed from original publisher. No local audio downloaded.
-            </p>
-            <p class="capability-text" v-else>
-              Direct static playback unavailable. Commercial copyrighted master recording requires licensed streaming authorization (Spotify OAuth / API subscription). Metadata preserved as source of truth.
-            </p>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- MODAL: SETTINGS & AUDIO ENGINE INFO -->
-    <div
-      v-if="showSettingsModal"
-      class="modal-backdrop"
-      @click.self="showSettingsModal = false"
-      role="dialog"
-      aria-modal="true"
-    >
-      <div class="modal-card glass">
-        <div class="modal-header">
-          <div class="logo">
-            <span class="orb">⚙️</span>
-            <span>Audio Engine Settings</span>
-          </div>
-          <button class="close-btn" @click="showSettingsModal = false" aria-label="Close dialog">✕</button>
+    <!-- MODAL: SETTINGS & AUDIO -->
+    <div v-if="showSettingsModal" class="jb-modal-backdrop" @click.self="showSettingsModal = false">
+      <div class="jb-dialog font-mono">
+        <div class="jb-dialog-header">
+          <span class="jb-dialog-tag">AUDIO ENGINE SETTINGS</span>
+          <button class="jb-dialog-close" @click="showSettingsModal = false">✕</button>
         </div>
-
-        <div class="modal-body">
-          <div class="setting-item">
+        <div class="jb-dialog-body">
+          <div class="jb-setting-row">
             <strong>Persistent HTML5 Audio Engine</strong>
-            <p>Active driver: <code>DirectAudioProvider</code> (HTML5 Audio / Jamendo CC Stream)</p>
+            <p>Active Provider: <code>DirectAudioProvider</code> (Jamendo CC Stream Only)</p>
           </div>
-
-          <div class="setting-item">
+          <div class="jb-setting-row">
             <strong>Volume Memory</strong>
-            <p>Current level: {{ Math.round(playerStore.volume * 100) }}% ({{ playerStore.muted ? 'Muted' : 'Unmuted' }})</p>
+            <p>{{ Math.round(playerStore.volume * 100) }}% ({{ playerStore.muted ? 'Muted' : 'Unmuted' }})</p>
           </div>
-
-          <div class="setting-item">
-            <strong>Playback Race Guard</strong>
-            <p>State: Enabled (Sequence tracking active via <code>playRequestId</code>)</p>
-          </div>
-
-          <div class="setting-item">
-            <strong>Spotify Developer Mode</strong>
-            <p>OAuth & Web Playback SDK: Available for allowlisted test accounts (25 max)</p>
+          <div class="jb-setting-row">
+            <strong>Playback Policy</strong>
+            <p>Strict CC authorization, unverified providers rejected.</p>
           </div>
         </div>
       </div>
@@ -642,21 +624,13 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { usePlayerStore } from '../stores/player';
 import { usePlaylistStore } from '../stores/playlist';
 import { useAuthStore } from '../stores/auth';
 import { useToastStore } from '../stores/toast';
 import { FEATURED_SONGS } from '../data/featuredSongs';
-import { resolvePlayableAudioUrl } from '../services/providers/detector';
-import {
-  createPlaybackAttemptId,
-  infoPlayback,
-  warnPlayback,
-  errorPlayback
-} from '../utils/playbackDiagnostics';
-import FloatingPlayerDock from '../components/player/FloatingPlayerDock.vue';
 import CreatePlaylistModal from '../components/playlists/CreatePlaylistModal.vue';
 
 const router = useRouter();
@@ -666,310 +640,226 @@ const playlistStore = usePlaylistStore();
 const authStore = useAuthStore();
 const toastStore = useToastStore();
 
-// Reference Color Palettes (Amber, Lavender, Mint, Rose, Sky, Aqua)
-const PALETTES = [
-  { o1: '#ffd27a', o2: '#ffa24c', tint: '#ffe9c9' }, // 0: Amber
-  { o1: '#c9b6ff', o2: '#8a68ff', tint: '#e6dcff' }, // 1: Lavender
-  { o1: '#8ff2d3', o2: '#2fd3a2', tint: '#d3f8ec' }, // 2: Mint
-  { o1: '#ff9bd2', o2: '#ff4f9a', tint: '#ffd9ec' }, // 3: Rose
-  { o1: '#9ad8ff', o2: '#3fa7ff', tint: '#d4eeff' }, // 4: Sky
-  { o1: '#7ff0e6', o2: '#19c9bd', tint: '#d8faf6' }, // 5: Aqua
-];
-
-const EMOJIS = ['⚡', '🌸', '💫', '🌊', '🔥', '✨', '🕊️', '🌼', '💃', '💎', '🌧️', '🎧', '🌙', '🌴', '🕶️', '🐱', '🐾', '🚨'];
-
-const getPalette = (idx) => PALETTES[idx % PALETTES.length];
-
-// Reusable SVG icons from reference
+// Icons
 const ICONS = {
-  menu: 'M3 6h18v2H3zM3 11h18v2H3zM3 16h18v2H3z',
   search: 'M10.5 3a7.5 7.5 0 1 0 4.5 13.500l4.500 4.500 1.500-1.500-4.500-4.500A7.500 7.500 0 0 0 10.500 3zm0 2a5.500 5.500 0 1 1 0 11 5.500 5.500 0 0 1 0-11z',
-  bell: 'M12 3a6 6 0 0 0-6 6v4l-2 3h16l-2-3V9a6 6 0 0 0-6-6zm-2 15a2 2 0 0 0 4 0z',
-  heart: 'M12 21s-8-5.200-8-11a4.600 4.600 0 0 1 8-3 4.600 4.600 0 0 1 8 3c0 5.800-8 11-8 11z',
-  play: 'M7 4v16l13-8z',
-  pause: 'M6 4h4v16H6zM14 4h4v16h-4z',
-  l: 'M14 6l-6 6 6 6 1.400-1.400L10.800 12l4.600-4.600z',
-  r: 'M10 6l6 6-6 6-1.400-1.400 4.600-4.600-4.600-4.600z',
-  chev: 'M7 10l5 5 5-5z',
 };
 
 // UI State
-const isDrawerOpen = ref(false);
+const isSidebarCollapsed = ref(false);
 const isQueueOpen = ref(false);
-const isSearchFocused = ref(false);
 const searchQuery = ref('');
-const hasUnreadNotification = ref(true);
-const isMoodAccordionOpen = ref(false);
 const selectedGenreFilter = ref('');
-const activeFilter = ref(''); // '' | 'favorites' | 'search' | 'genre' | 'playlist'
+const activeFilter = ref(''); // '' | 'favorites' | 'genre' | 'playlist'
 const activePlaylist = ref(null);
 const showCreateModal = ref(false);
 const showSettingsModal = ref(false);
 const selectedInfoTrack = ref(null);
-const trackCarouselRef = ref(null);
-const searchInputRef = ref(null);
 const favoritesList = ref([]);
+const sortBy = ref('default');
 
-// Dynamic Greeting based on time of day
-const greetingWords = computed(() => {
-  const h = new Date().getHours();
-  let baseGreeting = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
-  if (authStore.isAuthenticated && authStore.username) {
-    baseGreeting = `${baseGreeting}, ${authStore.username}`;
-  }
-  return baseGreeting.split(' ');
-});
-
-const userInitial = computed(() => {
-  return (authStore.username?.[0] || 'U').toUpperCase();
-});
-
-// Load persistent favorites
-const loadFavorites = () => {
-  try {
-    const raw = localStorage.getItem('soundwave_favorites');
-    favoritesList.value = raw ? JSON.parse(raw) : [];
-  } catch (e) {
-    favoritesList.value = [];
-  }
+// Distinct Jellykit Category Colors
+const GENRE_MAP = {
+  'Electronic / Dance': { color: '#4D6BFF', icon: '⚡' },
+  'English Pop': { color: '#FF6B5E', icon: '🌸' },
+  'Reggaeton': { color: '#FFD84A', icon: '💃' },
+  'Hip-Hop': { color: '#FFA23A', icon: '🔥' },
+  'Indie Pop / Rock': { color: '#B8F23C', icon: '🎸' },
+  'Latin Dance': { color: '#FF4F9A', icon: '✨' },
+  'Latin Pop': { color: '#5DE3A6', icon: '🌴' },
 };
 
-// Curated Track Catalog with Palettes and Emojis
+const getGenreColor = (genre) => {
+  if (!genre) return '#B9A6FF';
+  return GENRE_MAP[genre]?.color || '#3FD8EA';
+};
+
+// Curated Track Catalog
 const allCuratedTracks = computed(() => {
-  return FEATURED_SONGS.map((t, i) => ({
+  return FEATURED_SONGS.map((t, idx) => ({
     ...t,
-    palette: getPalette(i),
-    emoji: EMOJIS[i % EMOJIS.length],
+    genreColor: getGenreColor(t.genre),
   }));
 });
 
-// Dynamic background wash color based on active track
-const currentPalette = computed(() => {
-  const t = playerStore.currentTrack;
-  if (!t) return PALETTES[5]; // Default Aqua
-  const foundIdx = allCuratedTracks.value.findIndex(
-    (x) => x.id === t.id || x._id === t._id || x.title === t.title
-  );
-  return foundIdx !== -1 ? getPalette(foundIdx) : PALETTES[5];
+// Available Genres with count
+const availableGenres = computed(() => {
+  const counts = {};
+  allCuratedTracks.value.forEach((t) => {
+    const g = t.genre || 'Electronic / Dance';
+    counts[g] = (counts[g] || 0) + 1;
+  });
+  return Object.keys(counts).map((g) => ({
+    name: g,
+    count: counts[g],
+    color: getGenreColor(g),
+    icon: GENRE_MAP[g]?.icon || '🎵',
+  }));
 });
 
-const currentWashColor = computed(() => currentPalette.value.tint);
-
-// Genre chips
-const genreChips = ['All', 'English Pop', 'Electronic / Dance', 'Latin', 'Reggaeton', 'Alternative / Indie', 'Hip-Hop'];
-
-// Displayed Tracks with Search & Genre Filtering
-const displayedListenAgainTracks = computed(() => {
-  let list = allCuratedTracks.value.slice(0, 6);
-  return applyFilters(list);
+// Top 3 Spotlight Tracks
+const featuredSpotlightTracks = computed(() => {
+  return allCuratedTracks.value.slice(0, 3);
 });
 
-const displayedTrendingTracks = computed(() => {
-  let list = allCuratedTracks.value.slice(6);
-  return applyFilters(list);
+// Popular rotation (next 4)
+const popularTracks = computed(() => {
+  return allCuratedTracks.value.slice(3, 7);
 });
 
-const displayedCuratedTracks = computed(() => {
-  return applyFilters(allCuratedTracks.value);
-});
+// Displayed Tracks with filtering & sorting
+const displayedTracks = computed(() => {
+  let list = [...allCuratedTracks.value];
 
-const applyFilters = (tracks) => {
-  let result = [...tracks];
-
-  // Favourites filter
-  if (activeFilter.value === 'favorites') {
-    result = result.filter((t) => favoritesList.value.includes(t.id || t._id));
-  }
-
-  // Playlist filter
+  // Active Playlist filter
   if (activeFilter.value === 'playlist' && activePlaylist.value) {
-    const plSongs = (activePlaylist.value.songs || []).map((s) => ({
-      ...s,
-      palette: s.palette || { o1: '#8ff2d3', o2: '#2fd3a2', tint: '#d3f8ec' },
-      emoji: s.emoji || '🎵',
-      genre: s.genre || 'Playlist',
-    }));
-    const plSongIds = plSongs.map((s) => s._id || s.id || s.title);
-    const matched = result.filter((t) => plSongIds.includes(t._id || t.id || t.title));
-    if (matched.length > 0) {
-      return matched;
-    } else if (plSongs.length > 0) {
-      return plSongs;
+    const pSongs = activePlaylist.value.songs || [];
+    if (pSongs.length > 0) {
+      list = pSongs.map((s) => ({
+        ...s,
+        genreColor: getGenreColor(s.genre),
+      }));
     } else {
       return [];
     }
   }
 
-  // Genre filter
-  if (selectedGenreFilter.value && selectedGenreFilter.value !== 'All') {
-    const g = selectedGenreFilter.value.toLowerCase();
-    result = result.filter((t) => {
-      const trackGenre = (t.genre || '').toLowerCase();
-      if (g === 'latin') {
-        return trackGenre.includes('latin') || trackGenre.includes('reggaeton');
-      }
-      return trackGenre.includes(g);
-    });
+  // Favorites filter
+  if (activeFilter.value === 'favorites') {
+    list = list.filter((t) => favoritesList.value.includes(t.id || t._id));
   }
 
-  // Text search query filter
+  // Genre filter
+  if (selectedGenreFilter.value) {
+    list = list.filter((t) => t.genre === selectedGenreFilter.value);
+  }
+
+  // Search filter
   if (searchQuery.value.trim()) {
     const q = searchQuery.value.toLowerCase().trim();
-    result = result.filter((t) =>
-      `${t.title} ${t.artist} ${t.genre || ''}`.toLowerCase().includes(q)
+    list = list.filter(
+      (t) =>
+        (t.title && t.title.toLowerCase().includes(q)) ||
+        (t.artist && t.artist.toLowerCase().includes(q)) ||
+        (t.genre && t.genre.toLowerCase().includes(q))
     );
   }
 
-  return result;
-};
+  // Sort
+  if (sortBy.value === 'title') {
+    list.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+  } else if (sortBy.value === 'duration') {
+    list.sort((a, b) => (a.duration || 0) - (b.duration || 0));
+  }
+
+  return list;
+});
+
+// Hero Color & Watermark
+const currentCategoryHeroColor = computed(() => {
+  if (activePlaylist.value) return '#B9A6FF';
+  if (selectedGenreFilter.value) return getGenreColor(selectedGenreFilter.value);
+  return '#FFD84A'; // Jellykit Signature Yellow
+});
+
+const heroWatermarkGlyph = computed(() => {
+  if (activePlaylist.value) return 'PLAYLIST';
+  if (selectedGenreFilter.value) return selectedGenreFilter.value.split('/')[0].trim().toUpperCase();
+  return 'SOUNDWAVE';
+});
+
+const activeBreadcrumb = computed(() => {
+  if (activePlaylist.value) return `PLAYLIST: ${activePlaylist.value.name.toUpperCase()}`;
+  if (selectedGenreFilter.value) return `COLLECTION: ${selectedGenreFilter.value.toUpperCase()}`;
+  if (activeFilter.value === 'favorites') return 'LIKED TRACKS';
+  return 'DISCOVER MUSIC';
+});
 
 const activeFilterBadge = computed(() => {
-  if (searchQuery.value.trim()) return `Search: "${searchQuery.value.trim()}"`;
-  if (activeFilter.value === 'favorites') return 'Favourites';
-  if (activeFilter.value === 'playlist' && activePlaylist.value) return `Playlist: "${activePlaylist.value.name}"`;
-  if (selectedGenreFilter.value && selectedGenreFilter.value !== 'All') return `Genre: ${selectedGenreFilter.value}`;
+  if (activeFilter.value === 'favorites') return 'LIKED TRACKS';
+  if (activeFilter.value === 'playlist' && activePlaylist.value) return `PLAYLIST: "${activePlaylist.value.name}"`;
+  if (selectedGenreFilter.value) return `GENRE: ${selectedGenreFilter.value}`;
+  if (searchQuery.value.trim()) return `SEARCH: "${searchQuery.value.trim()}"`;
   return '';
 });
 
-const clearAllFilters = () => {
-  searchQuery.value = '';
-  activeFilter.value = '';
-  selectedGenreFilter.value = '';
-  activePlaylist.value = null;
-  if (route.query.playlist) {
-    router.push({ path: '/' });
-  }
-};
+const userInitial = computed(() => (authStore.username?.[0] || 'U').toUpperCase());
 
-// Playback handlers
+// Current Playing Metadata
+const currentTrackArtwork = computed(() => {
+  const t = playerStore.currentTrack;
+  return t?.coverImage || t?.artwork || t?.albumArt || null;
+});
+
+const currentTrackTitle = computed(() => playerStore.currentTrack?.title || 'No Track Loaded');
+const currentTrackArtist = computed(() => playerStore.currentTrack?.artist || 'Soundwave Jamendo Stream');
+const isFavorite = computed(() => {
+  const id = playerStore.currentTrack?.id || playerStore.currentTrack?._id;
+  return id ? favoritesList.value.includes(id) : false;
+});
+
+// Playback Methods
 const isCurrentTrack = (track) => {
-  if (!playerStore.currentTrack) return false;
+  if (!playerStore.currentTrack || !track) return false;
   return (
-    playerStore.currentTrack.id === track.id ||
-    playerStore.currentTrack._id === track._id ||
+    (track._id && playerStore.currentTrack._id === track._id) ||
+    (track.id && playerStore.currentTrack.id === track.id) ||
     playerStore.currentTrack.title === track.title
   );
 };
 
-const handlePlayTrack = async (track, queue, index, event) => {
-  const attemptId = createPlaybackAttemptId();
-  infoPlayback('TRACK_SELECTION', attemptId, 'card_click_event', {
-    trackId: track?.id || track?._id,
-    title: track?.title,
-    artist: track?.artist,
-    provider: track?.provider
-  });
-  if (isCurrentTrack(track) && playerStore.isPlaying) {
+const handlePlayTrack = (track, list, index, event) => {
+  if (event) event.stopPropagation();
+  if (isCurrentTrack(track)) {
     playerStore.togglePlay();
-    return;
-  }
-
-  // Update theme colors
-  if (track.palette) {
-    playerStore.setTheme(track.palette.o1, track.palette.o2, track.palette.tint);
-  }
-
-  // Trigger bubble pop animation
-  if (event) {
-    const rect = event.currentTarget.getBoundingClientRect();
-    popParticles(rect.left + rect.width / 2, rect.top + rect.height / 2, 20, track.palette);
-  }
-
-  const audioUrl = resolvePlayableAudioUrl(track);
-  const canResolve = Boolean((!audioUrl || track.needsResolution) && track.providerTrackId && track.provider && track.provider !== 'spotify' && !track.isUnavailable);
-
-  if (!audioUrl && !canResolve) {
-    playerStore.currentTrack = track;
-    playerStore.queue = queue;
-    playerStore.trackIndex = index;
-    playerStore.currentTime = 0;
-    playerStore.duration = track.duration || 0;
-    playerStore.isPlaying = false;
-    playerStore.error = `Playback unavailable: "${track.title}" is currently unavailable for direct streaming.`;
-    toastStore.info(`"${track.title}" — Currently unavailable for direct streaming.`);
-    return;
-  }
-
-  await playerStore.playTrack(track, queue, index, attemptId);
-};
-
-// Carousel scrolling
-const scrollCarousel = (delta) => {
-  if (trackCarouselRef.value) {
-    trackCarouselRef.value.scrollBy({ left: delta, behavior: 'smooth' });
-  }
-};
-
-// Drawer controls & root/background scroll lock
-const openDrawer = () => {
-  isDrawerOpen.value = true;
-};
-
-const closeDrawer = () => {
-  isDrawerOpen.value = false;
-};
-
-const getPlaylistLink = (p) => {
-  if (!p) return '/';
-  if (p.isMood || p.id?.startsWith('mood-') || p._id?.startsWith('mood-')) {
-    return { path: '/', query: { playlist: p._id || p.id } };
-  }
-  return `/playlist/${p._id || p.id}`;
-};
-
-// Style preservation for root and body
-let savedHtmlOverflow = null;
-let savedBodyOverflow = null;
-let savedBodyTouchAction = null;
-
-const applyScrollLock = () => {
-  if (typeof document === 'undefined') return;
-  const html = document.documentElement;
-  const body = document.body;
-
-  if (savedHtmlOverflow === null) savedHtmlOverflow = html.style.overflow;
-  if (savedBodyOverflow === null) savedBodyOverflow = body.style.overflow;
-  if (savedBodyTouchAction === null) savedBodyTouchAction = body.style.touchAction;
-
-  html.style.overflow = 'hidden';
-  body.style.overflow = 'hidden';
-  body.style.touchAction = 'none';
-};
-
-const releaseScrollLock = () => {
-  if (typeof document === 'undefined') return;
-  const html = document.documentElement;
-  const body = document.body;
-
-  if (savedHtmlOverflow !== null) {
-    html.style.overflow = savedHtmlOverflow;
-    savedHtmlOverflow = null;
-  }
-  if (savedBodyOverflow !== null) {
-    body.style.overflow = savedBodyOverflow;
-    savedBodyOverflow = null;
-  }
-  if (savedBodyTouchAction !== null) {
-    body.style.touchAction = savedBodyTouchAction;
-    savedBodyTouchAction = null;
-  }
-};
-
-watch(isDrawerOpen, (isOpen) => {
-  if (isOpen) {
-    applyScrollLock();
   } else {
-    releaseScrollLock();
-  }
-});
-
-const handleKeyDown = (e) => {
-  if (e.key === 'Escape' && isDrawerOpen.value) {
-    closeDrawer();
+    playerStore.playTrack(track, list, index);
   }
 };
 
-// Search handling
+const handleTogglePlay = (event) => {
+  if (event) event.stopPropagation();
+  playerStore.togglePlay();
+};
+
+const handleSeekClick = (e) => {
+  const rect = e.currentTarget.getBoundingClientRect();
+  const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+  if (playerStore.duration) {
+    playerStore.seek(pct * playerStore.duration);
+  }
+};
+
+// Filter actions
+const handleSelectGenre = (genreName) => {
+  activePlaylist.value = null;
+  activeFilter.value = genreName ? 'genre' : '';
+  selectedGenreFilter.value = genreName;
+};
+
+const handleSelectPlaylist = (p) => {
+  selectedGenreFilter.value = '';
+  activeFilter.value = 'playlist';
+  activePlaylist.value = p;
+  if (p.songs && p.songs.length) {
+    playerStore.queue = p.songs;
+  }
+};
+
+const handleFilterFavorites = () => {
+  selectedGenreFilter.value = '';
+  activePlaylist.value = null;
+  activeFilter.value = 'favorites';
+};
+
+const clearAllFilters = () => {
+  selectedGenreFilter.value = '';
+  activePlaylist.value = null;
+  activeFilter.value = '';
+  searchQuery.value = '';
+  sortBy.value = 'default';
+};
+
 const handleSearchInput = () => {
   if (searchQuery.value.trim()) {
     activeFilter.value = 'search';
@@ -984,82 +874,43 @@ const handleSearchSubmit = () => {
   }
 };
 
-// Bell notifications
-const handleBellClick = (event) => {
-  hasUnreadNotification.value = false;
-  toastStore.info('All 12 curated tracks verified for direct HTTP 200 playback!');
-  if (event) {
-    const rect = event.currentTarget.getBoundingClientRect();
-    popParticles(rect.left + rect.width / 2, rect.top + rect.height / 2, 12, {
-      o1: '#ff4f9a',
-      o2: '#ffa24c',
-    });
-  }
-};
-
-// Favourites toggle
-const handleFilterFavorites = () => {
-  loadFavorites();
-  if (activeFilter.value === 'favorites') {
-    activeFilter.value = '';
+// Favorite toggle
+const toggleFavorite = (track, event) => {
+  if (event) event.stopPropagation();
+  const id = track?.id || track?._id;
+  if (!id) return;
+  const idx = favoritesList.value.indexOf(id);
+  if (idx === -1) {
+    favoritesList.value.push(id);
+    toastStore.show('Added to Liked Tracks', 'success');
   } else {
-    activeFilter.value = 'favorites';
-    if (favoritesList.value.length === 0) {
-      toastStore.info('No tracks favorited yet! Click the heart in the player to save a track.');
-    }
+    favoritesList.value.splice(idx, 1);
+    toastStore.show('Removed from Liked Tracks', 'info');
   }
-  closeDrawer();
+  try {
+    localStorage.setItem('soundwave_favorites', JSON.stringify(favoritesList.value));
+  } catch {}
 };
 
-const handleSelectGenre = (chip) => {
-  if (chip === 'All') {
-    selectedGenreFilter.value = '';
-    activeFilter.value = '';
-  } else {
-    selectedGenreFilter.value = chip;
-    activeFilter.value = 'genre';
-  }
-  isMoodAccordionOpen.value = false;
-  closeDrawer();
+// Queue handling
+const handleToggleQueue = () => {
+  isQueueOpen.value = !isQueueOpen.value;
 };
 
-// Modal helpers
+const handlePlayQueueItem = (idx) => {
+  if (!playerStore.queue || !playerStore.queue[idx]) return;
+  playerStore.playTrack(playerStore.queue[idx], playerStore.queue, idx);
+};
+
+// Playlist Operations
 const openCreateModal = () => {
-  closeDrawer();
   showCreateModal.value = true;
 };
 
 const handlePlaylistCreated = () => {
   showCreateModal.value = false;
   playlistStore.fetchPlaylists();
-  toastStore.success('Playlist bubble created successfully!');
-};
-
-const openLicenseModal = (track) => {
-  selectedInfoTrack.value = track || playerStore.currentTrack;
-};
-
-const isJamendoTrack = (t) => {
-  if (!t) return false;
-  return (
-    t.provider === 'jamendo' ||
-    t.source?.provider === 'jamendo' ||
-    Boolean(t.providerTrackUrl && t.providerTrackUrl.includes('jamendo.com'))
-  );
-};
-
-const getTrackSourceUrl = (t) => {
-  if (!t) return null;
-  const prov = t.provider || t.source?.provider;
-  const extId = t.providerTrackId || t.source?.externalId;
-  if (prov === 'jamendo' && extId) {
-    return `https://www.jamendo.com/track/${extId}`;
-  }
-  if (t.providerTrackUrl) return t.providerTrackUrl;
-  if (t.source?.url && t.source.url.includes('jamendo.com/track/')) return t.source.url;
-  if (t.source?.trackUrl) return t.source.trackUrl;
-  if (t.source?.url && !t.source.url.includes('storage.jamendo.com')) return t.source.url;
-  return null;
+  toastStore.show('Playlist created!', 'success');
 };
 
 const isMoodPlaylist = (p) => {
@@ -1068,25 +919,21 @@ const isMoodPlaylist = (p) => {
     p.isMood ||
     p.id?.startsWith('mood-') ||
     p._id?.startsWith('mood-') ||
-    p.id?.startsWith('curated-') ||
-    p._id?.startsWith('curated-')
+    p.id?.startsWith('curated-')
   );
 };
 
 const handleDeleteActivePlaylist = async () => {
   if (!activePlaylist.value) return;
   const p = activePlaylist.value;
-  const name = p.name || 'this playlist';
-  if (!confirm(`Are you sure you want to permanently delete "${name}"?`)) return;
+  if (!confirm(`Are you sure you want to permanently delete "${p.name}"?`)) return;
 
   try {
     await playlistStore.deletePlaylist(p._id || p.id);
-    toastStore.success(`Playlist "${name}" deleted.`);
+    toastStore.show(`Playlist "${p.name}" deleted.`, 'success');
     clearAllFilters();
-    router.replace({ path: '/' });
   } catch (err) {
-    console.error('Delete playlist error:', err);
-    toastStore.error(err.response?.data?.message || 'Failed to delete playlist');
+    toastStore.show(err.response?.data?.message || 'Failed to delete playlist', 'error');
   }
 };
 
@@ -1094,1681 +941,1625 @@ const handleRemoveSongFromActivePlaylist = async (track) => {
   if (!activePlaylist.value) return;
   const p = activePlaylist.value;
   const trackId = track?._id || track?.id;
-  const trackTitle = track?.title || 'this track';
-
-  if (!confirm(`Remove "${trackTitle}" from "${p.name}"?`)) return;
+  if (!confirm(`Remove "${track?.title}" from "${p.name}"?`)) return;
 
   try {
     await playlistStore.removeSong(p._id || p.id, trackId);
     if (activePlaylist.value.songs) {
       activePlaylist.value.songs = activePlaylist.value.songs.filter((s) => (s._id || s.id) !== trackId);
     }
-    toastStore.success(`Removed "${trackTitle}" from "${p.name}"`);
+    toastStore.show(`Removed track from "${p.name}"`, 'success');
   } catch (err) {
-    console.error('Remove song error:', err);
-    toastStore.error(err.response?.data?.message || 'Failed to remove song');
+    toastStore.show(err.response?.data?.message || 'Failed to remove track', 'error');
   }
 };
 
-const handleToggleQueue = () => {
-  isQueueOpen.value = !isQueueOpen.value;
+// Info Modal
+const openLicenseModal = (track) => {
+  selectedInfoTrack.value = track || playerStore.currentTrack;
 };
 
-const handlePlayQueueItem = (idx) => {
-  if (!playerStore.queue || !playerStore.queue[idx]) return;
-  playerStore.trackIndex = idx;
-  playerStore.playTrack(playerStore.queue[idx], playerStore.queue, idx);
+const isJamendoTrack = (t) => {
+  return t?.provider === 'jamendo' || t?.source?.provider === 'jamendo';
 };
 
-const handleShuffleCurated = (event) => {
-  if (allCuratedTracks.value.length > 0) {
-    const rndIdx = Math.floor(Math.random() * allCuratedTracks.value.length);
-    handlePlayTrack(allCuratedTracks.value[rndIdx], allCuratedTracks.value, rndIdx, event);
-  }
+const getTrackSourceUrl = (t) => {
+  const extId = t.providerTrackId || t.source?.externalId;
+  if (extId) return `https://www.jamendo.com/track/${extId}`;
+  return t.source?.pageUrl || t.source?.url || 'https://www.jamendo.com';
+};
+
+const formatDuration = (sec) => {
+  if (!sec || isNaN(sec)) return '0:00';
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return `${m}:${s < 10 ? '0' : ''}${s}`;
 };
 
 const handleLogout = () => {
   authStore.logout();
-  closeDrawer();
-  toastStore.info('Logged out successfully.');
+  toastStore.show('Logged out', 'info');
 };
-
-// Particle pop function
-const popParticles = (x, y, n = 18, colorPair = null) => {
-  if (typeof window === 'undefined') return;
-  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-  const o1 = colorPair?.o1 || playerStore.o1 || '#7ff0e6';
-  const o2 = colorPair?.o2 || playerStore.o2 || '#19c9bd';
-
-  for (let i = 0; i < n; i++) {
-    const d = document.createElement('i');
-    d.className = 'bub';
-    const s = 12 + Math.random() * 28;
-    d.style.cssText = `left:${x}px;top:${y}px;width:${s}px;height:${s}px;--bc:${i % 2 ? o1 : o2}`;
-    document.body.appendChild(d);
-    const a = Math.random() * 6.28;
-    const v = 50 + Math.random() * 160;
-
-    d.animate(
-      [
-        { transform: 'translate(0,0) scale(.3)', opacity: 1 },
-        { transform: `translate(${Math.cos(a) * v}px,${Math.sin(a) * v - 150}px) scale(1)`, opacity: 1, offset: 0.75 },
-        { transform: `translate(${Math.cos(a) * v}px,${Math.sin(a) * v - 175}px) scale(1.4)`, opacity: 0 },
-      ],
-      {
-        duration: 900 + Math.random() * 650,
-        easing: 'cubic-bezier(.2,.8,.3,1)',
-      }
-    ).onfinish = () => d.remove();
-  }
-};
-
-const handleBubblePop = (data) => {
-  if (data?.target) {
-    const rect = data.target.getBoundingClientRect();
-    popParticles(rect.left + rect.width / 2, rect.top + rect.height / 2, data.count || 16);
-  }
-};
-
-watch(
-  () => [route.query.playlist, playlistStore.playlists],
-  ([newId, playlists]) => {
-    if (newId && Array.isArray(playlists) && playlists.length > 0) {
-      const found = playlists.find((p) => p._id === newId || p.id === newId);
-      if (found) {
-        activePlaylist.value = found;
-        activeFilter.value = 'playlist';
-        if (found.songs && found.songs.length > 0) {
-          playerStore.queue = found.songs;
-        }
-      }
-    } else if (!newId && activeFilter.value === 'playlist') {
-      activePlaylist.value = null;
-      activeFilter.value = '';
-    }
-  },
-  { immediate: true }
-);
 
 onMounted(() => {
-  infoPlayback('HOMEPAGE_INIT', null, 'component_mounted', {
-    totalCuratedTracks: FEATURED_SONGS.length,
-    validTracks: FEATURED_SONGS.filter(t => (t.id || t._id) && t.title && t.provider === 'jamendo').length,
-    firstTrack: FEATURED_SONGS[0]?.title
-  });
-  loadFavorites();
-  if (authStore.isAuthenticated) {
-    playlistStore.fetchPlaylists().catch(() => {});
-  }
-  window.addEventListener('keydown', handleKeyDown);
-
-  // Set initial default track in player to the first song from Spotify collection if not actively playing
-  if (allCuratedTracks.value.length > 0 && !playerStore.isPlaying) {
-    const initialTrack = allCuratedTracks.value[0];
-    playerStore.currentTrack = initialTrack;
-    playerStore.queue = allCuratedTracks.value;
-    playerStore.trackIndex = 0;
-    playerStore.duration = initialTrack.duration;
-    if (initialTrack.palette) {
-      playerStore.setTheme(initialTrack.palette.o1, initialTrack.palette.o2, initialTrack.palette.tint);
-    }
-  }
-
-  if (route.query.drawer === 'true' || route.query.drawer === '1') {
-    isDrawerOpen.value = true;
-  }
-  if (route.query.playing === 'true') {
-    playerStore.isPlaying = true;
-    playerStore.currentTime = 42;
-  }
-});
-
-onUnmounted(() => {
-  window.removeEventListener('keydown', handleKeyDown);
-  releaseScrollLock();
+  try {
+    const raw = localStorage.getItem('soundwave_favorites');
+    favoritesList.value = raw ? JSON.parse(raw) : [];
+  } catch {}
+  playlistStore.fetchPlaylists().catch(() => {});
 });
 </script>
 
 <style scoped>
-/* SOUNDWAVE Main Home Layout */
-.soundwave-home {
-  position: relative;
+/* ==========================================================================
+   JELLYKIT NEO-BRUTALIST HOMEPAGE STYLES
+   ========================================================================== */
+
+.jb-app-shell {
+  display: flex;
   min-height: 100vh;
-  width: 100%;
-  max-width: 100%;
-  color: var(--ink);
-  font-family: Figtree, system-ui, sans-serif;
-  overflow-x: hidden;
-  padding-bottom: 0;
+  background-color: var(--bg, #F3EFE8);
+  color: var(--ink, #111111);
+  font-family: var(--font-body);
 }
 
-/* 1. TOP FLOATING NAVBAR */
-.top {
-  position: fixed;
-  z-index: 40;
-  left: 50%;
-  transform: translate(-50%, 0);
-  top: calc(0.8rem + env(safe-area-inset-top, 0px));
-  width: min(1240px, calc(100% - 1.5rem));
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-  padding: 0.5rem 0.6rem;
-  border-radius: 99px;
-  box-shadow: 0 16px 40px rgba(120, 80, 200, 0.14), 0 0 0 1px rgba(255, 255, 255, 0.9);
-  transition: transform 0.3s;
-}
-
-.ib {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  flex: none;
-  position: relative;
-  display: grid;
-  place-items: center;
-  border: 0;
-  background: none;
-  cursor: pointer;
-  color: var(--ink);
-  transition: transform 0.3s cubic-bezier(0.2, 2.4, 0.4, 1);
-}
-
-.ib:hover {
-  transform: scale(1.15) rotate(-6deg);
-}
-
-.ib:active {
-  transform: scale(0.9);
-}
-
-.ib.orb {
-  color: #fff;
-  background: radial-gradient(circle at 30% 24%, #fff 0 5%, rgba(255, 255, 255, 0) 26%),
-              radial-gradient(circle at 70% 78%, rgba(255, 255, 255, 0.4), transparent 40%),
-              radial-gradient(circle at 50% 45%, var(--o1, #7ff0e6), var(--o2, #19c9bd) 78%);
-  box-shadow: inset -6px -9px 15px rgba(0, 0, 0, 0.14),
-              inset 5px 7px 12px rgba(255, 255, 255, 0.55),
-              0 10px 20px var(--sh, rgba(25, 201, 189, 0.35));
-}
-
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font: 800 1.35rem "Bricolage Grotesque", sans-serif;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  color: var(--ink);
-}
-
-.logo .orb {
-  width: 38px;
-  height: 38px;
-  font-size: 1.1rem;
-  animation: wob 3s ease-in-out infinite;
-}
-
-@keyframes wob {
-  50% {
-    transform: rotate(-14deg) scale(1.1);
-  }
-}
-
-.sp {
-  flex: 1;
-}
-
-.search {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  width: min(320px, 40vw);
-  padding: 0.6rem 1rem;
-  border-radius: 99px;
-  background: rgba(255, 255, 255, 0.85);
-  box-shadow: inset 0 2px 6px rgba(43, 29, 90, 0.08);
-  transition: width 0.4s cubic-bezier(0.2, 1.4, 0.3, 1), box-shadow 0.2s;
-  position: relative;
-}
-
-.search.is-focused {
-  width: min(440px, 55vw);
-  box-shadow: inset 0 2px 6px rgba(43, 29, 90, 0.08), 0 0 0 2px var(--o2, #19c9bd);
-}
-
-.search-icon svg {
-  width: 18px;
-  height: 18px;
-  color: var(--muted);
-}
-
-.search input {
-  border: 0;
-  background: none;
-  outline: 0;
-  width: 100%;
-  min-width: 0;
-  font-size: 0.95rem;
-  color: var(--ink);
-}
-
-.clear-btn {
-  border: 0;
-  background: none;
-  color: var(--muted);
-  cursor: pointer;
-  font-size: 0.85rem;
-  padding: 0 4px;
-}
-
-.bell-btn {
-  background: rgba(255, 255, 255, 0.7);
-}
-
-.dot {
-  position: absolute;
-  top: 6px;
-  right: 7px;
-  width: 11px;
-  height: 11px;
-  border-radius: 50%;
-  background: #ff4f9a;
-  border: 2px solid #fff;
-  animation: pulse 1.6s ease-out infinite;
-}
-
-@keyframes pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(255, 79, 154, 0.6);
-  }
-  100% {
-    box-shadow: 0 0 0 12px rgba(255, 79, 154, 0);
-  }
-}
-
-/* 2. SLIDING DRAWER & SCRIM */
-.scrim {
-  position: fixed;
-  inset: 0;
-  z-index: 45;
-  background: rgba(43, 29, 90, 0.25);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.4s;
-}
-
-.scrim.is-open {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.drawer {
-  position: fixed;
-  z-index: 55;
-  left: 0.6rem;
-  top: calc(0.6rem + env(safe-area-inset-top, 0px));
-  bottom: calc(0.6rem + env(safe-area-inset-bottom, 0px));
-  width: min(360px, calc(100% - 1.2rem));
-  max-width: calc(100vw - 1.2rem);
-  box-sizing: border-box;
-  border-radius: 36px;
-  padding: 1.2rem;
+/* 1. SIDEBAR */
+.jb-sidebar {
+  width: var(--sidebar-w, 300px);
+  background-color: #EFEAE1;
+  border-right: var(--bw, 2px) solid var(--border, #111111);
   display: flex;
   flex-direction: column;
-  gap: 1.2rem;
-  transform: translateX(-115%) rotate(-3deg);
-  transition: transform 0.6s cubic-bezier(0.2, 1.4, 0.3, 1);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  flex-shrink: 0;
+  z-index: 100;
+  transition: width 0.15s ease;
   overflow-y: auto;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
-  box-shadow: 0 20px 50px rgba(43, 29, 90, 0.2);
 }
 
-.drawer.is-open {
-  transform: none;
+.jb-sidebar.collapsed {
+  width: var(--sidebar-w-collapsed, 80px);
 }
 
-.dh {
+.jb-sidebar-header {
+  padding: 1.25rem 1rem;
   display: flex;
   align-items: center;
-  gap: 0.7rem;
+  justify-content: space-between;
+  border-bottom: var(--bw, 2px) solid var(--border, #111111);
+  background-color: var(--surface, #FFFDF8);
 }
 
-.drawer-auth {
+.jb-brand {
   display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
 }
 
-.auth {
+.jb-logo-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.6rem;
+  grid-template-columns: 12px 12px;
+  grid-template-rows: 12px 12px;
+  gap: 3px;
 }
 
-.user-pill {
-  display: flex;
-  align-items: center;
-  gap: 0.7rem;
-  padding: 0.6rem 0.9rem;
-  border-radius: 99px;
+.jb-logo-grid .sq {
+  width: 12px;
+  height: 12px;
+  border: 1.5px solid #111111;
+  border-radius: 3px;
 }
 
-.user-avatar {
-  width: 36px;
-  height: 36px;
-  font-weight: 800;
-  color: #fff;
-  font-size: 1rem;
+.sq-blue { background-color: var(--c-blue, #4D6BFF); }
+.sq-coral { background-color: var(--c-coral, #FF6B5E); }
+.sq-sun { background-color: var(--c-sun, #FFD84A); }
+.sq-lime { background-color: var(--c-lime, #B8F23C); }
+
+.jb-brand-text {
+  font-size: 1.35rem;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  color: var(--ink, #111111);
 }
 
-.user-info {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.user-info strong {
-  font-size: 0.95rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.user-info small {
-  font-size: 0.8rem;
-  color: var(--muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.btn {
-  padding: 0.85rem 1rem;
-  border-radius: 99px;
+.jb-collapse-toggle {
+  background: var(--surface-2, #FFFFFF);
+  border: var(--bw, 2px) solid var(--border, #111111);
+  box-shadow: 2px 2px 0 var(--border, #111111);
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-sm, 8px);
+  cursor: pointer;
   font-weight: 700;
-  font-size: 0.95rem;
-  display: inline-flex;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-  border: 0;
-  transition: transform 0.25s cubic-bezier(0.2, 2.2, 0.4, 1);
-}
-
-.btn:hover {
-  transform: scale(1.07) rotate(-1.5deg);
-}
-
-.btn:active {
-  transform: scale(0.94);
-}
-
-.btn.p {
-  color: #fff;
-  background: linear-gradient(180deg, var(--o1, #7ff0e6), var(--o2, #19c9bd));
-  box-shadow: inset 0 3px 6px rgba(255, 255, 255, 0.55), 0 10px 22px var(--sh, rgba(25, 201, 189, 0.45));
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-}
-
-.btn.s {
-  background: #fff;
-  color: var(--ink);
-  box-shadow: inset 0 0 0 2px var(--ink);
-}
-
-.drawer-nav-group {
-  display: grid;
-  gap: 0.4rem;
-}
-
-.nav {
   display: flex;
   align-items: center;
-  gap: 0.8rem;
-  padding: 0.6rem 0.8rem;
-  border-radius: 99px;
-  font: 800 1.1rem "Bricolage Grotesque", sans-serif;
-  color: var(--ink);
-  width: 100%;
-  text-align: left;
-  border: 0;
-  background: none;
-  cursor: pointer;
-  transition: background 0.2s, transform 0.3s cubic-bezier(0.2, 2, 0.4, 1);
+  justify-content: center;
+  transition: transform 0.08s ease;
 }
 
-.nav:hover {
-  background: rgba(255, 255, 255, 0.85);
-  transform: translateX(6px);
+.jb-collapse-toggle:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
 }
 
-.nav.is-active {
-  background: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 4px 14px rgba(43, 29, 90, 0.1);
+/* Sidebar Search */
+.jb-search-box-wrap {
+  padding: 0.9rem 1rem;
 }
 
-.nav .orb {
-  width: 36px;
-  height: 36px;
-  flex: none;
-  font-size: 1rem;
+.jb-search-box {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: var(--surface-2, #FFFFFF);
+  border: var(--bw, 2px) solid var(--border, #111111);
+  box-shadow: var(--shadow-sm, 3px 3px 0 var(--border, #111111));
+  border-radius: var(--r-md, 12px);
+  padding: 0.55rem 0.75rem;
 }
 
-.nav .orb svg {
+.jb-search-box.collapsed {
+  justify-content: center;
+  padding: 0.6rem;
+}
+
+.jb-search-icon {
   width: 18px;
   height: 18px;
-  fill: #fff;
+  fill: var(--ink, #111111);
+  flex-shrink: 0;
 }
 
-.drawer-section {
+.jb-search-input {
+  border: none;
+  outline: none;
+  background: transparent;
+  width: 100%;
+  font-size: 0.85rem;
+  color: var(--ink, #111111);
+}
+
+.jb-key-cap {
+  border: 1.5px solid var(--border, #111111);
+  border-radius: 4px;
+  padding: 0.1rem 0.35rem;
+  font-size: 0.7rem;
+  background: #EFEAE1;
+}
+
+.jb-clear-search {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+/* Sidebar Nav */
+.jb-sidebar-nav {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.35rem;
+  padding: 0.5rem 1rem;
 }
 
-.lab {
+.jb-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.45rem 0.65rem;
+  border-radius: var(--r-sm, 8px);
+  border: var(--bw, 2px) solid transparent;
+  color: var(--ink, #111111);
+  font-weight: 700;
+  font-size: 0.92rem;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.1s ease;
+}
+
+.jb-nav-item:hover {
+  background-color: rgba(17, 17, 17, 0.05);
+}
+
+.jb-nav-item.active {
+  background-color: var(--ink, #111111);
+  color: var(--bg, #F3EFE8);
+  border-color: var(--border, #111111);
+}
+
+.jb-nav-tile {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1.5px solid var(--border, #111111);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.tile-blue { background-color: var(--c-blue, #4D6BFF); color: #fff; }
+.tile-coral { background-color: var(--c-coral, #FF6B5E); color: #fff; }
+.tile-pink { background-color: var(--c-hotpink, #FF4F9A); color: #fff; }
+.tile-sun { background-color: var(--c-sun, #FFD84A); color: #111; }
+.tile-lavender { background-color: var(--c-lavender, #B9A6FF); color: #111; }
+
+.jb-nav-count {
+  margin-left: auto;
+  font-size: 0.75rem;
+  border: 1px solid var(--border, #111111);
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  background: var(--surface-2, #FFFFFF);
+  color: var(--ink, #111111);
+}
+
+.jb-nav-item.active .jb-nav-count {
+  background: var(--ink, #111111);
+  color: var(--bg, #F3EFE8);
+  border-color: var(--bg, #F3EFE8);
+}
+
+/* Sidebar Section Headers */
+.jb-sidebar-section {
+  padding: 0.75rem 1rem;
+  border-top: var(--bw, 2px) solid var(--border, #111111);
+}
+
+.jb-section-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--ink-muted, #4A4740);
+  margin-bottom: 0.5rem;
+}
+
+.jb-split-label {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.8rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  font-weight: 700;
-  color: var(--muted);
-  padding: 0 0.5rem;
 }
 
-.lab button {
-  color: var(--o2, #19c9bd);
-  font-weight: 800;
-  filter: brightness(0.8);
-  border: 0;
-  background: none;
+.jb-mini-add-btn {
+  background: var(--surface-2, #FFFFFF);
+  border: 1.5px solid var(--border, #111111);
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: bold;
   cursor: pointer;
 }
 
-.pls {
-  display: grid;
+.jb-collections-list,
+.jb-playlists-list {
+  display: flex;
+  flex-direction: column;
   gap: 0.35rem;
 }
 
-.pl-item .pl-name {
+.jb-collection-row,
+.jb-playlist-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.4rem 0.5rem;
+  border: 2px solid transparent;
+  border-radius: var(--r-sm, 8px);
+  background: none;
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+  text-align: left;
+}
+
+.jb-collection-row:hover,
+.jb-playlist-row:hover {
+  background-color: rgba(17, 17, 17, 0.05);
+}
+
+.jb-collection-row.active,
+.jb-playlist-row.active {
+  background-color: var(--surface-2, #FFFFFF);
+  border-color: var(--border, #111111);
+  box-shadow: 2px 2px 0 var(--border, #111111);
+}
+
+.jb-collection-name,
+.jb-playlist-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+
+.jb-collection-count {
+  font-size: 0.72rem;
+  color: var(--ink-muted, #4A4740);
+}
+
+/* Sidebar Footer */
+.jb-sidebar-footer {
+  margin-top: auto;
+  padding: 1rem 1rem calc(var(--player-h, 88px) + 1.25rem);
+  border-top: var(--bw, 2px) solid var(--border, #111111);
+  background-color: var(--surface, #FFFDF8);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.jb-support-btn {
+  background-color: var(--yellow, #FFD84A);
+  border: var(--bw, 2px) solid var(--border, #111111);
+  box-shadow: var(--shadow-sm, 3px 3px 0 var(--border, #111111));
+  padding: 0.55rem;
+  border-radius: var(--r-md, 12px);
+  font-weight: 700;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: transform 0.08s ease;
+}
+
+.jb-support-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+.jb-user-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.4rem;
+  background: #EFEAE1;
+  border: 1.5px solid var(--border, #111111);
+  border-radius: var(--r-sm, 8px);
+}
+
+.jb-user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.jb-user-avatar {
+  width: 24px;
+  height: 24px;
+  background: var(--ink, #111111);
+  color: var(--bg, #F3EFE8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  font-size: 0.75rem;
+}
+
+.jb-username {
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.jb-signout-btn {
+  background: none;
+  border: 1px solid var(--border, #111111);
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  font-size: 0.68rem;
+  cursor: pointer;
+}
+
+.jb-auth-box {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.jb-auth-pill {
+  flex: 1;
+  text-align: center;
+  padding: 0.45rem;
+  border: 1.5px solid var(--border, #111111);
+  border-radius: var(--r-sm, 8px);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-decoration: none;
+  color: var(--ink, #111111);
+  background: var(--surface-2, #FFFFFF);
+}
+
+.jb-auth-pill.fill {
+  background: var(--ink, #111111);
+  color: var(--bg, #F3EFE8);
+}
+
+/* 2. TOPBAR */
+.jb-main-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding-bottom: 96px; /* player bar offset */
+}
+
+.jb-topbar {
+  height: var(--topbar-h, 68px);
+  background-color: var(--surface, #FFFDF8);
+  border-bottom: var(--bw, 2px) solid var(--border, #111111);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2rem;
+  position: sticky;
+  top: 0;
+  z-index: 90;
+}
+
+.jb-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.jb-breadcrumb-sep {
+  color: var(--ink-faint, #8A867C);
+}
+
+.jb-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.jb-queue-toggle-btn {
+  background: var(--surface-2, #FFFFFF);
+  border: var(--bw, 2px) solid var(--border, #111111);
+  box-shadow: var(--shadow-sm, 3px 3px 0 var(--border, #111111));
+  padding: 0.4rem 0.85rem;
+  border-radius: var(--r-pill, 999px);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.08s ease;
+}
+
+.jb-queue-toggle-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+.jb-status-chip {
+  background: var(--mint, #5DE3A6);
+  border: var(--bw, 2px) solid var(--border, #111111);
+  box-shadow: var(--shadow-sm, 3px 3px 0 var(--border, #111111));
+  padding: 0.35rem 0.85rem;
+  border-radius: var(--r-pill, 999px);
+  font-size: 0.78rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.jb-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid #111111;
+  background: transparent;
+}
+
+/* 3. CONTENT STAGE */
+.jb-content-stage {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+}
+
+.jb-filter-banner {
+  background: var(--yellow, #FFD84A);
+  border: var(--bw, 2px) solid var(--border, #111111);
+  box-shadow: var(--shadow-sm, 3px 3px 0 var(--border, #111111));
+  padding: 0.65rem 1.25rem;
+  border-radius: var(--r-md, 12px);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.jb-filter-clear-btn {
+  background: var(--ink, #111111);
+  color: var(--bg, #F3EFE8);
+  border: none;
+  padding: 0.25rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+/* JELLYKIT HERO CARD */
+.jb-hero-card {
+  position: relative;
+  border: var(--bw, 2px) solid var(--border, #111111);
+  border-radius: var(--r-lg, 18px);
+  box-shadow: var(--shadow-lg, 8px 8px 0 var(--border, #111111));
+  padding: 3rem 2.5rem;
+  overflow: hidden;
+  transition: background-color 0.3s ease;
+}
+
+.jb-hero-meta {
+  position: relative;
+  z-index: 2;
+  max-width: 800px;
+}
+
+.jb-hero-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+}
+
+.jb-num-badge {
+  background: var(--surface-2, #FFFFFF);
+  border: var(--bw, 2px) solid var(--border, #111111);
+  padding: 0.15rem 0.55rem;
+  border-radius: 6px;
+  font-weight: 900;
+  font-size: 0.78rem;
+}
+
+.jb-cat-label {
+  font-weight: 800;
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+}
+
+.jb-hero-title {
+  font-size: clamp(2.8rem, 6vw, 5.2rem);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.045em;
+  line-height: 0.92;
+  color: #111111;
+  margin-bottom: 1.25rem;
+}
+
+.jb-hero-tagline {
+  font-size: 1.25rem;
+  font-weight: 500;
+  line-height: 1.4;
+  color: #111111;
+  margin-bottom: 2rem;
+}
+
+.jb-hero-foot-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.jb-dark-pill {
+  background: var(--ink, #111111);
+  color: var(--bg, #F3EFE8);
+  padding: 0.35rem 0.85rem;
+  border-radius: var(--r-pill, 999px);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.jb-live-tag {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #111111;
+}
+
+.jb-hero-del-btn {
+  background: var(--surface-2, #FFFFFF);
+  border: var(--bw, 2px) solid var(--danger, #E5372B);
+  color: var(--danger, #E5372B);
+  padding: 0.35rem 0.85rem;
+  border-radius: var(--r-pill, 999px);
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.jb-hero-watermark {
+  position: absolute;
+  right: -2rem;
+  bottom: -2.5rem;
+  font-size: clamp(6rem, 15vw, 12rem);
+  font-weight: 900;
+  color: rgba(17, 17, 17, 0.08);
+  user-select: none;
+  pointer-events: none;
+  line-height: 1;
+  letter-spacing: -0.06em;
+}
+
+/* SECTION HEADINGS WITH RULE */
+.jb-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.jb-section-head {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.jb-head-left {
+  display: flex;
+  align-items: baseline;
+  gap: 0.65rem;
+}
+
+.jb-section-title {
+  font-size: 1.85rem;
+  font-weight: 900;
+  letter-spacing: -0.035em;
+  text-transform: uppercase;
+  color: var(--ink, #111111);
+  white-space: nowrap;
+}
+
+.jb-head-count {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--ink-muted, #4A4740);
+}
+
+.jb-section-line {
+  flex: 1;
+  height: var(--bw, 2px);
+  background-color: var(--border, #111111);
+}
+
+/* FEATURED 3-UP CARDS */
+.jb-featured-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.jb-featured-card {
+  background: var(--surface-2, #FFFFFF);
+  border: var(--bw, 2px) solid var(--border, #111111);
+  border-radius: var(--r-lg, 18px);
+  box-shadow: var(--shadow-md, 5px 5px 0 var(--border, #111111));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+
+.jb-featured-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 7px 7px 0 var(--border, #111111);
+}
+
+.jb-featured-card.is-active {
+  border-color: var(--c-blue, #4D6BFF);
+  box-shadow: 6px 6px 0 var(--c-blue, #4D6BFF);
+}
+
+.jb-card-eyebrow {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem 1.25rem;
+  border-bottom: var(--bw, 2px) solid var(--border, #111111);
+  font-size: 0.75rem;
+  font-weight: 800;
+  background-color: #FAF8F5;
+}
+
+.accent-mono {
+  color: var(--c-blue, #4D6BFF);
+}
+
+.jb-card-art-box {
+  height: 200px;
+  border-bottom: var(--bw, 2px) solid var(--border, #111111);
+  background: repeating-linear-gradient(45deg, rgba(17, 17, 17, 0.03) 0 2px, transparent 2px 10px), #FAF8F5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.jb-card-cover {
+  width: 140px;
+  height: 140px;
+  object-fit: cover;
+  border: var(--bw, 2px) solid var(--border, #111111);
+  border-radius: var(--r-md, 12px);
+  box-shadow: var(--shadow-sm, 3px 3px 0 var(--border, #111111));
+}
+
+.jb-art-fallback {
+  width: 140px;
+  height: 140px;
+  background: var(--c-sun, #FFD84A);
+  border: var(--bw, 2px) solid var(--border, #111111);
+  border-radius: var(--r-md, 12px);
+  box-shadow: var(--shadow-sm, 3px 3px 0 var(--border, #111111));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  font-weight: 900;
+}
+
+.jb-art-play-btn {
+  position: absolute;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--yellow, #FFD84A);
+  border: var(--bw, 2px) solid var(--border, #111111);
+  box-shadow: 2px 2px 0 var(--border, #111111);
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.08s ease;
+}
+
+.jb-art-play-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+.jb-card-body {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.jb-card-title {
+  font-size: 1.25rem;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.empty {
-  padding: 0.4rem 0.5rem;
-  color: var(--muted);
+.jb-card-artist {
   font-size: 0.95rem;
+  color: var(--ink-muted, #4A4740);
+  font-weight: 600;
 }
 
-.accordion-header {
-  width: 100%;
-  cursor: pointer;
-  border: 0;
-  background: none;
-}
-
-.acc {
-  display: grid;
-  grid-template-rows: 0fr;
-  transition: grid-template-rows 0.45s cubic-bezier(0.2, 1.2, 0.3, 1);
-}
-
-.acc > div {
-  overflow: hidden;
-}
-
-.acc.on {
-  grid-template-rows: 1fr;
-}
-
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  padding: 0.4rem 0.2rem;
-}
-
-.chip {
-  padding: 0.4rem 0.85rem;
-  border-radius: 99px;
-  background: rgba(43, 29, 90, 0.08);
-  color: var(--ink);
-  font-weight: 700;
-  font-size: 0.85rem;
-  border: 0;
-  cursor: pointer;
-  transition: transform 0.25s cubic-bezier(0.2, 2.4, 0.4, 1), background 0.2s;
-}
-
-.chip:hover {
-  transform: scale(1.08);
-}
-
-.chip[aria-pressed="true"] {
-  color: #fff;
-  background: linear-gradient(180deg, var(--o1, #7ff0e6), var(--o2, #19c9bd));
-  box-shadow: 0 6px 14px var(--sh, rgba(25, 201, 189, 0.45));
-}
-
-.chev {
-  transition: transform 0.4s cubic-bezier(0.2, 2, 0.4, 1);
-  display: inline-flex;
-}
-
-.accordion-header.on .chev {
-  transform: rotate(180deg);
-}
-
-.foot {
-  margin-top: auto;
-  display: flex;
-  gap: 1rem;
-  padding: 0.6rem 0.5rem;
-  color: var(--muted);
-  font-weight: 700;
-  font-size: 0.9rem;
-}
-
-.foot a {
-  color: inherit;
-  text-decoration: none;
-}
-
-.foot a:hover {
-  color: var(--ink);
-}
-
-/* 3. MAIN CONTENT */
-.home-main {
-  max-width: 1240px;
-  margin: 0 auto;
-  padding: 7.5rem 1.25rem 9rem;
-}
-
-/* GREETING */
-.greet {
-  font-size: clamp(2.1rem, 6.5vw, 5.5rem);
-  margin-bottom: 2.2rem;
-  line-height: 1.05;
-  font-family: "Bricolage Grotesque", sans-serif;
-  letter-spacing: -0.03em;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.15em 0.3em;
-  max-width: 100%;
-  word-break: normal;
-  overflow-wrap: break-word;
-}
-
-.greet span {
-  display: inline-block;
-  opacity: 0;
-  transform: translateY(70%) scale(0.7);
-  animation: pop 0.9s cubic-bezier(0.2, 1.7, 0.3, 1) forwards;
-  animation-delay: calc(var(--i) * 110ms + 150ms);
-}
-
-.greet .g {
-  background: linear-gradient(100deg, #19c9bd, #4cb8ff, #9b7bff, #ff6fb5);
-  background-size: 200%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation: pop 0.9s cubic-bezier(0.2, 1.7, 0.3, 1) forwards, flow 5s linear infinite;
-  animation-delay: calc(var(--i) * 110ms + 150ms), 0s;
-}
-
-.greet .em {
-  display: inline-block;
-  font-size: 0.8em;
-  margin-left: 0.1em;
-  animation: pop 0.9s cubic-bezier(0.2, 1.7, 0.3, 1) forwards, bob 2.2s ease-in-out infinite;
-  animation-delay: 600ms, 1.5s;
-}
-
-@keyframes pop {
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-@keyframes flow {
-  to {
-    background-position: 200% 0;
-  }
-}
-
-@keyframes bob {
-  50% {
-    transform: translateY(-12px) rotate(14deg);
-  }
-}
-
-/* Active Filter Banner */
-.filter-banner {
+.jb-card-meta-row {
+  margin-top: 0.75rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.6rem 1.2rem;
-  border-radius: 99px;
-  margin-bottom: 2rem;
-  font-size: 0.95rem;
 }
 
-.filter-clear {
-  border: 0;
-  background: none;
-  color: var(--muted);
+.jb-mono-chip {
+  background: #EFEAE1;
+  border: 1px solid var(--border, #111111);
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
   font-weight: 700;
   cursor: pointer;
 }
 
-.filter-clear:hover {
-  color: var(--ink);
+.jb-open-action {
+  background: none;
+  border: none;
+  font-size: 0.8rem;
+  font-weight: 800;
+  cursor: pointer;
+  color: var(--ink, #111111);
 }
 
-/* Section Common Header */
-.home-section {
-  margin-bottom: 4rem;
+.jb-open-action:hover {
+  text-decoration: underline;
 }
 
-.sh {
+/* POPULAR ROWS */
+.jb-popular-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.jb-popular-row {
+  background: var(--surface-2, #FFFFFF);
+  border: var(--bw, 2px) solid var(--border, #111111);
+  border-radius: var(--r-md, 12px);
+  box-shadow: var(--shadow-sm, 3px 3px 0 var(--border, #111111));
+  padding: 0.85rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  cursor: pointer;
+  transition: transform 0.08s ease;
+}
+
+.jb-popular-row:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 4px 4px 0 var(--border, #111111);
+}
+
+.jb-pop-tile {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--r-sm, 8px);
+  border: var(--bw, 2px) solid var(--border, #111111);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.jb-pop-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.jb-pop-title {
+  font-size: 1.05rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.jb-pop-artist {
+  font-size: 0.78rem;
+  color: var(--ink-muted, #4A4740);
+}
+
+.jb-pop-badge {
+  font-size: 0.72rem;
+  border: 1px solid var(--border, #111111);
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  background: #FAF8F5;
+  font-weight: 700;
+}
+
+/* CHIPS BAR */
+.jb-chips-bar {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: center;
   flex-wrap: wrap;
-  gap: 0.4rem 1rem;
-  margin: 0 0 1.2rem;
-  max-width: 100%;
-}
-
-.sh h2 {
-  font-size: clamp(1.6rem, 4vw, 2.8rem);
-  min-width: 0;
-}
-
-.section-tag {
-  font-size: 0.8rem;
-  color: var(--muted);
-  letter-spacing: 0.1em;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-/* 4. "LISTEN AGAIN" GRID */
-.again {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 310px), 1fr));
   gap: 1rem;
-  max-width: 100%;
 }
 
-.song {
+.jb-chips-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.jb-chips-label {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--ink-muted, #4A4740);
+}
+
+.jb-filter-chip {
+  background: var(--surface-2, #FFFFFF);
+  border: var(--bw, 2px) solid var(--border, #111111);
+  border-radius: var(--r-pill, 999px);
+  padding: 0.35rem 0.85rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+
+.jb-filter-chip.active {
+  background: var(--ink, #111111);
+  color: var(--bg, #F3EFE8);
+}
+
+/* 4-COLUMN CARDS GRID */
+.jb-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+}
+
+.jb-track-card {
+  background: var(--surface-2, #FFFFFF);
+  border: var(--bw, 2px) solid var(--border, #111111);
+  border-radius: var(--r-md, 12px);
+  box-shadow: var(--shadow-sm, 3px 3px 0 var(--border, #111111));
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  gap: 0.85rem;
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+
+.jb-track-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 var(--border, #111111);
+}
+
+.jb-track-card.is-active {
+  border-color: var(--c-blue, #4D6BFF);
+  box-shadow: 4px 4px 0 var(--c-blue, #4D6BFF);
+}
+
+.jb-tc-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.jb-tc-art-wrap {
+  width: 72px;
+  height: 72px;
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.jb-tc-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border: var(--bw, 2px) solid var(--border, #111111);
+  border-radius: var(--r-sm, 8px);
+}
+
+.jb-tc-fallback {
+  width: 100%;
+  height: 100%;
+  background: var(--c-sun, #FFD84A);
+  border: var(--bw, 2px) solid var(--border, #111111);
+  border-radius: var(--r-sm, 8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  font-weight: 900;
+}
+
+.jb-tc-hover-play {
+  position: absolute;
+  inset: 0;
+  background: rgba(17, 17, 17, 0.6);
+  color: #fff;
+  border-radius: var(--r-sm, 8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.jb-tc-art-wrap:hover .jb-tc-hover-play {
+  opacity: 1;
+}
+
+.jb-tc-badge-column {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+}
+
+.jb-tc-badge {
+  font-size: 0.68rem;
+  font-weight: 800;
+  border: 1.5px solid var(--border, #111111);
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+}
+
+.jb-tc-time {
+  font-size: 0.72rem;
+  color: var(--ink-muted, #4A4740);
+  font-weight: 600;
+}
+
+.jb-tc-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.jb-tc-title {
+  font-size: 1.05rem;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.jb-tc-artist {
+  font-size: 0.85rem;
+  color: var(--ink-muted, #4A4740);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.jb-tc-footer {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 0.65rem;
+  border-top: 1.5px solid rgba(17, 17, 17, 0.08);
+}
+
+.jb-tc-action-btn {
+  background: var(--surface, #FFFDF8);
+  border: 1.5px solid var(--border, #111111);
+  padding: 0.25rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.08s ease;
+}
+
+.jb-tc-action-btn:hover {
+  background: var(--yellow, #FFD84A);
+}
+
+.jb-tc-meta-cluster {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.jb-tc-fav-btn,
+.jb-tc-del-btn,
+.jb-tc-jamendo-link {
+  background: none;
+  border: 1.5px solid var(--border, #111111);
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  cursor: pointer;
+  text-decoration: none;
+  color: var(--ink, #111111);
+}
+
+.jb-tc-fav-btn.active {
+  background: var(--c-hotpink, #FF4F9A);
+  color: #fff;
+}
+
+.jb-tc-del-btn:hover {
+  background: var(--danger, #E5372B);
+  color: #fff;
+}
+
+/* EMPTY STATE */
+.jb-empty-box {
+  background: var(--surface-2, #FFFFFF);
+  border: var(--bw, 2px) solid var(--border, #111111);
+  box-shadow: var(--shadow-md, 5px 5px 0 var(--border, #111111));
+  border-radius: var(--r-lg, 18px);
+  padding: 4rem 2rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.jb-empty-glyph {
+  font-size: 3rem;
+  font-weight: 900;
+}
+
+.jb-empty-title {
+  font-size: 1.5rem;
+  font-weight: 900;
+}
+
+.jb-empty-desc {
+  color: var(--ink-muted, #4A4740);
+  max-width: 480px;
+}
+
+.jb-empty-btn {
+  background: var(--yellow, #FFD84A);
+  border: var(--bw, 2px) solid var(--border, #111111);
+  padding: 0.65rem 1.25rem;
+  border-radius: var(--r-sm, 8px);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+/* 4. BOTTOM PERSISTENT PLAYER BAR */
+.jb-player-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 88px;
+  background: var(--surface, #FFFDF8);
+  border-top: var(--bw, 2px) solid var(--border, #111111);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+  z-index: 1000;
+  box-sizing: border-box;
+}
+
+.jb-pb-track {
   display: flex;
   align-items: center;
   gap: 0.85rem;
-  text-align: left;
+  width: 280px;
+  min-width: 0;
+}
+
+.jb-pb-art {
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+}
+
+.jb-pb-cover {
   width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  box-sizing: border-box;
-  padding: 0.65rem 1.1rem 0.65rem 0.65rem;
-  border-radius: 99px;
-  cursor: pointer;
-  border: 0;
-  transition: transform 0.35s cubic-bezier(0.2, 2, 0.4, 1), background 0.2s, box-shadow 0.2s;
-}
-
-.song:hover {
-  transform: translateY(-5px) scale(1.03) rotate(-0.8deg);
-  background: rgba(255, 255, 255, 0.95);
-}
-
-.song .orb {
-  width: 68px;
-  height: 68px;
-  font-size: 1.9rem;
-  flex: none;
-  transition: transform 0.5s cubic-bezier(0.2, 3, 0.4, 1);
-}
-
-.song:hover .orb {
-  transform: scale(1.15, 0.92) rotate(-10deg);
-}
-
-.song b {
-  display: block;
-  font: 800 1.15rem "Bricolage Grotesque", sans-serif;
-  line-height: 1.1;
-  color: var(--ink);
-}
-
-.song small {
-  color: var(--muted);
-  font-weight: 600;
-}
-
-.song .mt {
-  flex: 1;
-  min-width: 0;
-}
-
-.song .mt b,
-.song .mt small {
-  display: block;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.song.on {
-  background: #fff;
-  box-shadow: 0 0 0 3px var(--o2, #19c9bd), 0 14px 30px var(--sh, rgba(25, 201, 189, 0.35));
-}
-
-/* Equalizer Bars */
-.eq {
-  display: none;
-  align-items: flex-end;
-  gap: 2px;
-  height: 18px;
-  flex: none;
-}
-
-.song.on .eq {
-  display: inline-flex;
-}
-
-.eq b {
-  width: 4px;
   height: 100%;
-  border-radius: 2px;
-  background: var(--o2, #19c9bd);
-  transform: scaleY(0.25);
-  transform-origin: bottom;
-  animation: bar 0.5s ease-in-out infinite alternate;
-  animation-play-state: paused;
-  display: block;
+  object-fit: cover;
+  border: 1.5px solid var(--border, #111111);
+  border-radius: 6px;
 }
 
-.eq b:nth-child(2) {
-  animation-delay: -0.2s;
-}
-
-.eq b:nth-child(3) {
-  animation-delay: -0.35s;
-}
-
-.soundwave-home.playing .song.on .eq b {
-  animation-play-state: running;
-}
-
-@keyframes bar {
-  to {
-    transform: scaleY(1);
-  }
-}
-
-/* 5. "TRENDING" CAROUSEL */
-.arrows {
-  display: flex;
-  gap: 0.6rem;
-}
-
-.arrows .ib {
-  background: #fff;
-  box-shadow: 0 8px 18px rgba(120, 80, 200, 0.16);
-  display: grid;
-  place-items: center;
-}
-
-.track {
-  display: flex;
-  gap: 1.2rem;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  padding: 1rem 0.3rem 2rem;
-  scrollbar-width: none;
-}
-
-.track::-webkit-scrollbar {
-  display: none;
-}
-
-.tc {
-  flex: none;
-  width: 210px;
-  scroll-snap-align: start;
-  text-align: left;
-  border: 0;
-  background: none;
-  cursor: pointer;
-  transition: transform 0.4s cubic-bezier(0.2, 2, 0.4, 1);
-}
-
-.tc:hover {
-  transform: translateY(-12px) rotate(-2.5deg) scale(1.04);
-}
-
-.tc .cv {
+.jb-pb-fallback {
   width: 100%;
-  aspect-ratio: 1;
-  border-radius: 34px;
-  font-size: 4.2rem;
-  display: grid;
-  place-items: center;
-  position: relative;
-  overflow: hidden;
-  background: radial-gradient(circle at 28% 22%, rgba(255, 255, 255, 0.9) 0 6%, transparent 28%),
-              linear-gradient(145deg, var(--o1, #7ff0e6), var(--o2, #19c9bd));
-  box-shadow: inset -10px -14px 26px rgba(0, 0, 0, 0.14),
-              inset 8px 10px 20px rgba(255, 255, 255, 0.55),
-              0 18px 30px var(--sh, rgba(25, 201, 189, 0.45));
-}
-
-.tc .cv span {
-  display: inline-block;
-  transition: transform 0.5s cubic-bezier(0.2, 3, 0.4, 1);
-}
-
-.tc:hover .cv span {
-  transform: scale(1.25) rotate(12deg);
-}
-
-.tc .cv::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(110deg, transparent 35%, rgba(255, 255, 255, 0.7) 50%, transparent 65%);
-  transform: translateX(-120%);
-  transition: transform 0.8s;
-}
-
-.tc:hover .cv::after {
-  transform: translateX(120%);
-}
-
-.tc .pl {
-  position: absolute;
-  right: 12px;
-  bottom: 12px;
-  width: 46px;
-  height: 46px;
-  border-radius: 50%;
-  background: #fff;
-  color: var(--o2, #19c9bd);
-  display: grid;
-  place-items: center;
-  transform: scale(0);
-  transition: transform 0.35s cubic-bezier(0.2, 2.4, 0.4, 1);
-  z-index: 2;
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
-}
-
-.tc .pl svg {
-  width: 20px;
-  height: 20px;
-  fill: currentColor;
-}
-
-.tc:hover .pl,
-.tc.on .pl {
-  transform: scale(1);
-}
-
-@media (hover: none) {
-  .tc .pl {
-    transform: scale(1);
-  }
-}
-
-.tc b {
-  display: block;
-  font: 800 1.1rem "Bricolage Grotesque", sans-serif;
-  margin-top: 0.8rem;
-  color: var(--ink);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.tc small {
-  color: var(--muted);
-  font-weight: 600;
-  display: block;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.tc.on .cv {
-  outline: 4px solid #fff;
-  outline-offset: -4px;
-}
-
-/* 6. CURATED DISCOVER SHELF */
-.curated-heading h2 {
-  font-size: clamp(1.9rem, 4vw, 2.8rem);
-}
-
-.curated-sub {
-  font-size: 0.85rem;
-  color: var(--muted);
-  margin-top: 0.2rem;
-}
-
-.curated-actions-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.delete-playlist-btn {
-  font-size: 1.1rem;
-  padding: 0.5rem 0.8rem;
-  border-radius: 99px;
-  cursor: pointer;
-  background: rgba(255, 75, 75, 0.1);
-  border: 1px solid rgba(255, 75, 75, 0.25);
-  transition: all 0.2s ease;
-}
-
-.delete-playlist-btn:hover {
-  background: rgba(255, 75, 75, 0.25);
-  transform: scale(1.08);
-}
-
-.card-right-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex: none;
-}
-
-.remove-song-mini {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 75, 75, 0.25);
-  background: rgba(255, 75, 75, 0.08);
-  color: #ff4b4b;
-  font-weight: 700;
-  font-size: 0.85rem;
-  cursor: pointer;
+  height: 100%;
+  background: var(--c-sun, #FFD84A);
+  border: 1.5px solid var(--border, #111111);
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  font-size: 1.25rem;
+  font-weight: 900;
 }
 
-.remove-song-mini:hover {
-  background: #ff4b4b;
-  color: #fff;
-  border-color: #ff4b4b;
-  transform: scale(1.1);
-}
-
-.refresh-btn {
-  font-size: 1.4rem;
-  font-weight: 800;
-}
-
-.curated-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
-  gap: 1rem;
-  max-width: 100%;
-}
-
-.curated-card {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.8rem 1rem;
-  border-radius: 28px;
-  cursor: pointer;
+.jb-pb-text {
   min-width: 0;
-  max-width: 100%;
-  box-sizing: border-box;
-  transition: transform 0.3s cubic-bezier(0.2, 2, 0.4, 1), background 0.2s, box-shadow 0.2s;
-}
-
-.curated-card:hover {
-  transform: translateY(-4px) scale(1.02);
-  background: rgba(255, 255, 255, 0.95);
-}
-
-.curated-card.on {
-  background: #fff;
-  box-shadow: 0 0 0 3px var(--o2, #19c9bd), 0 12px 28px var(--sh, rgba(25, 201, 189, 0.35));
-}
-
-.card-left {
-  display: flex;
-  align-items: center;
-  gap: 0.9rem;
-  min-width: 0;
-}
-
-.card-orb {
-  width: 52px;
-  height: 52px;
-  font-size: 1.5rem;
-  flex: none;
-}
-
-.card-text {
   display: flex;
   flex-direction: column;
-  min-width: 0;
 }
 
-.card-title {
-  font-size: 1.05rem;
-  color: var(--ink);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.card-artist {
-  font-size: 0.85rem;
-  color: var(--muted);
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.card-tags {
-  display: flex;
-  gap: 0.4rem;
-  margin-top: 0.3rem;
-}
-
-.badge {
-  font-size: 0.7rem;
-  padding: 0.15rem 0.5rem;
-  border-radius: 99px;
-  font-weight: 700;
-}
-
-.badge-license {
-  background: rgba(43, 29, 90, 0.08);
-  color: var(--ink);
-}
-
-.badge-license:hover {
-  background: var(--o2, #19c9bd);
-  color: #fff;
-}
-
-.badge-genre {
-  background: rgba(25, 201, 189, 0.12);
-  color: var(--ink);
-}
-
-.badge-jamendo-link {
-  color: #ff3366 !important;
-  text-decoration: none;
-  background: rgba(255, 51, 102, 0.12) !important;
-  border-radius: 99px;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: inline-flex;
-  align-items: center;
-}
-
-.badge-jamendo-link:hover {
-  background: rgba(255, 51, 102, 0.25) !important;
-  color: #ff1050 !important;
-  text-decoration: underline;
-}
-
-.play-mini {
-  width: 42px;
-  height: 42px;
-  flex: none;
-}
-
-.play-mini svg {
-  width: 18px;
-  height: 18px;
-  fill: #fff;
-}
-
-/* MODALS */
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 999;
-  background: rgba(43, 29, 90, 0.3);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  display: grid;
-  place-items: center;
-  padding: 1rem;
-}
-
-.modal-card {
-  width: min(520px, 100%);
-  border-radius: 32px;
-  padding: 1.8rem;
-  box-shadow: 0 24px 60px rgba(43, 29, 90, 0.25);
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.2rem;
-}
-
-.close-btn {
-  border: 0;
-  background: none;
-  font-size: 1.3rem;
-  color: var(--muted);
-  cursor: pointer;
-}
-
-.close-btn:hover {
-  color: var(--ink);
-}
-
-.modal-body {
-  display: grid;
-  gap: 1rem;
-}
-
-.modal-artist {
-  color: var(--muted);
-  font-weight: 600;
-  margin-top: -0.5rem;
-}
-
-.info-row {
-  display: grid;
-  gap: 0.3rem;
-}
-
-.info-row label {
-  font-size: 0.8rem;
+.jb-pb-title {
+  font-size: 0.95rem;
+  font-weight: 900;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  font-weight: 700;
-  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.license-chip {
-  padding: 0.4rem 0.8rem;
-  border-radius: 99px;
-  background: rgba(43, 29, 90, 0.08);
-  font-weight: 700;
-  display: inline-block;
-  font-size: 0.9rem;
-  color: inherit;
-  text-decoration: none;
-  transition: background-color 0.2s ease;
+.jb-pb-artist {
+  font-size: 0.75rem;
+  color: var(--ink-muted, #4A4740);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.license-chip.license-link:hover {
-  background: rgba(43, 29, 90, 0.16);
-  text-decoration: underline;
+.jb-pb-fav {
+  background: none;
+  border: 1.5px solid var(--border, #111111);
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
 }
 
-.attribution-box {
-  margin: 0;
-  padding: 0.7rem 1rem;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.7);
-  border-left: 4px solid var(--o2, #19c9bd);
-  font-size: 0.9rem;
-  line-height: 1.4;
+.jb-pb-fav.active {
+  background: var(--c-hotpink, #FF4F9A);
+  color: #fff;
 }
 
-.source-link {
-  color: var(--o2, #19c9bd);
-  font-weight: 700;
-  text-decoration: underline;
-}
-
-.capability-text {
-  font-size: 0.85rem;
-  color: var(--muted);
-  line-height: 1.4;
-}
-
-.setting-item {
-  display: grid;
-  gap: 0.2rem;
-}
-
-.setting-item p {
-  color: var(--muted);
-  font-size: 0.9rem;
-  margin: 0;
-}
-
-/* RESPONSIVE BREAKPOINTS */
-@media (max-width: 860px) {
-  .home-main {
-    padding-top: 6.2rem;
-    padding-bottom: 10.5rem;
-  }
-  .curated-grid {
-    grid-template-columns: 1fr;
-  }
-  .again {
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  }
-}
-
-@media (max-width: 620px) {
-  .search {
-    display: none;
-  }
-  .sp {
-    display: block;
-  }
-  .home-main {
-    padding-top: 5.5rem;
-    padding-left: 0.9rem;
-    padding-right: 0.9rem;
-    padding-bottom: 9.5rem;
-  }
-  .greet {
-    font-size: clamp(1.75rem, 8vw, 2.7rem);
-    margin-bottom: 1.8rem;
-    gap: 0.15em 0.28em;
-  }
-  .home-section {
-    margin-bottom: 2.8rem;
-  }
-  .track {
-    gap: 0.85rem;
-    padding: 0.6rem 0.1rem 1.4rem;
-  }
-  .tc {
-    width: 168px;
-  }
-  .tc .cv {
-    border-radius: 26px;
-    font-size: 3.2rem;
-  }
-  .tc .pl {
-    transform: scale(1);
-    width: 38px;
-    height: 38px;
-    right: 8px;
-    bottom: 8px;
-  }
-  .tc .pl svg {
-    width: 16px;
-    height: 16px;
-  }
-  .tc b {
-    font-size: 0.98rem;
-    margin-top: 0.6rem;
-  }
-  .tc small {
-    font-size: 0.82rem;
-  }
-  .curated-grid {
-    grid-template-columns: 1fr;
-    gap: 0.75rem;
-  }
-  .curated-card {
-    padding: 0.65rem 0.85rem;
-    border-radius: 22px;
-  }
-  .card-orb {
-    width: 44px;
-    height: 44px;
-    font-size: 1.25rem;
-  }
-  .card-title {
-    font-size: 0.95rem;
-  }
-  .card-artist {
-    font-size: 0.8rem;
-  }
-  .play-mini {
-    width: 36px;
-    height: 36px;
-  }
-  .play-mini svg {
-    width: 15px;
-    height: 15px;
-  }
-}
-
-@media (max-width: 480px) {
-  .top {
-    width: calc(100% - 1rem);
-    padding: 0.4rem 0.55rem;
-    gap: 0.45rem;
-  }
-  .ib {
-    width: 38px;
-    height: 38px;
-  }
-  .logo {
-    font-size: 1.15rem;
-    gap: 0.4rem;
-  }
-  .logo .orb {
-    width: 32px;
-    height: 32px;
-    font-size: 1rem;
-  }
-  .home-main {
-    padding-top: 4.8rem;
-    padding-left: 0.75rem;
-    padding-right: 0.75rem;
-    padding-bottom: 9rem;
-  }
-  .again {
-    grid-template-columns: 1fr;
-    gap: 0.65rem;
-  }
-  .song {
-    padding: 0.5rem 0.8rem 0.5rem 0.5rem;
-    gap: 0.65rem;
-    border-radius: 28px;
-  }
-  .song .orb {
-    width: 50px;
-    height: 50px;
-    font-size: 1.4rem;
-  }
-  .song b {
-    font-size: 1rem;
-  }
-  .song small {
-    font-size: 0.82rem;
-  }
-  .sh {
-    margin-bottom: 0.85rem;
-  }
-  .sh h2 {
-    font-size: 1.45rem;
-  }
-  .section-tag {
-    font-size: 0.72rem;
-    letter-spacing: 0.08em;
-  }
-  .drawer {
-    left: 0.4rem;
-    top: calc(0.4rem + env(safe-area-inset-top, 0px));
-    bottom: calc(0.4rem + env(safe-area-inset-bottom, 0px));
-    width: calc(100vw - 0.8rem);
-    max-width: calc(100vw - 0.8rem);
-    padding: 1rem 0.85rem;
-    border-radius: 28px;
-  }
-}
-
-@media (max-width: 360px) {
-  .greet {
-    font-size: clamp(1.45rem, 7.5vw, 1.95rem);
-    margin-bottom: 1.4rem;
-  }
-  .tc {
-    width: 144px;
-  }
-  .tc .cv {
-    border-radius: 22px;
-    font-size: 2.7rem;
-  }
-  .home-main {
-    padding-top: 4.5rem;
-    padding-left: 0.55rem;
-    padding-right: 0.55rem;
-    padding-bottom: 8.5rem;
-  }
-  .top {
-    width: calc(100% - 0.6rem);
-    padding: 0.35rem 0.45rem;
-  }
-}
-
-@media (max-width: 330px) {
-  .logo span:not(.orb) {
-    display: none;
-  }
-  .drawer {
-    width: 100vw;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    border-radius: 0 24px 24px 0;
-  }
-}
-
-/* Empty Curated Search Banner */
-.empty-curated-search {
-  margin-top: 1.5rem;
-  padding: 2rem;
-  border-radius: 20px;
-  text-align: center;
+/* Player Center */
+.jb-pb-controls {
+  flex: 1;
+  max-width: 600px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
+  gap: 0.35rem;
 }
 
-.empty-curated-search p {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--ink);
-  margin: 0;
-}
-
-/* Queue Drawer Styles for HomeView */
-.queue-drawer-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  z-index: 1000;
+.jb-pb-buttons {
   display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.jb-btn-icon {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.jb-btn-icon.on {
+  color: var(--c-blue, #4D6BFF);
+}
+
+.jb-btn-play {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--r-sm, 8px);
+  background: var(--yellow, #FFD84A);
+  border: var(--bw, 2px) solid var(--border, #111111);
+  box-shadow: 2px 2px 0 var(--border, #111111);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: 900;
+  cursor: pointer;
+  transition: transform 0.08s ease;
+}
+
+.jb-btn-play:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+.jb-pb-timeline {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.jb-pb-time {
+  font-size: 0.72rem;
+  color: var(--ink-muted, #4A4740);
+  width: 40px;
+  text-align: center;
+}
+
+.jb-pb-trackbar {
+  flex: 1;
+  height: 10px;
+  background: #EFEAE1;
+  border: 1.5px solid var(--border, #111111);
+  border-radius: 999px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.jb-pb-fill {
+  height: 100%;
+  background: var(--c-blue, #4D6BFF);
+  border-right: 1.5px solid var(--border, #111111);
+}
+
+/* Player Extras */
+.jb-pb-extras {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  width: 220px;
   justify-content: flex-end;
 }
 
-.queue-drawer-panel {
-  width: min(420px, 92vw);
-  height: 100%;
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border-left: 2px solid var(--pg-border, #111);
-  display: flex;
-  flex-direction: column;
-  padding: 24px;
-  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.2);
-  animation: slideInRight 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+.jb-vol-slider {
+  width: 80px;
+  accent-color: var(--ink, #111111);
 }
 
-@keyframes slideInRight {
-  from {
-    transform: translateX(100%);
-  }
-  to {
-    transform: translateX(0);
-  }
-}
-
-.queue-drawer-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-bottom: 16px;
-  border-bottom: 2px solid var(--pg-border, #111);
-  margin-bottom: 16px;
-}
-
-.queue-title-wrap {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.queue-title {
-  font-size: 1.25rem;
-  font-weight: 900;
-  margin: 0;
-  color: var(--pg-ink, #111);
-}
-
-.queue-badge {
-  font-size: 0.65rem;
+.jb-queue-pill {
+  background: var(--surface-2, #FFFFFF);
+  border: var(--bw, 2px) solid var(--border, #111111);
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--r-pill, 999px);
   font-weight: 800;
-  padding: 2px 8px;
-  background: #111;
-  color: #fff;
-  border-radius: 9999px;
+  font-size: 0.75rem;
+  cursor: pointer;
 }
 
-.queue-close-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: 1.5px solid var(--pg-border, #111);
-  background: #fff;
-  cursor: pointer;
+/* 5. MODALS & QUEUE DRAWER */
+.jb-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 17, 17, 0.6);
+  z-index: 2000;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 800;
-  box-shadow: 2px 2px 0px var(--pg-border, #111);
+  padding: 1rem;
 }
 
-.queue-empty {
+.jb-queue-drawer {
+  position: fixed;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 360px;
+  max-width: 90vw;
+  background: var(--surface, #FFFDF8);
+  border-left: var(--bw, 2px) solid var(--border, #111111);
+  display: flex;
+  flex-direction: column;
+  z-index: 2100;
+}
+
+.jb-drawer-head {
+  padding: 1.25rem;
+  border-bottom: var(--bw, 2px) solid var(--border, #111111);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.jb-drawer-title {
+  font-size: 1.15rem;
+  font-weight: 900;
+}
+
+.jb-drawer-close {
+  background: none;
+  border: 1.5px solid var(--border, #111111);
+  border-radius: 4px;
   font-size: 0.85rem;
-  color: var(--pg-ink-muted, #71717a);
-  text-align: center;
-  padding: 40px 16px;
-  line-height: 1.6;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 0.2rem 0.5rem;
 }
 
-.queue-track-list {
+.jb-empty-queue {
+  padding: 3rem 1rem;
+  text-align: center;
+  color: var(--ink-muted, #4A4740);
+  font-size: 0.85rem;
+}
+
+.jb-queue-items {
   flex: 1;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding-right: 4px;
 }
 
-.queue-track-row {
+.jb-queue-row {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  background: rgba(255, 255, 255, 0.7);
-  border: 1.5px solid var(--pg-border, #111);
-  border-radius: 12px;
+  gap: 0.85rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(17, 17, 17, 0.08);
   cursor: pointer;
-  transition: all 0.15s ease;
-  box-shadow: 2px 2px 0px var(--pg-border, #111);
 }
 
-.queue-track-row:hover {
-  background: #fff;
-  transform: translateY(-1px);
-  box-shadow: 3px 3px 0px var(--pg-border, #111);
+.jb-queue-row:hover {
+  background: rgba(17, 17, 17, 0.04);
 }
 
-.queue-track-row.is-active {
-  background: #fdf2f8;
-  border-color: #e11d48;
-  box-shadow: 3px 3px 0px #e11d48;
+.jb-queue-row.is-current {
+  background: rgba(77, 107, 255, 0.12);
+  border-left: 4px solid var(--c-blue, #4D6BFF);
 }
 
-.queue-track-idx {
+.jb-qr-num {
   font-size: 0.75rem;
-  font-weight: 800;
-  color: var(--pg-ink-muted, #888);
-  width: 20px;
+  color: var(--ink-muted, #4A4740);
 }
 
-.queue-track-meta {
+.jb-qr-info {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
 }
 
-.queue-track-name {
+.jb-qr-title {
   font-size: 0.88rem;
-  font-weight: 800;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: var(--pg-ink, #111);
-}
-
-.queue-track-sub {
-  font-size: 0.72rem;
-  color: var(--pg-ink-secondary, #666);
+  font-weight: 900;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.queue-track-prov {
-  font-size: 0.6rem;
-  font-weight: 800;
-  padding: 2px 6px;
-  background: rgba(0, 0, 0, 0.06);
-  border-radius: 4px;
+.jb-qr-artist {
+  font-size: 0.75rem;
+  color: var(--ink-muted, #4A4740);
 }
 
-.queue-track-jamendo-link {
-  color: #ff3366 !important;
-  text-decoration: none;
-  font-size: 0.6rem;
-  letter-spacing: 0.04em;
-  background: rgba(255, 51, 102, 0.12);
-  padding: 0.1rem 0.35rem;
-  border-radius: 4px;
-  transition: all 0.2s;
-  display: inline-flex;
-  align-items: center;
-}
-
-.queue-track-jamendo-link:hover {
-  background: rgba(255, 51, 102, 0.25);
-  color: #ff1050 !important;
-  text-decoration: underline;
-}
-
-.queue-remove-btn {
+.jb-qr-del {
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 0.8rem;
-  color: var(--pg-ink-muted, #999);
-  padding: 4px 6px;
-  border-radius: 4px;
+  font-weight: bold;
+  color: var(--danger, #E5372B);
 }
 
-.queue-remove-btn:hover {
-  color: #e11d48;
-  background: rgba(225, 29, 72, 0.1);
+/* DIALOGS */
+.jb-dialog {
+  background: var(--surface, #FFFDF8);
+  border: var(--bw, 2px) solid var(--border, #111111);
+  box-shadow: var(--shadow-lg, 8px 8px 0 var(--border, #111111));
+  border-radius: var(--r-lg, 18px);
+  width: 100%;
+  max-width: 540px;
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.jb-dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: var(--bw, 2px) solid var(--border, #111111);
+  padding-bottom: 0.75rem;
+}
+
+.jb-dialog-tag {
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.jb-dialog-close {
+  background: none;
+  border: 1.5px solid var(--border, #111111);
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 0.2rem 0.5rem;
+}
+
+.jb-dialog-title {
+  font-size: 1.6rem;
+  font-weight: 900;
+}
+
+.jb-dialog-sub {
+  color: var(--ink-muted, #4A4740);
+  font-weight: 700;
+  margin-top: -0.5rem;
+}
+
+.jb-dialog-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.jb-dialog-field label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--ink-muted, #4A4740);
+}
+
+.jb-dialog-val {
+  background: #EFEAE1;
+  border: 1.5px solid var(--border, #111111);
+  border-radius: 6px;
+  padding: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.jb-dialog-val.quote {
+  font-style: italic;
+}
+
+.jb-dialog-link {
+  color: var(--c-blue, #4D6BFF);
+  text-decoration: underline;
+  word-break: break-all;
+  font-size: 0.82rem;
+}
+
+.jb-setting-row {
+  border-bottom: 1px solid rgba(17, 17, 17, 0.1);
+  padding: 0.75rem 0;
+}
+
+/* RESPONSIVE BREAKPOINTS */
+@media (max-width: 1200px) {
+  .jb-cards-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 992px) {
+  .jb-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .jb-featured-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .jb-popular-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .jb-app-shell {
+    flex-direction: column;
+  }
+  .jb-sidebar {
+    width: 100%;
+    height: auto;
+    position: relative;
+    border-right: none;
+    border-bottom: var(--bw, 2px) solid var(--border, #111111);
+  }
+  .jb-sidebar.collapsed {
+    width: 100%;
+  }
+  .jb-cards-grid {
+    grid-template-columns: 1fr;
+  }
+  .jb-featured-grid {
+    grid-template-columns: 1fr;
+  }
+  .jb-content-stage {
+    padding: 1rem;
+  }
+  .jb-topbar {
+    padding: 0 1rem;
+  }
+  .jb-player-bar {
+    padding: 0 1rem;
+  }
+  .jb-pb-extras {
+    display: none;
+  }
+  .jb-hero-title {
+    font-size: 2.5rem;
+  }
 }
 </style>
