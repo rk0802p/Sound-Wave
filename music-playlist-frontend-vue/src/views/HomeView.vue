@@ -366,12 +366,24 @@
       <section class="home-section" aria-label="Curated Discover Collection">
         <div class="sh">
           <div class="curated-heading">
-            <h2 class="rv in">Curated Discover</h2>
-            <p class="curated-sub font-mono">18 tracks from your Spotify collection</p>
+            <h2 class="rv in">{{ activeFilter === 'playlist' && activePlaylist ? activePlaylist.name : 'Curated Discover' }}</h2>
+            <p class="curated-sub font-mono">
+              {{ activeFilter === 'playlist' && activePlaylist ? (activePlaylist.description || (activePlaylist.songs?.length || 0) + ' tracks in this playlist') : '18 tracks from your curated Jamendo collection' }}
+            </p>
           </div>
-          <button class="ib glass font-mono refresh-btn" title="Shuffle pick" @click="handleShuffleCurated($event)">
-            ↺
-          </button>
+          <div class="curated-actions-row">
+            <button
+              v-if="activeFilter === 'playlist' && activePlaylist && !isMoodPlaylist(activePlaylist)"
+              class="ib glass font-mono delete-playlist-btn"
+              title="Delete this playlist"
+              @click="handleDeleteActivePlaylist"
+            >
+              🗑️
+            </button>
+            <button class="ib glass font-mono refresh-btn" title="Shuffle pick" @click="handleShuffleCurated($event)">
+              ↺
+            </button>
+          </div>
         </div>
 
         <div class="curated-grid">
@@ -412,15 +424,26 @@
               </div>
             </div>
 
-            <button
-              class="ib orb play-mini"
-              :aria-label="isCurrentTrack(track) && playerStore.isPlaying ? 'Pause' : 'Play ' + track.title"
-            >
-              <svg viewBox="0 0 24 24">
-                <path v-if="isCurrentTrack(track) && playerStore.isPlaying" :d="ICONS.pause" />
-                <path v-else :d="ICONS.play" />
-              </svg>
-            </button>
+            <div class="card-right-actions">
+              <button
+                v-if="activeFilter === 'playlist' && activePlaylist && !isMoodPlaylist(activePlaylist)"
+                class="ib remove-song-mini"
+                title="Remove song from playlist"
+                @click.stop="handleRemoveSongFromActivePlaylist(track)"
+              >
+                ✕
+              </button>
+
+              <button
+                class="ib orb play-mini"
+                :aria-label="isCurrentTrack(track) && playerStore.isPlaying ? 'Pause' : 'Play ' + track.title"
+              >
+                <svg viewBox="0 0 24 24">
+                  <path v-if="isCurrentTrack(track) && playerStore.isPlaying" :d="ICONS.pause" />
+                  <path v-else :d="ICONS.play" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1037,6 +1060,54 @@ const getTrackSourceUrl = (t) => {
   if (t.source?.trackUrl) return t.source.trackUrl;
   if (t.source?.url && !t.source.url.includes('storage.jamendo.com')) return t.source.url;
   return null;
+};
+
+const isMoodPlaylist = (p) => {
+  if (!p) return false;
+  return Boolean(
+    p.isMood ||
+    p.id?.startsWith('mood-') ||
+    p._id?.startsWith('mood-') ||
+    p.id?.startsWith('curated-') ||
+    p._id?.startsWith('curated-')
+  );
+};
+
+const handleDeleteActivePlaylist = async () => {
+  if (!activePlaylist.value) return;
+  const p = activePlaylist.value;
+  const name = p.name || 'this playlist';
+  if (!confirm(`Are you sure you want to permanently delete "${name}"?`)) return;
+
+  try {
+    await playlistStore.deletePlaylist(p._id || p.id);
+    toastStore.success(`Playlist "${name}" deleted.`);
+    clearAllFilters();
+    router.replace({ path: '/' });
+  } catch (err) {
+    console.error('Delete playlist error:', err);
+    toastStore.error(err.response?.data?.message || 'Failed to delete playlist');
+  }
+};
+
+const handleRemoveSongFromActivePlaylist = async (track) => {
+  if (!activePlaylist.value) return;
+  const p = activePlaylist.value;
+  const trackId = track?._id || track?.id;
+  const trackTitle = track?.title || 'this track';
+
+  if (!confirm(`Remove "${trackTitle}" from "${p.name}"?`)) return;
+
+  try {
+    await playlistStore.removeSong(p._id || p.id, trackId);
+    if (activePlaylist.value.songs) {
+      activePlaylist.value.songs = activePlaylist.value.songs.filter((s) => (s._id || s.id) !== trackId);
+    }
+    toastStore.success(`Removed "${trackTitle}" from "${p.name}"`);
+  } catch (err) {
+    console.error('Remove song error:', err);
+    toastStore.error(err.response?.data?.message || 'Failed to remove song');
+  }
 };
 
 const handleToggleQueue = () => {
@@ -1995,6 +2066,57 @@ onUnmounted(() => {
   font-size: 0.85rem;
   color: var(--muted);
   margin-top: 0.2rem;
+}
+
+.curated-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.delete-playlist-btn {
+  font-size: 1.1rem;
+  padding: 0.5rem 0.8rem;
+  border-radius: 99px;
+  cursor: pointer;
+  background: rgba(255, 75, 75, 0.1);
+  border: 1px solid rgba(255, 75, 75, 0.25);
+  transition: all 0.2s ease;
+}
+
+.delete-playlist-btn:hover {
+  background: rgba(255, 75, 75, 0.25);
+  transform: scale(1.08);
+}
+
+.card-right-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: none;
+}
+
+.remove-song-mini {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 75, 75, 0.25);
+  background: rgba(255, 75, 75, 0.08);
+  color: #ff4b4b;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.remove-song-mini:hover {
+  background: #ff4b4b;
+  color: #fff;
+  border-color: #ff4b4b;
+  transform: scale(1.1);
 }
 
 .refresh-btn {

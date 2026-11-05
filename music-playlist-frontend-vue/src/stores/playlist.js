@@ -152,18 +152,195 @@ export const usePlaylistStore = defineStore('playlist', {
     async addSong(playlistId, songData, allowDuplicate = false) {
       this.isMutating = true;
       try {
-        const added = await playlistApi.addSong(playlistId, songData, allowDuplicate);
+        const res = await playlistApi.addSong(playlistId, songData, allowDuplicate);
+        const addedSong = res?.addedSong || res?.song || res;
 
         const p = this.playlists.find((x) => x._id === playlistId || x.id === playlistId);
         if (p) {
           if (!p.songs) p.songs = [];
-          p.songs.push(added);
+          p.songs.push(addedSong);
           saveOfflinePlaylists(this.playlists);
         }
-        return added;
+
+        if (this.currentPlaylist && (this.currentPlaylist._id === playlistId || this.currentPlaylist.id === playlistId)) {
+          if (!this.currentPlaylist.songs) this.currentPlaylist.songs = [];
+          this.currentPlaylist.songs.push(addedSong);
+        }
+
+        return addedSong;
       } finally {
         this.isMutating = false;
       }
+    },
+
+    async removeSong(playlistId, songId) {
+      this.isMutating = true;
+      this.error = null;
+      try {
+        const res = await playlistApi.deleteSong(playlistId, songId);
+        const updatedPlaylist = res?.playlist;
+
+        const p = this.playlists.find((x) => x._id === playlistId || x.id === playlistId);
+        if (p) {
+          if (updatedPlaylist && Array.isArray(updatedPlaylist.songs)) {
+            p.songs = updatedPlaylist.songs;
+          } else if (Array.isArray(p.songs)) {
+            p.songs = p.songs.filter((s) => s._id !== songId && s.id !== songId);
+          }
+          saveOfflinePlaylists(this.playlists);
+        }
+
+        if (this.currentPlaylist && (this.currentPlaylist._id === playlistId || this.currentPlaylist.id === playlistId)) {
+          if (updatedPlaylist && Array.isArray(updatedPlaylist.songs)) {
+            this.currentPlaylist.songs = updatedPlaylist.songs;
+          } else if (Array.isArray(this.currentPlaylist.songs)) {
+            this.currentPlaylist.songs = this.currentPlaylist.songs.filter((s) => s._id !== songId && s.id !== songId);
+          }
+        }
+
+        return res;
+      } catch (err) {
+        this.error = err.response?.data?.message || err.message;
+        throw err;
+      } finally {
+        this.isMutating = false;
+      }
+    },
+
+    async deletePlaylist(playlistId) {
+      this.isMutating = true;
+      this.error = null;
+      try {
+        const res = await playlistApi.deletePlaylist(playlistId);
+
+        this.playlists = this.playlists.filter((x) => x._id !== playlistId && x.id !== playlistId);
+
+        if (this.currentPlaylist && (this.currentPlaylist._id === playlistId || this.currentPlaylist.id === playlistId)) {
+          this.currentPlaylist = this.playlists[0] || null;
+          this.selectedPlaylistIndex = 0;
+        }
+
+        saveOfflinePlaylists(this.playlists);
+        return res;
+      } catch (err) {
+        this.error = err.response?.data?.message || err.message;
+        throw err;
+      } finally {
+        this.isMutating = false;
+      }
+    },
+
+    async updatePlaylist(playlistId, updateData) {
+      this.isMutating = true;
+      this.error = null;
+      try {
+        const updated = await playlistApi.updatePlaylist(playlistId, updateData);
+
+        const idx = this.playlists.findIndex((x) => x._id === playlistId || x.id === playlistId);
+        if (idx !== -1) {
+          this.playlists[idx] = {
+            ...this.playlists[idx],
+            ...updated,
+            songs: updated.songs || this.playlists[idx].songs || [],
+          };
+          saveOfflinePlaylists(this.playlists);
+        }
+
+        if (this.currentPlaylist && (this.currentPlaylist._id === playlistId || this.currentPlaylist.id === playlistId)) {
+          this.currentPlaylist = {
+            ...this.currentPlaylist,
+            ...updated,
+            songs: updated.songs || this.currentPlaylist.songs || [],
+          };
+        }
+
+        return updated;
+      } catch (err) {
+        this.error = err.response?.data?.message || err.message;
+        throw err;
+      } finally {
+        this.isMutating = false;
+      }
+    },
+
+    async updateSong(playlistId, songId, songData) {
+      this.isMutating = true;
+      this.error = null;
+      try {
+        const res = await playlistApi.updateSong(playlistId, songId, songData);
+
+        const p = this.playlists.find((x) => x._id === playlistId || x.id === playlistId);
+        if (p && res && Array.isArray(res.songs)) {
+          p.songs = res.songs;
+          saveOfflinePlaylists(this.playlists);
+        }
+
+        if (this.currentPlaylist && (this.currentPlaylist._id === playlistId || this.currentPlaylist.id === playlistId) && res?.songs) {
+          this.currentPlaylist.songs = res.songs;
+        }
+
+        return res;
+      } catch (err) {
+        this.error = err.response?.data?.message || err.message;
+        throw err;
+      } finally {
+        this.isMutating = false;
+      }
+    },
+
+    async reorderSongs(playlistId, songIds) {
+      this.isMutating = true;
+      this.error = null;
+      try {
+        const res = await playlistApi.reorderSongs(playlistId, songIds);
+        const updatedPlaylist = res?.playlist || res;
+
+        const p = this.playlists.find((x) => x._id === playlistId || x.id === playlistId);
+        if (p && updatedPlaylist && Array.isArray(updatedPlaylist.songs)) {
+          p.songs = updatedPlaylist.songs;
+          saveOfflinePlaylists(this.playlists);
+        }
+
+        if (this.currentPlaylist && (this.currentPlaylist._id === playlistId || this.currentPlaylist.id === playlistId) && updatedPlaylist?.songs) {
+          this.currentPlaylist.songs = updatedPlaylist.songs;
+        }
+
+        return res;
+      } catch (err) {
+        this.error = err.response?.data?.message || err.message;
+        throw err;
+      } finally {
+        this.isMutating = false;
+      }
+    },
+
+    async fetchPlaylist(playlistId) {
+      this.isLoading = true;
+      this.error = null;
+      try {
+        const data = await playlistApi.getPlaylistById(playlistId);
+        if (data) {
+          this.currentPlaylist = data;
+          const idx = this.playlists.findIndex((x) => x._id === playlistId || x.id === playlistId);
+          if (idx !== -1) {
+            this.playlists[idx] = {
+              ...this.playlists[idx],
+              ...data,
+            };
+            saveOfflinePlaylists(this.playlists);
+          }
+        }
+        return data;
+      } catch (err) {
+        this.error = err.response?.data?.message || err.message;
+        throw err;
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    async resolveTrack(url) {
+      return await playlistApi.resolveTrack(url);
     },
 
     clearUserCache(userId) {

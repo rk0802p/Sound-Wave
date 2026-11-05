@@ -111,6 +111,17 @@
               >
                 ✏️ EDIT IN LIBRARY
               </router-link>
+
+              <button
+                v-if="playlist.isOwner"
+                class="cta-pill-danger"
+                :disabled="isDeletingPlaylist"
+                @click="deleteCurrentPlaylist"
+                title="Delete this mixtape permanently"
+              >
+                <span v-if="isDeletingPlaylist">DELETING...</span>
+                <span v-else>🗑️ DELETE PLAYLIST</span>
+              </button>
             </div>
           </div>
         </header>
@@ -124,6 +135,7 @@
             <span class="col-source">SOURCE</span>
             <span class="col-duration">TIME</span>
             <span class="col-action">PLAY</span>
+            <span v-if="playlist.isOwner" class="col-delete">REMOVE</span>
           </div>
 
           <div v-if="!playlist.songs || playlist.songs.length === 0" class="empty-tracklist font-mono">
@@ -189,6 +201,16 @@
                   {{ isCurrentTrack(track) && playerStore.isPlaying ? '⏸' : '▶' }}
                 </button>
               </div>
+
+              <div v-if="playlist.isOwner" class="col-delete">
+                <button
+                  class="row-delete-btn"
+                  title="Remove track from playlist"
+                  @click.stop="removeTrackFromPlaylist(track)"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
           </div>
         </section>
@@ -206,12 +228,14 @@ import { useRoute, useRouter } from 'vue-router';
 import { playlistApi } from '../api/playlists';
 import { usePlayerStore } from '../stores/player';
 import { useToastStore } from '../stores/toast';
+import { usePlaylistStore } from '../stores/playlist';
 import { MOOD_PLAYLISTS } from '../data/moodPlaylists';
 import FloatingPlayerDock from '../components/player/FloatingPlayerDock.vue';
 
 const route = useRoute();
 const router = useRouter();
 const playerStore = usePlayerStore();
+const playlistStore = usePlaylistStore();
 const toastStore = useToastStore();
 
 const playlist = ref(null);
@@ -219,6 +243,7 @@ const isLoading = ref(true);
 const error = ref(null);
 const errorCode = ref(404);
 const isForking = ref(false);
+const isDeletingPlaylist = ref(false);
 
 const loadPlaylist = async () => {
   const id = route.params.id;
@@ -392,6 +417,44 @@ const copyShareLink = async () => {
 
 const handleImgError = (event) => {
   event.target.style.display = 'none';
+};
+
+const removeTrackFromPlaylist = async (track) => {
+  if (!playlist.value?._id) return;
+  const trackId = track?._id || track?.id;
+  const trackTitle = track?.title || 'this track';
+  if (!confirm(`Remove "${trackTitle}" from "${playlist.value.name}"?`)) return;
+
+  try {
+    await playlistStore.removeSong(playlist.value._id, trackId);
+    if (playlist.value.songs) {
+      playlist.value.songs = playlist.value.songs.filter((s) => (s._id || s.id) !== trackId);
+    }
+    toastStore.show(`Removed "${trackTitle}" from mixtape`, 'success');
+  } catch (err) {
+    console.error('Error removing song from playlist:', err);
+    toastStore.show(err.response?.data?.message || 'Failed to remove song from mixtape', 'error');
+  }
+};
+
+const deleteCurrentPlaylist = async () => {
+  if (!playlist.value?._id) return;
+  const name = playlist.value.name || 'this mixtape';
+  if (!confirm(`Are you sure you want to permanently delete the playlist "${name}"? This action cannot be undone.`)) {
+    return;
+  }
+
+  isDeletingPlaylist.value = true;
+  try {
+    await playlistStore.deletePlaylist(playlist.value._id);
+    toastStore.show(`Deleted playlist "${name}"`, 'success');
+    router.push('/explore');
+  } catch (err) {
+    console.error('Error deleting playlist:', err);
+    toastStore.show(err.response?.data?.message || 'Failed to delete playlist', 'error');
+  } finally {
+    isDeletingPlaylist.value = false;
+  }
 };
 
 onMounted(() => {
@@ -672,6 +735,36 @@ onMounted(() => {
   cursor: pointer;
   text-decoration: none;
   letter-spacing: 0.05em;
+  transition: all 0.2s ease;
+}
+
+.cta-pill-owner:hover {
+  background: rgba(57, 255, 20, 0.2);
+  border-color: #39ff14;
+}
+
+.cta-pill-danger {
+  background: rgba(255, 75, 75, 0.1);
+  color: #ff4b4b;
+  border: 1px solid rgba(255, 75, 75, 0.3);
+  padding: 0.65rem 1.2rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  transition: all 0.2s ease;
+}
+
+.cta-pill-danger:hover:not(:disabled) {
+  background: rgba(255, 75, 75, 0.25);
+  border-color: #ff4b4b;
+  box-shadow: 0 0 15px rgba(255, 75, 75, 0.4);
+}
+
+.cta-pill-danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .tracklist-section {
@@ -683,7 +776,7 @@ onMounted(() => {
 
 .tracklist-header {
   display: grid;
-  grid-template-columns: 40px 3fr 2fr 1.5fr 80px 60px;
+  grid-template-columns: 40px 3fr 2fr 1.5fr 80px 50px 60px;
   padding: 1rem 1.5rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   color: rgba(255, 255, 255, 0.4);
@@ -693,7 +786,7 @@ onMounted(() => {
 
 .track-row {
   display: grid;
-  grid-template-columns: 40px 3fr 2fr 1.5fr 80px 60px;
+  grid-template-columns: 40px 3fr 2fr 1.5fr 80px 50px 60px;
   align-items: center;
   padding: 0.9rem 1.5rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
@@ -764,18 +857,6 @@ onMounted(() => {
   color: #fff;
 }
 
-.badge-archive {
-  background: rgba(0, 242, 254, 0.15);
-  color: #00f2fe;
-  border: 1px solid rgba(0, 242, 254, 0.3);
-}
-
-.badge-audius {
-  background: rgba(204, 0, 255, 0.15);
-  color: #cc00ff;
-  border: 1px solid rgba(204, 0, 255, 0.3);
-}
-
 .badge-spotify {
   background: rgba(29, 185, 84, 0.15);
   color: #1db954;
@@ -810,6 +891,29 @@ onMounted(() => {
 .row-play-btn:hover {
   background: #00f2fe;
   color: #0b0c10;
+}
+
+.row-delete-btn {
+  background: rgba(255, 75, 75, 0.08);
+  border: 1px solid rgba(255, 75, 75, 0.2);
+  color: #ff4b4b;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  transition: all 0.15s ease;
+}
+
+.row-delete-btn:hover {
+  background: #ff4b4b;
+  color: #fff;
+  border-color: #ff4b4b;
+  box-shadow: 0 0 10px rgba(255, 75, 75, 0.4);
 }
 
 .empty-tracklist {
