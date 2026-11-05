@@ -159,7 +159,6 @@ class JamendoProvider extends BaseProvider {
         limit: String(limit),
         search: cleanQuery,
         include: 'musicinfo+licenses',
-        audioformat: 'mp32',
       }).toString();
 
       const res = await this.fetchWithTimeout(searchUrl, {
@@ -193,7 +192,36 @@ class JamendoProvider extends BaseProvider {
         throw new Error(data.headers?.error_message || 'Jamendo request failed');
       }
 
-      const rawTracks = data.results || [];
+      let rawTracks = data.results || [];
+
+      // Fallback: If full-text search yielded 0 results, retry with fuzzyfttags for genre/mood/tag matching
+      if (rawTracks.length === 0 && !options.signal?.aborted) {
+        try {
+          const fallbackUrl = `${this.baseUrl}/tracks/?` + new URLSearchParams({
+            client_id: this.getClientId(),
+            format: 'json',
+            limit: String(limit),
+            fuzzyfttags: cleanQuery,
+            include: 'musicinfo+licenses',
+          }).toString();
+          const fallbackRes = await this.fetchWithTimeout(fallbackUrl, {
+            headers: {
+              'User-Agent': 'SOUNDWAVE-Audio-Discovery/1.0',
+              Accept: 'application/json',
+            },
+            signal: options.signal,
+          }, 3000);
+          if (fallbackRes.ok) {
+            const fallbackData = await fallbackRes.json();
+            if (fallbackData.headers?.status === 'success' && Array.isArray(fallbackData.results) && fallbackData.results.length > 0) {
+              rawTracks = fallbackData.results;
+            }
+          }
+        } catch (_) {
+          // Fallback failure is non-fatal; continue with original empty results
+        }
+      }
+
       const results = rawTracks.map((item) => {
         const licenseMeta = this.parseLicense(item.license_ccurl);
         const shareUrl = item.shareurl || `https://www.jamendo.com/track/${item.id}`;
@@ -271,7 +299,7 @@ class JamendoProvider extends BaseProvider {
 
     try {
       const rawId = trackId.replace(/^jamendo:/, '');
-      const url = `${this.baseUrl}/tracks/?client_id=${this.getClientId()}&format=json&id=${encodeURIComponent(rawId)}&include=musicinfo+licenses&audioformat=mp32`;
+      const url = `${this.baseUrl}/tracks/?client_id=${this.getClientId()}&format=json&id=${encodeURIComponent(rawId)}&include=musicinfo+licenses`;
       const res = await this.fetchWithTimeout(url, {}, 4000);
 
       if (!res.ok) {
@@ -284,7 +312,24 @@ class JamendoProvider extends BaseProvider {
       }
 
       const data = await res.json();
-      const track = data.results?.[0];
+      let track = data.results?.[0];
+
+      // Replica resilience: retry with array format id[] if primary query returned empty results
+      if (!track) {
+        try {
+          const retryUrl = `${this.baseUrl}/tracks/?client_id=${this.getClientId()}&format=json&id[]=${encodeURIComponent(rawId)}&include=musicinfo+licenses`;
+          const retryRes = await this.fetchWithTimeout(retryUrl, {}, 3000);
+          if (retryRes.ok) {
+            const retryData = await retryRes.json();
+            if (retryData.results?.[0]) {
+              track = retryData.results[0];
+            }
+          }
+        } catch (_) {
+          // Ignore retry failure and proceed to not found check
+        }
+      }
+
       if (!track) {
         return {
           streamUrl: null,

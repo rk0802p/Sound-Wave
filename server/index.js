@@ -1,5 +1,24 @@
+const path = require("path");
+const fs = require("fs");
 const dotenv = require("dotenv");
-dotenv.config();
+
+// Load environment configuration: checks root and server directories for .env.local and .env
+const rootDir = path.resolve(__dirname, "..");
+const envCandidates = [
+  path.join(rootDir, ".env.local"),
+  path.join(__dirname, ".env.local"),
+  path.join(rootDir, ".env"),
+  path.join(__dirname, ".env"),
+];
+
+if (process.env.NODE_ENV !== "test") {
+  for (const envPath of envCandidates) {
+    if (fs.existsSync(envPath)) {
+      dotenv.config({ path: envPath });
+    }
+  }
+  dotenv.config();
+}
 
 const express = require("express");
 const mongoose = require("mongoose");
