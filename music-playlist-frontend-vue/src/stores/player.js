@@ -12,7 +12,7 @@ import {
 import { searchApi } from '../api/search';
 // Module-scoped in-flight deduplication and provider environment status cache
 const activeResolutions = new Map();
-const blockedProviders = new Set(['saavn', 'archive', 'audius', 'spotify', 'youtube', 'direct']);
+const blockedProviders = new Set(['archive', 'audius', 'spotify', 'youtube', 'direct']);
 const loggedBlockedProviders = new Set();
 
 const resolveWithDedup = async (provider, providerTrackId) => {

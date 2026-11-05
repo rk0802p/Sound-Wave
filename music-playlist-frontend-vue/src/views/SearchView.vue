@@ -569,7 +569,7 @@ const getProviderLabel = (input) => {
   if (type === 'archive') return 'ARCHIVE';
   if (type === 'jamendo') return 'JAMENDO';
   if (type === 'audius') return 'AUDIUS';
-  if (type === 'saavn') return 'DEV-SAAVN';
+  
   return 'LOSSLESS';
 };
 
