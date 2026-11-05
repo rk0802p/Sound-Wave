@@ -1,8 +1,8 @@
 <template>
   <div class="auth-page">
-    <div class="wash"></div>
+    
 
-    <div class="glass auth-card">
+    <div class="auth-card">
       <div class="brand">
         <span class="orb">🎧</span>
         <span>Soundwave</span>
@@ -26,7 +26,7 @@
             placeholder="curator@soundwave.io"
             required
             autocomplete="email"
-            class="glass-input"
+            class="neo-input font-mono"
           />
         </div>
 
@@ -38,11 +38,11 @@
             placeholder="••••••••"
             required
             autocomplete="current-password"
-            class="glass-input"
+            class="neo-input font-mono"
           />
         </div>
 
-        <button type="submit" class="cta submit-btn" :disabled="loading">
+        <button type="submit" class="neo-submit-btn font-mono" :disabled="loading">
           <span>{{ loading ? 'Signing in...' : 'Sign In' }}</span>
         </button>
       </form>
@@ -97,53 +97,57 @@ const handleLogin = async () => {
   display: grid;
   place-items: center;
   padding: 2rem 1.25rem;
-  position: relative;
+  background-color: var(--bg, #F3EFE8);
+  color: var(--ink, #111111);
+  font-family: var(--font-body);
 }
 
 .auth-card {
-  width: min(440px, 100%);
-  border-radius: 40px;
-  padding: 2.8rem 2.2rem;
+  width: min(460px, 100%);
+  border: var(--bw, 2px) solid var(--border, #111111);
+  box-shadow: var(--shadow-lg, 8px 8px 0 var(--border, #111111));
+  border-radius: var(--r-lg, 18px);
+  padding: 2.5rem 2.2rem;
   display: flex;
   flex-direction: column;
-  gap: 1.6rem;
-  background: rgba(255, 255, 255, 0.8);
-  box-shadow: 0 25px 60px rgba(43, 29, 90, 0.2);
+  gap: 1.5rem;
+  background: var(--surface-2, #FFFFFF);
 }
 
 .brand {
-  font: 800 1.5rem "Bricolage Grotesque", sans-serif;
+  font-size: 1.35rem;
+  font-weight: 900;
+  letter-spacing: -0.04em;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: var(--ink);
-}
-
-.brand .orb {
-  width: 32px;
-  height: 32px;
-  font-size: 0.95rem;
+  color: var(--ink, #111111);
+  text-transform: uppercase;
 }
 
 .auth-intro h2 {
   font-size: 2.2rem;
-  margin-bottom: 0.3rem;
-  color: var(--ink);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  margin-bottom: 0.35rem;
+  color: var(--ink, #111111);
+  text-transform: uppercase;
 }
 
 .auth-intro p {
-  color: var(--muted);
+  color: var(--ink-muted, #4A4740);
   font-size: 0.95rem;
+  font-weight: 600;
 }
 
 .error-banner {
   padding: 0.75rem 1rem;
-  border-radius: 16px;
-  background: rgba(255, 79, 154, 0.15);
-  border: 1px solid rgba(255, 79, 154, 0.4);
-  color: #ff2b7d;
+  border-radius: var(--r-sm, 8px);
+  background: #FFE8E8;
+  border: 1.5px solid var(--danger, #E5372B);
+  color: var(--danger, #E5372B);
   font-size: 0.88rem;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .auth-form {
@@ -155,64 +159,89 @@ const handleLogin = async () => {
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.35rem;
 }
 
 .form-group label {
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--muted);
-  text-transform: uppercase;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--ink-muted, #4A4740);
   letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
-.glass-input {
+.neo-input {
   width: 100%;
-  padding: 0.85rem 1.2rem;
-  border-radius: 99px;
-  background: rgba(255, 255, 255, 0.7);
-  border: 1.5px solid rgba(255, 255, 255, 0.9);
-  color: var(--ink);
-  font-size: 1rem;
-  font-weight: 500;
+  padding: 0.75rem 1rem;
+  border-radius: var(--r-sm, 8px);
+  background: #FFFDF8;
+  border: var(--bw, 2px) solid var(--border, #111111);
+  color: var(--ink, #111111);
+  font-size: 0.95rem;
+  font-weight: 600;
   outline: none;
-  transition: all 0.2s;
+  box-sizing: border-box;
 }
 
-.glass-input:focus {
-  background: #ffffff;
-  border-color: var(--ink);
-  box-shadow: 0 0 0 3px rgba(43, 29, 90, 0.1);
+.neo-input:focus {
+  background: #FFFFFF;
+  border-color: var(--ink, #111111);
+  outline: 2px solid var(--focus, #3B5BFF);
 }
 
-.submit-btn {
+.neo-submit-btn {
   width: 100%;
-  justify-content: center;
-  margin-top: 0.6rem;
+  padding: 0.75rem;
+  margin-top: 0.5rem;
+  background: var(--yellow, #FFD84A);
+  color: var(--ink, #111111);
+  border: var(--bw, 2px) solid var(--border, #111111);
+  box-shadow: var(--shadow-sm, 3px 3px 0 var(--border, #111111));
+  border-radius: var(--r-sm, 8px);
+  font-size: 0.9rem;
+  font-weight: 900;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  transition: transform 0.08s ease;
+}
+
+.neo-submit-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+.neo-submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .auth-footer {
   text-align: center;
-  font-size: 0.9rem;
-  color: var(--muted);
+  font-size: 0.88rem;
+  color: var(--ink-muted, #4A4740);
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 0.5rem;
+  font-weight: 600;
+  border-top: 1.5px solid rgba(17, 17, 17, 0.08);
+  padding-top: 1rem;
 }
 
 .auth-link {
-  color: var(--ink);
-  font-weight: 700;
+  color: var(--ink, #111111);
+  font-weight: 800;
   text-decoration: underline;
 }
 
 .back-link {
-  color: var(--muted);
-  font-size: 0.85rem;
-  transition: color 0.2s;
+  color: var(--ink-muted, #4A4740);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: none;
 }
 
 .back-link:hover {
-  color: var(--ink);
+  color: var(--ink, #111111);
+  text-decoration: underline;
 }
 </style>
