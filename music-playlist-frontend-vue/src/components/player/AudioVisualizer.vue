@@ -82,6 +82,7 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
 import { usePlayerStore } from '../../stores/player';
+import { infoPlayback } from '../../utils/playbackDiagnostics';
 
 const props = defineProps({
   isOpen: {
@@ -107,47 +108,21 @@ let animFrameId = null;
 let peakBars = [];
 let phaseOffset = 0;
 
-// Initialize or reconnect to the singleton Web Audio Graph
+// Initialize visualizer with Smooth Sync to preserve direct native audio
 const setupAudioGraph = () => {
   if (typeof window === 'undefined') return;
 
   try {
-    const audioEl = window._soundwaveAudio;
-    if (!audioEl) {
-      isSimulated.value = true;
-      return;
-    }
-
-    if (!window._soundwaveAudioContext) {
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      if (AudioCtx) {
-        window._soundwaveAudioContext = new AudioCtx();
-      }
-    }
-    audioContext = window._soundwaveAudioContext;
-
-    if (!window._soundwaveAnalyser && audioContext) {
-      analyser = audioContext.createAnalyser();
-      analyser.fftSize = 256;
-      analyser.smoothingTimeConstant = 0.85;
-      window._soundwaveAnalyser = analyser;
-
-      // Connect HTMLAudioElement to Analyser (guarded once)
-      if (!window._soundwaveSourceNode) {
-        try {
-          sourceNode = audioContext.createMediaElementSource(audioEl);
-          sourceNode.connect(analyser);
-          analyser.connect(audioContext.destination);
-          window._soundwaveSourceNode = sourceNode;
-        } catch (srcErr) {
-          // If already connected or CORS cross-origin tainted, fall back to safe simulation
-          console.warn('Web Audio source connection notice (falling back to smooth sync):', srcErr);
-          isSimulated.value = true;
-        }
-      }
-    } else {
-      analyser = window._soundwaveAnalyser;
-    }
+    // Cross-origin audio streams (e.g. Jamendo CDN) lack permissive CORS headers.
+    // Attaching them to Web Audio createMediaElementSource disconnects native audio output
+    // and causes browsers to zero out audio to destination, muting speaker sound.
+    // Smooth Sync simulation provides fluid, beat-reactive visualizer animation
+    // without hijacking or silencing native browser audio output.
+    isSimulated.value = true;
+    infoPlayback('AUDIO_VISUALIZER', null, 'smooth_sync_simulation_active', {
+      mode: 'safe_simulation',
+      reason: 'Preserve native speaker output for cross-origin Jamendo audio stream'
+    });
   } catch (err) {
     console.warn('Web Audio initialization note:', err);
     isSimulated.value = true;

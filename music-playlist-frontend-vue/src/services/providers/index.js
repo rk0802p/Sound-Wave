@@ -31,14 +31,14 @@ export class UnifiedSoundController {
     return this.provider.currentTrack;
   }
 
-  async load(track) {
+  async load(track, attemptId = null) {
     const caps = this.provider.getCapabilities(track);
     this.callbacks.onCapabilities?.(caps);
-    return this.provider.load(track);
+    return this.provider.load(track, attemptId);
   }
 
-  async loadAndPlay(track) {
-    return this.load(track);
+  async loadAndPlay(track, attemptId = null) {
+    return this.load(track, attemptId);
   }
 
   play() {

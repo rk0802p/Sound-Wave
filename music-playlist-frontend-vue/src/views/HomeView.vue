@@ -627,6 +627,12 @@ import { useAuthStore } from '../stores/auth';
 import { useToastStore } from '../stores/toast';
 import { FEATURED_SONGS } from '../data/featuredSongs';
 import { resolvePlayableAudioUrl } from '../services/providers/detector';
+import {
+  createPlaybackAttemptId,
+  infoPlayback,
+  warnPlayback,
+  errorPlayback
+} from '../utils/playbackDiagnostics';
 import FloatingPlayerDock from '../components/player/FloatingPlayerDock.vue';
 import CreatePlaylistModal from '../components/playlists/CreatePlaylistModal.vue';
 
@@ -823,6 +829,13 @@ const isCurrentTrack = (track) => {
 };
 
 const handlePlayTrack = async (track, queue, index, event) => {
+  const attemptId = createPlaybackAttemptId();
+  infoPlayback('TRACK_SELECTION', attemptId, 'card_click_event', {
+    trackId: track?.id || track?._id,
+    title: track?.title,
+    artist: track?.artist,
+    provider: track?.provider
+  });
   if (isCurrentTrack(track) && playerStore.isPlaying) {
     playerStore.togglePlay();
     return;
@@ -854,7 +867,7 @@ const handlePlayTrack = async (track, queue, index, event) => {
     return;
   }
 
-  await playerStore.playTrack(track, queue, index);
+  await playerStore.playTrack(track, queue, index, attemptId);
 };
 
 // Carousel scrolling
@@ -1108,6 +1121,11 @@ watch(
 );
 
 onMounted(() => {
+  infoPlayback('HOMEPAGE_INIT', null, 'component_mounted', {
+    totalCuratedTracks: FEATURED_SONGS.length,
+    validTracks: FEATURED_SONGS.filter(t => (t.id || t._id) && t.title && t.provider === 'jamendo').length,
+    firstTrack: FEATURED_SONGS[0]?.title
+  });
   loadFavorites();
   if (authStore.isAuthenticated) {
     playlistStore.fetchPlaylists().catch(() => {});

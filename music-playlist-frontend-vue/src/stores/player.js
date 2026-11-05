@@ -1,7 +1,14 @@
 import { defineStore } from 'pinia';
 import { soundController } from '../services/providers';
 import { MOOD_PLAYLISTS } from '../data/moodPlaylists';
-import { resolvePlayableAudioUrl } from '../services/providers/detector';
+import { resolvePlayableAudioUrl, isAuthorizedStreamUrl, detectProviderType } from '../services/providers/detector';
+import {
+  createPlaybackAttemptId,
+  infoPlayback,
+  warnPlayback,
+  errorPlayback,
+  debugPlayback
+} from '../utils/playbackDiagnostics';
 import { searchApi } from '../api/search';
 // Module-scoped in-flight deduplication and provider environment status cache
 const activeResolutions = new Map();
@@ -61,6 +68,7 @@ export const usePlayerStore = defineStore('player', {
       shuffle: false,
       recoveryNotice: null,
       playRequestId: 0,
+      currentAttemptId: null,
       currentTime: 0,
       duration: initialTrack?.duration || 233,
       volume: 0.85,
@@ -118,6 +126,9 @@ export const usePlayerStore = defineStore('player', {
           this.isLoading = false;
           if (this.playbackState !== 'failed' && this.playbackState !== 'ended') {
             this.playbackState = 'paused';
+            infoPlayback('PLAYER_STATE', this.currentAttemptId, 'state_paused', {
+              currentTime: this.currentTime
+            });
           }
           if (typeof document !== 'undefined') {
             document.body.classList.remove('playing');
@@ -127,6 +138,10 @@ export const usePlayerStore = defineStore('player', {
           this.isPlaying = true;
           this.isLoading = false;
           this.playbackState = 'playing';
+          infoPlayback('PLAYER_STATE', this.currentAttemptId, 'state_playing', {
+            currentTime: this.currentTime,
+            duration: this.duration
+          });
           if (typeof document !== 'undefined') {
             document.body.classList.add('playing');
           }
@@ -289,7 +304,14 @@ export const usePlayerStore = defineStore('player', {
       return false;
     },
 
-    async playTrack(track, queue = null, index = null) {
+    async playTrack(track, queue = null, index = null, attemptId = null) {
+      const effectiveAttemptId = attemptId || createPlaybackAttemptId();
+      this.currentAttemptId = effectiveAttemptId;
+      infoPlayback('TRACK_SELECTION', effectiveAttemptId, 'play_track_requested', {
+        trackId: track?.id || track?._id,
+        title: track?.title,
+        provider: track?.provider || track?.source?.provider
+      });
       this.init();
       if (!track) {
         this.playbackState = 'idle';
@@ -312,27 +334,49 @@ export const usePlayerStore = defineStore('player', {
       this.playRequestId = (this.playRequestId || 0) + 1;
       const reqId = this.playRequestId;
 
-      const rawProvider = track.provider || track.source?.provider || '';
+      let audioUrl = resolvePlayableAudioUrl(track);
+      const rawProvider = track.provider || track.source?.provider || (audioUrl ? detectProviderType(audioUrl) : '');
       const provider = String(rawProvider).toLowerCase().trim();
 
-      // Policy Gate: Non-Jamendo providers are rejected or pending verification
-      if (provider && provider !== 'jamendo') {
+      // Explicit fail-closed check for unplayable or flagged tracks
+      if (track.isUnavailable === true || track.isPlayable === false) {
         soundController.pause();
         this.isPlaying = false;
         this.isLoading = false;
         this.playbackState = 'unavailable';
         this.currentTime = 0;
-        this.error = 'Playback unavailable: ' + provider.toUpperCase() + ' provider is disabled or pending verification.';
+        this.error = 'Playback unavailable: Track is marked as unavailable or unplayable.';
+        warnPlayback('TRACK_SELECTION', this.currentAttemptId, 'track_unplayable_flagged', {
+          trackId: track.id || track._id,
+          isUnavailable: track.isUnavailable,
+          isPlayable: track.isPlayable
+        });
+        if (typeof document !== 'undefined') {
+          document.body.classList.remove('playing');
+        }
+        return;
+      }
+
+      // Policy Gate: Non-Jamendo providers are rejected or pending verification
+      if (!provider || provider !== 'jamendo') {
+        soundController.pause();
+        this.isPlaying = false;
+        this.isLoading = false;
+        this.playbackState = 'unavailable';
+        this.currentTime = 0;
+        this.error = 'Playback unavailable: ' + (provider ? provider.toUpperCase() : 'UNKNOWN') + ' provider is disabled or pending verification.';
+        warnPlayback('PROVIDER_POLICY', this.currentAttemptId, 'provider_rejected_portfolio_policy', { provider });
         if (typeof document !== 'undefined') {
           document.body.classList.remove('playing');
         }
         return;
       }
       const providerTrackId = track.providerTrackId || track.source?.externalId;
-      let audioUrl = resolvePlayableAudioUrl(track);
 
-      // Check if provider is permanently blocked in this environment
-      if (provider && blockedProviders.has(provider)) {
+      const hasValidDirectUrl = Boolean(audioUrl && isAuthorizedStreamUrl(audioUrl));
+      // Check if provider is permanently blocked in this environment (only if no valid pre-resolved direct stream)
+      if (!hasValidDirectUrl && provider && blockedProviders.has(provider)) {
+        warnPlayback('PROVIDER_POLICY', this.currentAttemptId, 'provider_blocked_resolution_needed', { provider });
         const recovered = await this.tryAlternativeFallback(track, reqId);
         if (recovered || this.playRequestId !== reqId) return;
 
@@ -421,7 +465,11 @@ export const usePlayerStore = defineStore('player', {
       try {
         this.playbackState = 'loading';
         this.isLoading = true;
-        await soundController.load(track);
+        infoPlayback('PLAYER_STATE', this.currentAttemptId, 'sound_controller_loading', {
+          trackId: track.id || track._id,
+          title: track.title
+        });
+        await soundController.load(track, this.currentAttemptId);
         if (this.playRequestId !== reqId) return;
         // Keep isLoading true until onPlaying confirms actual media progression
         if (this.currentTime > 0) {

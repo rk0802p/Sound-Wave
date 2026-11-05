@@ -1,4 +1,10 @@
 import { resolvePlayableAudioUrl, isAuthorizedStreamUrl } from './detector';
+import {
+  infoPlayback,
+  warnPlayback,
+  errorPlayback,
+  debugPlayback
+} from '../../utils/playbackDiagnostics';
 
 export class DirectAudioProvider {
   constructor() {
@@ -7,12 +13,18 @@ export class DirectAudioProvider {
     this.callbacks = {};
     this.isInitialized = false;
     this.currentTrack = null;
+    this.currentAttemptId = null;
+    this._lastLoggedSecond = -1;
 
     if (this.audio) {
       this.audio.preload = 'metadata';
       if (typeof window !== 'undefined') {
         window._soundwaveAudio = this.audio;
       }
+      infoPlayback('HTML_AUDIO_ELEMENT', null, 'audio_element_created', {
+        preload: this.audio.preload,
+        defaultMuted: this.audio.defaultMuted
+      });
     }
   }
 
@@ -50,13 +62,69 @@ export class DirectAudioProvider {
       this.handlers.set(event, bound);
     };
 
-    bindEvent('play', () => this.callbacks.onPlay?.());
-    bindEvent('pause', () => this.callbacks.onPause?.());
-    bindEvent('playing', () => this.callbacks.onPlaying?.());
-    bindEvent('waiting', () => this.callbacks.onWaiting?.());
-    bindEvent('timeupdate', () => this.callbacks.onTimeUpdate?.(this.audio.currentTime));
-    bindEvent('loadedmetadata', () => this.callbacks.onLoadedMetadata?.(this.audio.duration));
-    bindEvent('ended', () => this.callbacks.onEnded?.());
+    bindEvent('play', () => {
+      infoPlayback('HTML_AUDIO_ELEMENT', this.currentAttemptId, 'event_play', {
+        currentTime: this.audio.currentTime,
+        paused: this.audio.paused,
+        readyState: this.audio.readyState
+      });
+      this.callbacks.onPlay?.();
+    });
+
+    bindEvent('pause', () => {
+      infoPlayback('HTML_AUDIO_ELEMENT', this.currentAttemptId, 'event_pause', {
+        currentTime: this.audio.currentTime,
+        paused: this.audio.paused
+      });
+      this.callbacks.onPause?.();
+    });
+
+    bindEvent('playing', () => {
+      infoPlayback('HTML_AUDIO_ELEMENT', this.currentAttemptId, 'event_playing', {
+        currentTime: this.audio.currentTime,
+        duration: this.audio.duration,
+        readyState: this.audio.readyState,
+        networkState: this.audio.networkState
+      });
+      this.callbacks.onPlaying?.();
+    });
+
+    bindEvent('waiting', () => {
+      infoPlayback('HTML_AUDIO_ELEMENT', this.currentAttemptId, 'event_waiting', {
+        currentTime: this.audio.currentTime,
+        readyState: this.audio.readyState
+      });
+      this.callbacks.onWaiting?.();
+    });
+
+    bindEvent('timeupdate', () => {
+      const sec = Math.floor(this.audio.currentTime);
+      // Log milestones (1s, 5s, 10s, 30s, 60s) to keep trace clean and non-spammy
+      if (sec !== this._lastLoggedSecond && [1, 5, 10, 30, 60, 120].includes(sec)) {
+        this._lastLoggedSecond = sec;
+        debugPlayback('HTML_AUDIO_ELEMENT', this.currentAttemptId, 'event_timeupdate_milestone', {
+          second: sec,
+          duration: this.audio.duration
+        });
+      }
+      this.callbacks.onTimeUpdate?.(this.audio.currentTime);
+    });
+
+    bindEvent('loadedmetadata', () => {
+      infoPlayback('HTML_AUDIO_ELEMENT', this.currentAttemptId, 'event_loadedmetadata', {
+        duration: this.audio.duration,
+        readyState: this.audio.readyState
+      });
+      this.callbacks.onLoadedMetadata?.(this.audio.duration);
+    });
+
+    bindEvent('ended', () => {
+      infoPlayback('HTML_AUDIO_ELEMENT', this.currentAttemptId, 'event_ended', {
+        currentTime: this.audio.currentTime
+      });
+      this.callbacks.onEnded?.();
+    });
+
     bindEvent('error', (err) => {
       const mediaError = this.audio?.error;
       const detail = {
@@ -68,17 +136,33 @@ export class DirectAudioProvider {
             : 'general',
         raw: err,
       };
+      errorPlayback('HTML_AUDIO_ELEMENT', this.currentAttemptId, 'event_error', detail, {
+        currentSrc: this.audio.currentSrc,
+        networkState: this.audio.networkState,
+        readyState: this.audio.readyState
+      });
       this.callbacks.onError?.(detail);
     });
 
     this.isInitialized = true;
+    infoPlayback('HTML_AUDIO_ELEMENT', null, 'initialized', { handlersBound: this.handlers.size });
   }
 
-  async load(track) {
+  async load(track, attemptId = null) {
     if (!this.audio) return;
     this.currentTrack = track;
+    this.currentAttemptId = attemptId;
+    this._lastLoggedSecond = -1;
 
     const provider = String(track?.source?.provider || track?.provider || '').toLowerCase().trim();
+    const trackId = track?.id || track?._id || 'unknown';
+    const title = track?.title || 'Unknown Title';
+
+    infoPlayback('DIRECT_AUDIO_PROVIDER', attemptId, 'load_start', {
+      trackId,
+      title,
+      provider
+    });
 
     // Security Gate 1: Reject unverified or unapproved providers
     if (provider !== 'jamendo') {
@@ -90,6 +174,7 @@ export class DirectAudioProvider {
           : 'Playback rejected: Track lacks authorized provider metadata.',
         kind: 'unauthorized_provider',
       };
+      warnPlayback('PROVIDER_POLICY', attemptId, 'rejected_provider', errDetail);
       this.callbacks.onError?.(errDetail);
       throw new Error(errDetail.message);
     }
@@ -102,6 +187,7 @@ export class DirectAudioProvider {
         message: 'Playback rejected: Track is flagged as unavailable or unverified for playback.',
         kind: 'unauthorized_track',
       };
+      warnPlayback('PROVIDER_POLICY', attemptId, 'rejected_unplayable_flag', errDetail);
       this.callbacks.onError?.(errDetail);
       throw new Error(errDetail.message);
     }
@@ -118,14 +204,31 @@ export class DirectAudioProvider {
           : 'No direct playable audio URL available',
         kind: 'unauthorized_domain',
       };
+      warnPlayback('AUDIO_URL_VALIDATION', attemptId, 'rejected_unauthorized_url', {
+        urlPresent: Boolean(url),
+        authorized: false
+      });
       this.callbacks.onError?.(errDetail);
       throw new Error(errDetail.message);
     }
 
+    infoPlayback('AUDIO_URL_VALIDATION', attemptId, 'url_validated_authorized', {
+      isHttps: url.startsWith('https://'),
+      host: 'jamendo.com (verified CDN)'
+    });
+
     if (this.audio.src !== url) {
+      infoPlayback('HTML_AUDIO_ELEMENT', attemptId, 'assigning_new_src', {
+        previousSrc: this.audio.src ? 'configured' : 'empty'
+      });
       this.audio.src = url;
       this.audio.load();
+      infoPlayback('HTML_AUDIO_ELEMENT', attemptId, 'load_invoked', {
+        readyState: this.audio.readyState,
+        networkState: this.audio.networkState
+      });
     }
+
     this.callbacks.onCapabilities?.(this.getCapabilities(track));
     return this.play();
   }
@@ -133,16 +236,32 @@ export class DirectAudioProvider {
   async play() {
     if (!this.audio) return;
     try {
+      infoPlayback('HTML_AUDIO_ELEMENT', this.currentAttemptId, 'play_invoked');
       await this.audio.play();
+      infoPlayback('HTML_AUDIO_ELEMENT', this.currentAttemptId, 'play_promise_resolved', {
+        paused: this.audio.paused,
+        currentTime: this.audio.currentTime
+      });
     } catch (err) {
-      if (err.name !== 'AbortError') {
-        throw err;
+      if (err.name === 'AbortError') {
+        infoPlayback('HTML_AUDIO_ELEMENT', this.currentAttemptId, 'play_aborted_by_subsequent_request');
+        return;
       }
+      if (err.name === 'NotAllowedError') {
+        warnPlayback('BROWSER_PLAYBACK', this.currentAttemptId, 'autoplay_restricted_needs_gesture', {
+          errorName: err.name,
+          message: err.message
+        });
+      } else {
+        errorPlayback('BROWSER_PLAYBACK', this.currentAttemptId, 'play_rejected', err);
+      }
+      throw err;
     }
   }
 
   pause() {
     if (!this.audio) return;
+    infoPlayback('HTML_AUDIO_ELEMENT', this.currentAttemptId, 'pause_invoked');
     this.audio.pause();
   }
 
@@ -150,6 +269,7 @@ export class DirectAudioProvider {
     if (!this.audio) return;
     const duration = this.audio.duration || 0;
     const target = Math.max(0, Math.min(seconds, duration));
+    infoPlayback('HTML_AUDIO_ELEMENT', this.currentAttemptId, 'seek_invoked', { target, duration });
     this.audio.currentTime = target;
   }
 
@@ -163,6 +283,7 @@ export class DirectAudioProvider {
   setMuted(muted) {
     if (!this.audio) return;
     this.audio.muted = Boolean(muted);
+    infoPlayback('HTML_AUDIO_ELEMENT', this.currentAttemptId, 'mute_toggled', { muted: Boolean(muted) });
   }
 
   get duration() {
@@ -183,5 +304,6 @@ export class DirectAudioProvider {
     this.audio.src = '';
     this.currentTrack = null;
     this.isInitialized = false;
+    infoPlayback('HTML_AUDIO_ELEMENT', null, 'destroyed');
   }
 }

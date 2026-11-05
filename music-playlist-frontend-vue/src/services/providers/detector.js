@@ -9,7 +9,9 @@ export const isAuthorizedStreamUrl = (url) => {
   if (!url || typeof url !== 'string') return false;
   try {
     const parsed = new URL(url);
-    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return false;
+    if (parsed.protocol !== 'https:') return false;
+    if (parsed.username || parsed.password) return false;
+    if (parsed.port && parsed.port !== '443' && parsed.port !== '') return false;
     const host = parsed.hostname.toLowerCase();
     // In SOUNDWAVE V2, only Jamendo CDN is conditionally authorized for direct audio streaming
     return host === 'jamendo.com' || host.endsWith('.jamendo.com');
@@ -22,13 +24,20 @@ export const detectProviderType = (url) => {
   if (!url || typeof url !== 'string') return 'unknown';
   const clean = url.trim().toLowerCase();
 
-  // Jamendo detection
-  if (clean.includes('jamendo.com')) {
-    return 'jamendo';
+  try {
+    const parsed = new URL(clean);
+    const host = parsed.hostname.toLowerCase();
+    if (host === 'jamendo.com' || host.endsWith('.jamendo.com')) {
+      return 'jamendo';
+    }
+    if (host === 'spotify.com' || host.endsWith('.spotify.com')) {
+      return 'spotify';
+    }
+  } catch {
+    // If not a full URL, check spotify URI scheme
   }
 
-  // Spotify detection (for metadata & linking)
-  if (clean.includes('spotify.com') || clean.startsWith('spotify:')) {
+  if (clean.startsWith('spotify:')) {
     return 'spotify';
   }
 
