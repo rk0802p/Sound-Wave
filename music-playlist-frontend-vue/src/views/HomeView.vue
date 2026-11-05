@@ -537,7 +537,17 @@
 
           <div class="info-row">
             <label>License</label>
-            <div class="license-chip">{{ selectedInfoTrack.license?.name || 'Creative Commons / Public Domain' }}</div>
+            <a
+              v-if="selectedInfoTrack.license?.url"
+              :href="selectedInfoTrack.license.url"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="license-chip license-link"
+              title="View Creative Commons license deed"
+            >
+              {{ selectedInfoTrack.license?.name || 'Creative Commons' }} ↗
+            </a>
+            <div v-else class="license-chip">{{ selectedInfoTrack.license?.name || 'Creative Commons / Public Domain' }}</div>
           </div>
 
           <div class="info-row" v-if="selectedInfoTrack.license?.attribution">
@@ -2168,6 +2178,14 @@ onUnmounted(() => {
   font-weight: 700;
   display: inline-block;
   font-size: 0.9rem;
+  color: inherit;
+  text-decoration: none;
+  transition: background-color 0.2s ease;
+}
+
+.license-chip.license-link:hover {
+  background: rgba(43, 29, 90, 0.16);
+  text-decoration: underline;
 }
 
 .attribution-box {
