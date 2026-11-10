@@ -53,13 +53,13 @@ describe("Security & Ownership Isolation Integration Tests", () => {
   });
 
   describe("Cross-User Access Controls", () => {
-    it("should prevent User B from viewing User A's private playlist (403)", async () => {
+    it("should prevent User B from viewing User A's private playlist (404 to hide existence)", async () => {
       const res = await request(app)
         .get(`/api/playlists/${userAPlaylist._id}`)
         .set("Authorization", `Bearer ${userBToken}`);
 
-      expect(res.status).toBe(403);
-      expect(res.body.message).toMatch(/not authorized/i);
+      expect(res.status).toBe(404);
+      expect(res.body.message).toMatch(/Playlist not found/i);
     });
 
     it("should allow User B to view User A's playlist if marked isPublic: true", async () => {

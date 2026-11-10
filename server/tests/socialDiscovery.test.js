@@ -239,12 +239,12 @@ describe("Milestone 6.2: Social Playlist Discovery & Sharing Integration Tests",
       expect(res.body.message).toMatch(/private playlist/i);
     });
 
-    it("should deny non-owner authenticated user from viewing private playlist with 403", async () => {
+    it("should deny non-owner authenticated user from viewing private playlist with 404 to hide existence", async () => {
       const res = await request(app)
         .get(`/api/playlists/${privatePlId}`)
         .set("Authorization", `Bearer ${tokenB}`);
-      expect(res.status).toBe(403);
-      expect(res.body.message).toMatch(/Not authorized|Forbidden/i);
+      expect(res.status).toBe(404);
+      expect(res.body.message).toMatch(/Playlist not found/i);
     });
 
     it("should allow owner to view their own private playlist with isOwner: true", async () => {
