@@ -8,6 +8,7 @@
     "build": "vite build",
     "build:analyze": "vite build --mode analyze",
     "preview": "vite preview",
+    "test": "vitest run",
     "lighthouse": "lighthouse http://localhost:5173 --output html --output-path ./lighthouse-report.html"
   },
   "dependencies": {
@@ -19,8 +20,10 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.2.3",
+    "playwright": "^1.65.0",
     "terser": "^5.28.1",
     "vite": "^6.2.4",
-    "vite-plugin-vue-devtools": "^7.7.2"
+    "vite-plugin-vue-devtools": "^7.7.2",
+    "vitest": "^5.1.0"
   }
 }
