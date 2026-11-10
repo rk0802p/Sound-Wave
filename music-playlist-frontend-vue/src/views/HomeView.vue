@@ -43,7 +43,7 @@
 
       <!-- Navigation Links -->
       <div class="jb-sidebar-nav">
-        <router-link to="/" class="jb-nav-item" :class="{ 'active': activeFilter === '' && !selectedGenreFilter && !activePlaylist }">
+        <router-link to="/" class="jb-nav-item" :class="{ 'active': activeFilter === '' && !selectedGenreFilter && !activeMood }">
           <span class="jb-nav-tile tile-blue">⌂</span>
           <span v-if="!isSidebarCollapsed" class="jb-nav-label">Home</span>
         </router-link>
@@ -91,20 +91,40 @@
       <!-- PLAYLISTS SECTION -->
       <div class="jb-sidebar-section">
         <div v-if="!isSidebarCollapsed" class="jb-section-label font-mono jb-split-label">
-          <span>PLAYLISTS ({{ playlistStore.playlists.length }})</span>
+          <span>PLAYLISTS ({{ userPlaylists.length }})</span>
           <button class="jb-mini-add-btn font-mono" @click="openCreateModal" title="New playlist">+ NEW</button>
         </div>
         <div class="jb-playlists-list">
-          <button
-            v-for="p in playlistStore.playlists"
+          <div v-if="userPlaylists.length === 0 && !isSidebarCollapsed" class="jb-sidebar-empty font-mono">
+            No user playlists
+          </div>
+          <PlaylistSidebarMenu
+            v-for="p in userPlaylists"
             :key="p._id || p.id"
-            class="jb-playlist-row"
-            :class="{ 'active': activePlaylist && (activePlaylist._id === p._id || activePlaylist.id === p.id) }"
-            @click="handleSelectPlaylist(p)"
-            :title="p.name"
+            :playlist="p"
+            :isCollapsed="isSidebarCollapsed"
+            @rename="handleSidebarRename"
+            @duplicate="handleSidebarDuplicate"
+            @delete="handleSidebarDelete"
+          />
+        </div>
+      </div>
+
+      <!-- MOODS SECTION -->
+      <div class="jb-sidebar-section">
+        <div v-if="!isSidebarCollapsed" class="jb-section-label font-mono">MOODS</div>
+        <div class="jb-collections-list">
+          <button
+            v-for="mood in MOOD_PLAYLISTS"
+            :key="mood.id"
+            class="jb-collection-row"
+            :class="{ 'active': activeFilter === 'mood' && activeMood?.id === mood.id }"
+            @click="handleSelectMood(mood)"
+            :title="mood.name"
           >
-            <span class="jb-nav-tile tile-lavender">🎵</span>
-            <span v-if="!isSidebarCollapsed" class="jb-playlist-name">{{ p.name }}</span>
+            <span class="jb-nav-tile" :style="{ backgroundColor: mood.tint || '#ffd84a' }">{{ mood.emoji || '✨' }}</span>
+            <span v-if="!isSidebarCollapsed" class="jb-collection-name">{{ mood.name }}</span>
+            <span v-if="!isSidebarCollapsed" class="jb-collection-count font-mono">{{ mood.songs?.length || 0 }}</span>
           </button>
         </div>
       </div>
@@ -171,29 +191,21 @@
         <section class="jb-hero-card" :style="{ backgroundColor: currentCategoryHeroColor }">
           <div class="jb-hero-meta">
             <div class="jb-hero-badge-row font-mono">
-              <span class="jb-num-badge">{{ activePlaylist ? 'PLAYLIST' : selectedGenreFilter ? 'COLLECTION' : '01' }}</span>
-              <span class="jb-cat-label">{{ activePlaylist ? 'CURATED PLAYLIST' : selectedGenreFilter ? selectedGenreFilter.toUpperCase() : 'VERIFIED AUDIO ARCHIVE' }}</span>
+              <span class="jb-num-badge">{{ activeMood ? 'MOOD' : selectedGenreFilter ? 'COLLECTION' : '01' }}</span>
+              <span class="jb-cat-label">{{ activeMood ? `MOOD: ${activeMood.name.toUpperCase()}` : selectedGenreFilter ? selectedGenreFilter.toUpperCase() : 'VERIFIED AUDIO ARCHIVE' }}</span>
             </div>
 
             <h1 class="jb-hero-title font-display">
-              {{ activePlaylist ? activePlaylist.name : selectedGenreFilter ? selectedGenreFilter.toUpperCase() : 'SOUNDWAVE' }}
+              {{ activeMood ? activeMood.name : selectedGenreFilter ? selectedGenreFilter.toUpperCase() : 'SOUNDWAVE' }}
             </h1>
 
             <p class="jb-hero-tagline">
-              {{ activePlaylist ? (activePlaylist.description || 'Custom curated music collection.') : selectedGenreFilter ? `Explore curated ${selectedGenreFilter} audio streams.` : 'Open music discovery powered by Jamendo. Fully authorized Creative Commons streaming.' }}
+              {{ activeMood ? (activeMood.description || 'Curated mood audio stream.') : selectedGenreFilter ? `Explore curated ${selectedGenreFilter} audio streams.` : 'Open music discovery powered by Jamendo. Fully authorized Creative Commons streaming.' }}
             </p>
 
             <div class="jb-hero-foot-row font-mono">
               <span class="jb-dark-pill">{{ displayedTracks.length }} TRACKS</span>
               <span class="jb-live-tag">● ZERO-PIRACY CC STREAMING</span>
-              <button
-                v-if="activePlaylist && !isMoodPlaylist(activePlaylist)"
-                class="jb-hero-del-btn font-mono"
-                @click="handleDeleteActivePlaylist"
-                title="Delete this playlist"
-              >
-                🗑️ DELETE PLAYLIST
-              </button>
             </div>
           </div>
 
@@ -203,7 +215,7 @@
         </section>
 
         <!-- 2. FEATURED AUDIO RELEASES (3-UP) -->
-        <section v-if="featuredSpotlightTracks.length && !selectedGenreFilter && !activePlaylist" class="jb-section">
+        <section v-if="featuredSpotlightTracks.length && !selectedGenreFilter && !activeMood" class="jb-section">
           <div class="jb-section-head">
             <h2 class="jb-section-title font-display">FEATURED SPOTLIGHT</h2>
             <div class="jb-section-line"></div>
@@ -260,7 +272,7 @@
         </section>
 
         <!-- 3. MOST PLAYED / POPULAR COMPACT TRACKS -->
-        <section v-if="popularTracks.length && !selectedGenreFilter && !activePlaylist" class="jb-section">
+        <section v-if="popularTracks.length && !selectedGenreFilter && !activeMood" class="jb-section">
           <div class="jb-section-head">
             <h2 class="jb-section-title font-display">POPULAR ROTATION</h2>
             <div class="jb-section-line"></div>
@@ -291,7 +303,7 @@
         <section class="jb-section">
           <div class="jb-section-head">
             <div class="jb-head-left">
-              <h2 class="jb-section-title font-display">{{ activePlaylist ? activePlaylist.name.toUpperCase() : selectedGenreFilter ? selectedGenreFilter.toUpperCase() : 'ALL TRACKS' }}</h2>
+              <h2 class="jb-section-title font-display">{{ activeMood ? activeMood.name.toUpperCase() : selectedGenreFilter ? selectedGenreFilter.toUpperCase() : 'ALL TRACKS' }}</h2>
               <span class="jb-head-count font-mono">({{ displayedTracks.length }})</span>
             </div>
             <div class="jb-section-line"></div>
@@ -348,7 +360,7 @@
           <!-- EMPTY STATE -->
           <div v-if="displayedTracks.length === 0" class="jb-empty-box font-mono">
             <div class="jb-empty-glyph font-display">Ø</div>
-            <h3 class="jb-empty-title font-display">NO AUDIO FREQUENCIES FOUND</h3>
+            <h3 class="jb-empty-title font-display">No tracks found</h3>
             <p class="jb-empty-desc">No tracks match your current filter or search criteria.</p>
             <button class="jb-empty-btn font-mono" @click="clearAllFilters">RESET ALL FILTERS</button>
           </div>
@@ -409,14 +421,13 @@
                     ♥
                   </button>
 
-                  <button
-                    v-if="activePlaylist && !isMoodPlaylist(activePlaylist)"
-                    class="jb-tc-del-btn"
-                    @click.stop="handleRemoveSongFromActivePlaylist(track)"
-                    title="Remove from playlist"
-                  >
-                    ✕
-                  </button>
+                  <AddToPlaylistMenu :track="track">
+                    <template #trigger>
+                      <button class="jb-tc-fav-btn" title="Add to playlist">
+                        ＋
+                      </button>
+                    </template>
+                  </AddToPlaylistMenu>
 
                   <a
                     v-if="isJamendoTrack(track) && getTrackSourceUrl(track)"
@@ -620,6 +631,25 @@
         </div>
       </div>
     </div>
+    <!-- Confirm Dialog for Sidebar Playlist Delete -->
+    <ConfirmDialog
+      v-if="showDeleteConfirm"
+      :isOpen="showDeleteConfirm"
+      title="Delete Playlist"
+      :message="`Delete '${playlistToDelete?.name}'? This can't be undone.`"
+      confirmText="DELETE PLAYLIST"
+      @cancel="showDeleteConfirm = false; playlistToDelete = null"
+      @confirm="confirmSidebarDelete"
+    />
+
+    <!-- Login Modal for Guest Authentication -->
+    <LoginModal
+      v-if="showLoginModal"
+      :isOpen="showLoginModal"
+      :onSuccess="pendingGuestAction"
+      @login-success="handleLoginSuccess"
+      @close="showLoginModal = false"
+    />
   </div>
 </template>
 
@@ -631,7 +661,12 @@ import { usePlaylistStore } from '../stores/playlist';
 import { useAuthStore } from '../stores/auth';
 import { useToastStore } from '../stores/toast';
 import { FEATURED_SONGS } from '../data/featuredSongs';
+import { MOOD_PLAYLISTS } from '../data/moodPlaylists';
 import CreatePlaylistModal from '../components/playlists/CreatePlaylistModal.vue';
+import PlaylistSidebarMenu from '../components/playlists/PlaylistSidebarMenu.vue';
+import AddToPlaylistMenu from '../components/playlists/AddToPlaylistMenu.vue';
+import ConfirmDialog from '../components/common/ConfirmDialog.vue';
+import LoginModal from '../components/common/LoginModal.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -650,13 +685,20 @@ const isSidebarCollapsed = ref(false);
 const isQueueOpen = ref(false);
 const searchQuery = ref('');
 const selectedGenreFilter = ref('');
-const activeFilter = ref(''); // '' | 'favorites' | 'genre' | 'playlist'
-const activePlaylist = ref(null);
+const activeFilter = ref(''); // '' | 'favorites' | 'genre' | 'mood' | 'search'
+const activeMood = ref(null);
 const showCreateModal = ref(false);
 const showSettingsModal = ref(false);
 const selectedInfoTrack = ref(null);
 const favoritesList = ref([]);
 const sortBy = ref('default');
+
+const showDeleteConfirm = ref(false);
+const playlistToDelete = ref(null);
+
+const userPlaylists = computed(() => {
+  return playlistStore.userPlaylists;
+});
 
 // Distinct Jellykit Category Colors
 const GENRE_MAP = {
@@ -711,11 +753,11 @@ const popularTracks = computed(() => {
 const displayedTracks = computed(() => {
   let list = [...allCuratedTracks.value];
 
-  // Active Playlist filter
-  if (activeFilter.value === 'playlist' && activePlaylist.value) {
-    const pSongs = activePlaylist.value.songs || [];
-    if (pSongs.length > 0) {
-      list = pSongs.map((s) => ({
+  // Active Mood filter
+  if (activeFilter.value === 'mood' && activeMood.value) {
+    const mSongs = activeMood.value.songs || [];
+    if (mSongs.length > 0) {
+      list = mSongs.map((s) => ({
         ...s,
         genreColor: getGenreColor(s.genre),
       }));
@@ -757,29 +799,29 @@ const displayedTracks = computed(() => {
 
 // Hero Color & Watermark
 const currentCategoryHeroColor = computed(() => {
-  if (activePlaylist.value) return '#B9A6FF';
+  if (activeMood.value) return activeMood.value.tint || '#B9A6FF';
   if (selectedGenreFilter.value) return getGenreColor(selectedGenreFilter.value);
   return '#FFD84A'; // Jellykit Signature Yellow
 });
 
 const heroWatermarkGlyph = computed(() => {
-  if (activePlaylist.value) return 'PLAYLIST';
+  if (activeMood.value) return 'MOOD';
   if (selectedGenreFilter.value) return selectedGenreFilter.value.split('/')[0].trim().toUpperCase();
   return 'SOUNDWAVE';
 });
 
 const activeBreadcrumb = computed(() => {
-  if (activePlaylist.value) return `PLAYLIST: ${activePlaylist.value.name.toUpperCase()}`;
+  if (activeMood.value) return `MOOD: ${activeMood.value.name.toUpperCase()}`;
   if (selectedGenreFilter.value) return `COLLECTION: ${selectedGenreFilter.value.toUpperCase()}`;
   if (activeFilter.value === 'favorites') return 'LIKED TRACKS';
   return 'DISCOVER MUSIC';
 });
 
 const activeFilterBadge = computed(() => {
-  if (activeFilter.value === 'favorites') return 'LIKED TRACKS';
-  if (activeFilter.value === 'playlist' && activePlaylist.value) return `PLAYLIST: "${activePlaylist.value.name}"`;
-  if (selectedGenreFilter.value) return `GENRE: ${selectedGenreFilter.value}`;
-  if (searchQuery.value.trim()) return `SEARCH: "${searchQuery.value.trim()}"`;
+  if (activeFilter.value === 'favorites') return 'Liked Tracks';
+  if (activeFilter.value === 'mood' && activeMood.value) return `Mood: ${activeMood.value.name}`;
+  if (selectedGenreFilter.value) return `Genre: ${selectedGenreFilter.value}`;
+  if (searchQuery.value.trim()) return `Search: "${searchQuery.value.trim()}"`;
   return '';
 });
 
@@ -832,29 +874,29 @@ const handleSeekClick = (e) => {
 
 // Filter actions
 const handleSelectGenre = (genreName) => {
-  activePlaylist.value = null;
+  activeMood.value = null;
   activeFilter.value = genreName ? 'genre' : '';
   selectedGenreFilter.value = genreName;
 };
 
-const handleSelectPlaylist = (p) => {
+const handleSelectMood = (mood) => {
   selectedGenreFilter.value = '';
-  activeFilter.value = 'playlist';
-  activePlaylist.value = p;
-  if (p.songs && p.songs.length) {
-    playerStore.queue = p.songs;
+  activeFilter.value = 'mood';
+  activeMood.value = mood;
+  if (mood.songs && mood.songs.length) {
+    playerStore.queue = mood.songs;
   }
 };
 
 const handleFilterFavorites = () => {
   selectedGenreFilter.value = '';
-  activePlaylist.value = null;
+  activeMood.value = null;
   activeFilter.value = 'favorites';
 };
 
 const clearAllFilters = () => {
   selectedGenreFilter.value = '';
-  activePlaylist.value = null;
+  activeMood.value = null;
   activeFilter.value = '';
   searchQuery.value = '';
   sortBy.value = 'default';
@@ -902,9 +944,29 @@ const handlePlayQueueItem = (idx) => {
   playerStore.playTrack(playerStore.queue[idx], playerStore.queue, idx);
 };
 
+const showLoginModal = ref(false);
+const pendingGuestAction = ref(null);
+
+const runWithAuthGuard = (action) => {
+  if (!authStore.isAuthenticated) {
+    pendingGuestAction.value = action;
+    showLoginModal.value = true;
+    return;
+  }
+  action();
+};
+
+const handleLoginSuccess = async () => {
+  try {
+    await playlistStore.fetchPlaylists();
+  } catch {}
+};
+
 // Playlist Operations
 const openCreateModal = () => {
-  showCreateModal.value = true;
+  runWithAuthGuard(() => {
+    showCreateModal.value = true;
+  });
 };
 
 const handlePlaylistCreated = () => {
@@ -913,44 +975,54 @@ const handlePlaylistCreated = () => {
   toastStore.show('Playlist created!', 'success');
 };
 
-const isMoodPlaylist = (p) => {
-  if (!p) return false;
-  return Boolean(
-    p.isMood ||
-    p.id?.startsWith('mood-') ||
-    p._id?.startsWith('mood-') ||
-    p.id?.startsWith('curated-')
-  );
+// Sidebar Playlist Menu Handlers
+const handleSidebarRename = (p) => {
+  runWithAuthGuard(async () => {
+    const newName = prompt('Enter new playlist name:', p.name);
+    if (newName && newName.trim() && newName.trim() !== p.name) {
+      try {
+        await playlistStore.updatePlaylist(p._id || p.id, { name: newName.trim() });
+        toastStore.show(`Playlist renamed to "${newName.trim()}"`, 'success');
+      } catch (err) {
+        toastStore.show(err.response?.data?.message || 'Failed to rename playlist', 'error');
+      }
+    }
+  });
 };
 
-const handleDeleteActivePlaylist = async () => {
-  if (!activePlaylist.value) return;
-  const p = activePlaylist.value;
-  if (!confirm(`Are you sure you want to permanently delete "${p.name}"?`)) return;
+const handleSidebarDuplicate = (p) => {
+  runWithAuthGuard(async () => {
+    try {
+      const dup = await playlistStore.duplicatePlaylist(p._id || p.id);
+      toastStore.show(`Duplicated as "${dup.name}"`, 'success');
+    } catch (err) {
+      toastStore.show(err.response?.data?.message || 'Failed to duplicate playlist', 'error');
+    }
+  });
+};
 
+const handleSidebarDelete = (p) => {
+  runWithAuthGuard(() => {
+    playlistToDelete.value = p;
+    showDeleteConfirm.value = true;
+  });
+};
+
+const confirmSidebarDelete = async () => {
+  if (!playlistToDelete.value) return;
+  const targetId = playlistToDelete.value._id || playlistToDelete.value.id;
   try {
-    await playlistStore.deletePlaylist(p._id || p.id);
-    toastStore.show(`Playlist "${p.name}" deleted.`, 'success');
-    clearAllFilters();
+    const pName = playlistToDelete.value.name;
+    await playlistStore.deletePlaylist(targetId);
+    toastStore.show(`Playlist "${pName}" deleted.`, 'success');
+    if (route.path === `/playlist/${targetId}`) {
+      router.push('/library');
+    }
   } catch (err) {
     toastStore.show(err.response?.data?.message || 'Failed to delete playlist', 'error');
-  }
-};
-
-const handleRemoveSongFromActivePlaylist = async (track) => {
-  if (!activePlaylist.value) return;
-  const p = activePlaylist.value;
-  const trackId = track?._id || track?.id;
-  if (!confirm(`Remove "${track?.title}" from "${p.name}"?`)) return;
-
-  try {
-    await playlistStore.removeSong(p._id || p.id, trackId);
-    if (activePlaylist.value.songs) {
-      activePlaylist.value.songs = activePlaylist.value.songs.filter((s) => (s._id || s.id) !== trackId);
-    }
-    toastStore.show(`Removed track from "${p.name}"`, 'success');
-  } catch (err) {
-    toastStore.show(err.response?.data?.message || 'Failed to remove track', 'error');
+  } finally {
+    showDeleteConfirm.value = false;
+    playlistToDelete.value = null;
   }
 };
 
@@ -987,6 +1059,16 @@ onMounted(() => {
     favoritesList.value = raw ? JSON.parse(raw) : [];
   } catch {}
   playlistStore.fetchPlaylists().catch(() => {});
+
+  if (route.query.playlist) {
+    const pId = String(route.query.playlist);
+    if (pId.startsWith('mood-')) {
+      const m = MOOD_PLAYLISTS.find((item) => item.id === pId || item._id === pId);
+      if (m) {
+        handleSelectMood(m);
+      }
+    }
+  }
 });
 </script>
 
@@ -1901,6 +1983,7 @@ onMounted(() => {
 }
 
 .jb-track-card {
+  position: relative;
   background: var(--surface-2, #FFFFFF);
   border: var(--bw, 2px) solid var(--border, #111111);
   border-radius: var(--r-md, 12px);
@@ -1910,6 +1993,11 @@ onMounted(() => {
   padding: 1rem;
   gap: 0.85rem;
   transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+
+.jb-track-card:has(.picker-dropdown),
+.jb-track-card:focus-within {
+  z-index: 40;
 }
 
 .jb-track-card:hover {

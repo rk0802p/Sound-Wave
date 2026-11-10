@@ -33,7 +33,12 @@
           {{ currentTrackArtist }}
           <span v-if="isUnavailable" class="unavailable-tag"> • Unavailable</span>
         </small>
-        <div v-if="isJamendoTrack" class="dock-jamendo-meta">
+        <!-- Multi-Source Preview Metadata -->
+        <div v-if="isPreviewTrack" class="dock-preview-meta">
+          <span class="dock-preview-badge font-mono">30s PREVIEW</span>
+          <span class="dock-provider-pill font-mono" :class="previewProviderClass">{{ previewProviderName }}</span>
+        </div>
+        <div v-else-if="isJamendoTrack" class="dock-jamendo-meta">
           <a
             v-if="jamendoTrackUrl"
             :href="jamendoTrackUrl"
@@ -122,25 +127,63 @@
         </button>
       </div>
 
-      <!-- Real Scrubbable Progress Bar -->
+      <!-- Real Scrubbable Progress Bar with A/B Loop Markers -->
       <div class="prog">
         <span id="tc">{{ formatTime(playerStore.currentTime) }}</span>
-        <input
-          type="range"
-          id="seek"
-          min="0"
-          max="1000"
-          :value="seekProgressValue"
-          :style="{ '--p': seekPercentage + '%' }"
-          aria-label="Seek audio position"
-          @input="handleSeekInput"
-        />
+        <div class="seek-track-wrapper">
+          <input
+            type="range"
+            id="seek"
+            min="0"
+            max="1000"
+            :value="seekProgressValue"
+            :style="{ '--p': seekPercentage + '%' }"
+            aria-label="Seek audio position"
+            @input="handleSeekInput"
+          />
+          <div
+            v-if="playerStore.loopA !== null && playerStore.duration > 0"
+            class="scrubber-marker marker-a"
+            :style="{ left: ((playerStore.loopA / playerStore.duration) * 100) + '%' }"
+            title="Loop Marker A"
+          >A</div>
+          <div
+            v-if="playerStore.loopB !== null && playerStore.duration > 0"
+            class="scrubber-marker marker-b"
+            :style="{ left: ((playerStore.loopB / playerStore.duration) * 100) + '%' }"
+            title="Loop Marker B"
+          >B</div>
+        </div>
         <span id="td">{{ formatTime(playerStore.duration) }}</span>
       </div>
     </div>
 
-    <!-- Right: Secondary Controls (Info, Queue, Volume) -->
+    <!-- Right: Secondary Controls (Practice, Speed, Info, Visualizer, Queue, Volume) -->
     <div class="ex">
+      <!-- Play-Along Practice Mode Popover Button -->
+      <button
+        class="cb practice-btn font-mono"
+        id="practiceBtn"
+        :class="{ 'is-looping': playerStore.isLooping, 'is-open': showPracticePopover }"
+        :aria-pressed="playerStore.isLooping ? 'true' : 'false'"
+        aria-label="Practice Mode: A-B Loop & Speed"
+        title="Open Play-Along & Practice Panel"
+        @click="showPracticePopover = !showPracticePopover"
+      >
+        <span class="loop-icon-text font-mono">A⇄B</span>
+      </button>
+
+      <!-- Playback Speed Cycle Button -->
+      <button
+        class="cb speed-btn font-mono"
+        id="speedBtn"
+        aria-label="Playback Speed"
+        :title="'Playback Speed: ' + playerStore.playbackSpeed + 'x (Click to cycle)'"
+        @click="playerStore.cyclePlaybackSpeed()"
+      >
+        {{ playerStore.playbackSpeed }}x
+      </button>
+
       <!-- License / Attribution Info -->
       <button
         class="cb"
@@ -203,6 +246,77 @@
       />
     </div>
 
+    <!-- Play-Along / Practice Mode Popover Panel -->
+    <div
+      v-if="showPracticePopover"
+      class="practice-popover neo-box font-mono"
+      id="practicePopover"
+      role="dialog"
+      aria-label="Practice Mode Controls"
+    >
+      <div class="pop-header">
+        <div class="pop-title font-display">⚡ PLAY-ALONG PRACTICE</div>
+        <button class="pop-close" @click="showPracticePopover = false" aria-label="Close Practice Mode">✕</button>
+      </div>
+
+      <!-- Playback Speed Row -->
+      <div class="pop-section">
+        <div class="pop-label">PLAYBACK SPEED</div>
+        <div class="speed-btn-group">
+          <button
+            v-for="s in [0.5, 0.75, 1, 1.25, 1.5, 2]"
+            :key="s"
+            class="speed-chip font-mono"
+            :class="{ 'active': playerStore.playbackSpeed === s }"
+            @click="playerStore.setPlaybackSpeed(s)"
+          >
+            {{ s }}x
+          </button>
+        </div>
+      </div>
+
+      <!-- A-B Loop Controls Row -->
+      <div class="pop-section">
+        <div class="pop-label-row">
+          <span class="pop-label">A-B LOOP MARKERS</span>
+          <span v-if="playerStore.isLooping" class="loop-active-indicator">● ACTIVE LOOP</span>
+        </div>
+
+        <div class="loop-times-display">
+          <div class="marker-pill">
+            <span class="marker-tag">A</span>
+            <span class="marker-val">{{ playerStore.loopA !== null ? formatTime(playerStore.loopA) : '--:--' }}</span>
+          </div>
+          <span class="arrow-sep">➔</span>
+          <div class="marker-pill">
+            <span class="marker-tag">B</span>
+            <span class="marker-val">{{ playerStore.loopB !== null ? formatTime(playerStore.loopB) : '--:--' }}</span>
+          </div>
+        </div>
+
+        <div class="loop-actions-row">
+          <button class="neo-pop-btn btn-set-a font-mono" id="btnSetA" @click="playerStore.setLoopA()">
+            SET A ({{ formatTime(playerStore.currentTime) }})
+          </button>
+          <button class="neo-pop-btn btn-set-b font-mono" id="btnSetB" @click="playerStore.setLoopB()">
+            SET B ({{ formatTime(playerStore.currentTime) }})
+          </button>
+          <button
+            class="neo-pop-btn btn-toggle-loop font-mono"
+            id="btnToggleLoop"
+            :class="{ 'is-active': playerStore.isLooping }"
+            :disabled="playerStore.loopA === null || playerStore.loopB === null || playerStore.loopB <= playerStore.loopA"
+            @click="playerStore.toggleLoop()"
+          >
+            {{ playerStore.isLooping ? 'LOOP: ON' : 'LOOP: OFF' }}
+          </button>
+          <button class="neo-pop-btn btn-clear-loop font-mono" id="btnClearLoop" @click="playerStore.clearLoop()">
+            CLEAR
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Real-Time Audio Visualizer Component -->
     <AudioVisualizer
       :is-open="showVisualizer"
@@ -221,6 +335,29 @@ const emit = defineEmits(['open-info', 'toggle-queue', 'bubble-pop']);
 const playerStore = usePlayerStore();
 const isVisible = ref(true);
 const showVisualizer = ref(false);
+const showPracticePopover = ref(false);
+
+// Multi-source preview computed properties
+const isPreviewTrack = computed(() => {
+  const t = playerStore.currentTrack;
+  if (!t) return false;
+  const p = (t.provider || t.source?.provider || '').toLowerCase();
+  return p === 'deezer' || p === 'itunes' || p === 'apple' || t.isPreview === true;
+});
+
+const previewProviderName = computed(() => {
+  const t = playerStore.currentTrack;
+  if (!t) return '';
+  const p = (t.provider || t.source?.provider || '').toLowerCase();
+  if (p === 'deezer') return 'DEEZER';
+  if (p === 'itunes' || p === 'apple') return 'ITUNES';
+  return p ? p.toUpperCase() : 'PREVIEW';
+});
+
+const previewProviderClass = computed(() => {
+  const p = (playerStore.currentTrack?.provider || playerStore.currentTrack?.source?.provider || '').toLowerCase();
+  return p === 'deezer' ? 'pill-deezer' : 'pill-itunes';
+});
 
 // Persistent favorites in localStorage
 const favoritesSet = ref(new Set());
@@ -863,6 +1000,320 @@ svg {
   input[type="range"]::-moz-range-thumb {
     width: 14px;
     height: 14px;
+  }
+}
+
+/* Multi-Source Preview Metadata */
+.dock-preview-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.15rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.dock-preview-badge {
+  background: #ffcc00;
+  color: #000;
+  border: 1.5px solid #000;
+  font-size: 0.62rem;
+  font-weight: 900;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  box-shadow: 1.5px 1.5px 0px #000;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.dock-provider-pill {
+  font-size: 0.62rem;
+  font-weight: 900;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  border: 1.5px solid #000;
+  letter-spacing: 0.03em;
+}
+
+.pill-deezer {
+  background: #ff007f;
+  color: #fff;
+}
+
+.pill-itunes {
+  background: #fa233b;
+  color: #fff;
+}
+
+/* Practice & Speed Dock Buttons */
+.cb.practice-btn {
+  font-size: 0.72rem;
+  font-weight: 900;
+  border: 1.5px solid currentColor;
+  border-radius: 8px;
+  width: auto;
+  padding: 0 0.5rem;
+  height: 32px;
+}
+
+.cb.practice-btn.is-looping {
+  background: #00ff88;
+  color: #000;
+  border-color: #000;
+  box-shadow: 2px 2px 0px #000;
+}
+
+.cb.speed-btn {
+  font-size: 0.75rem;
+  font-weight: 900;
+  border: 1.5px solid currentColor;
+  border-radius: 8px;
+  width: auto;
+  padding: 0 0.45rem;
+  height: 32px;
+}
+
+.seek-track-wrapper {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.scrubber-marker {
+  position: absolute;
+  top: -16px;
+  transform: translateX(-50%);
+  font-size: 0.6rem;
+  font-weight: 900;
+  width: 15px;
+  height: 15px;
+  border-radius: 3px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #000;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.marker-a {
+  background: #00e5ff;
+  color: #000;
+}
+
+.marker-b {
+  background: #ff007f;
+  color: #fff;
+}
+
+/* Play-Along / Practice Popover */
+.practice-popover.neo-box {
+  position: absolute;
+  bottom: calc(100% + 14px);
+  right: 2rem;
+  width: 340px;
+  max-width: calc(100vw - 2rem);
+  background: #ffffff;
+  border: 3px solid #000000;
+  box-shadow: 6px 6px 0px #000000;
+  border-radius: 12px;
+  padding: 1rem;
+  z-index: 60;
+  color: #000;
+  animation: popUp 0.2s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+.pop-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #000;
+  padding-bottom: 0.4rem;
+  margin-bottom: 0.8rem;
+}
+
+.pop-title {
+  font-weight: 900;
+  font-size: 0.92rem;
+  letter-spacing: -0.02em;
+  color: #000;
+}
+
+.pop-close {
+  background: #ff4d4d;
+  color: #fff;
+  border: 1.5px solid #000;
+  font-weight: 900;
+  font-size: 0.8rem;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.pop-close:hover {
+  background: #ff1a1a;
+}
+
+.pop-section {
+  margin-bottom: 0.8rem;
+}
+
+.pop-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #555;
+  margin-bottom: 0.35rem;
+}
+
+.pop-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.35rem;
+}
+
+.loop-active-indicator {
+  font-size: 0.68rem;
+  font-weight: 900;
+  color: #00aa55;
+  background: #e6ffed;
+  border: 1px solid #00aa55;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+}
+
+.speed-btn-group {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.speed-chip {
+  background: #f0f0f0;
+  border: 1.5px solid #000;
+  border-radius: 6px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.speed-chip:hover {
+  background: #e0e0e0;
+  transform: translateY(-1px);
+}
+
+.speed-chip.active {
+  background: #ffeb3b;
+  color: #000;
+  box-shadow: 2px 2px 0px #000;
+}
+
+.loop-times-display {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.6rem;
+  background: #f8f8f8;
+  border: 2px solid #000;
+  border-radius: 8px;
+  padding: 0.4rem 0.6rem;
+}
+
+.marker-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.marker-tag {
+  background: #000;
+  color: #fff;
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  display: grid;
+  place-items: center;
+  font-size: 0.65rem;
+}
+
+.marker-val {
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.arrow-sep {
+  color: #888;
+  font-weight: 900;
+}
+
+.loop-actions-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+}
+
+.neo-pop-btn {
+  background: #fff;
+  border: 2px solid #000;
+  border-radius: 6px;
+  padding: 0.4rem 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 2px 2px 0px #000;
+  transition: transform 0.1s, background-color 0.1s;
+}
+
+.neo-pop-btn:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0px #000;
+}
+
+.neo-pop-btn:active:not(:disabled) {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0px #000;
+}
+
+.neo-pop-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.btn-set-a {
+  background: #e0f7fa;
+}
+
+.btn-set-b {
+  background: #fce4ec;
+}
+
+.btn-toggle-loop.is-active {
+  background: #00ff88;
+  color: #000;
+}
+
+.btn-clear-loop {
+  background: #ffebee;
+  color: #c62828;
+}
+
+@keyframes popUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 

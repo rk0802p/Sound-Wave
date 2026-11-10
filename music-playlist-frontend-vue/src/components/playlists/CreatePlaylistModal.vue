@@ -1,59 +1,58 @@
 <template>
-  <div class="modal-backdrop" @click.self="$emit('close')">
-    <div class="glass modal-card">
+  <div class="modal-backdrop font-mono" @click.self="$emit('close')">
+    <div class="modal-card">
       <div class="modal-header">
-        <h2 class="font-display">New Bubble</h2>
-        <button class="close-btn" @click="$emit('close')" aria-label="Close modal">✕</button>
+        <h2 class="font-display">NEW PLAYLIST</h2>
+        <button class="close-btn font-mono" @click="$emit('close')" aria-label="Close modal">✕</button>
       </div>
-      <p class="modal-subtitle">Pick an emoji, choose your colors, and name your sound bubble.</p>
+      <p class="modal-subtitle font-mono">Pick an icon, choose your palette aura, and name your playlist.</p>
 
-      <!-- Live Bubble Preview -->
-      <div class="preview-stage">
+      <!-- Live Preview -->
+      <div class="preview-stage font-mono">
         <div
-          class="orb preview-orb"
+          class="preview-badge"
           :style="{
-            '--o1': selectedGradient.o1,
-            '--o2': selectedGradient.o2,
-            '--sh': selectedGradient.o2 + '88',
+            backgroundColor: selectedGradient.tint || '#FFD84A',
           }"
         >
           {{ selectedEmoji }}
         </div>
         <div class="preview-text">
-          <h3>{{ name || 'Untitled Bubble' }}</h3>
-          <small>{{ description || 'No description yet' }}</small>
+          <h3 class="font-display">{{ name || 'UNTITLED PLAYLIST' }}</h3>
+          <small class="font-mono">{{ description || 'No description yet' }}</small>
         </div>
       </div>
 
-      <form @submit.prevent="handleSubmit" class="bubble-form">
+      <form @submit.prevent="handleSubmit" class="bubble-form font-mono">
         <!-- Name Input -->
         <div class="form-group">
-          <label>Bubble Name</label>
+          <label class="field-label font-mono">PLAYLIST NAME</label>
           <input
             v-model="name"
             type="text"
-            placeholder="e.g. Dreamy Afternoon"
+            placeholder="e.g. Midnight Lo-Fi Vibes"
             required
             maxlength="40"
-            class="glass-input"
+            class="sw-text-input font-mono"
+            autofocus
           />
         </div>
 
         <!-- Description Input -->
         <div class="form-group">
-          <label>Mood Description</label>
+          <label class="field-label font-mono">DESCRIPTION</label>
           <input
             v-model="description"
             type="text"
             placeholder="e.g. Ambient haze and soft synth pulses."
             maxlength="80"
-            class="glass-input"
+            class="sw-text-input font-mono"
           />
         </div>
 
         <!-- Emoji Selector -->
         <div class="form-group">
-          <label>Bubble Icon</label>
+          <label class="field-label font-mono">PLAYLIST ICON</label>
           <div class="emoji-picker">
             <button
               v-for="em in emojiOptions"
@@ -70,7 +69,7 @@
 
         <!-- Gradient Palette Selector -->
         <div class="form-group">
-          <label>Color Aura</label>
+          <label class="field-label font-mono">COLOR THEME</label>
           <div class="palette-picker">
             <button
               v-for="(pal, idx) in paletteOptions"
@@ -89,14 +88,14 @@
 
         <!-- Public Sharing Toggle -->
         <div class="form-group public-toggle-group">
-          <label class="toggle-label">
+          <label class="toggle-label font-mono">
             <input
               type="checkbox"
               v-model="isPublic"
               class="toggle-checkbox"
             />
             <span class="toggle-text">
-              <span class="toggle-title">🌐 Make Public on Explore</span>
+              <span class="toggle-title">🌐 MAKE PUBLIC ON EXPLORE</span>
               <small class="toggle-desc">Allow community discovery, social sharing, and forking</small>
             </span>
           </label>
@@ -104,11 +103,11 @@
 
         <!-- Form Actions -->
         <div class="modal-actions">
-          <button type="button" class="cancel-btn" @click="$emit('close')">
-            Cancel
+          <button type="button" class="btn-cancel font-mono" @click="$emit('close')">
+            CANCEL
           </button>
-          <button type="submit" class="cta submit-btn" :disabled="!name.trim() || isSubmitting">
-            <span>{{ isSubmitting ? 'Creating...' : 'Create Bubble' }}</span>
+          <button type="submit" class="btn-submit font-mono" :disabled="!name.trim() || isSubmitting">
+            <span>{{ isSubmitting ? 'CREATING...' : 'CREATE PLAYLIST' }}</span>
           </button>
         </div>
       </form>
@@ -191,198 +190,234 @@ const handleSubmit = async (event) => {
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 1000;
-  background: rgba(43, 29, 90, 0.4);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  display: grid;
-  place-items: center;
-  padding: 1.5rem;
+  z-index: 2100;
+  background: rgba(17, 17, 17, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
 }
 
 .modal-card {
   width: min(520px, 100%);
-  border-radius: 40px;
-  padding: 2.2rem;
-  background: rgba(255, 255, 255, 0.85);
-  box-shadow: 0 25px 60px rgba(43, 29, 90, 0.25);
+  border-radius: 0;
+  padding: 24px;
+  background: #FFFFFF;
+  border: 3px solid #111111;
+  box-shadow: 6px 6px 0 #111111;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 .modal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 0.4rem;
+  margin-bottom: 6px;
+  border-bottom: 2px solid #111111;
+  padding-bottom: 12px;
 }
 
 .modal-header h2 {
-  font-size: 2.2rem;
-  color: var(--ink);
+  font-family: var(--font-display, "Bricolage Grotesque", sans-serif);
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: #111111;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
 }
 
 .close-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: rgba(43, 29, 90, 0.08);
-  font-size: 1.1rem;
-  display: grid;
-  place-items: center;
-  transition: transform 0.2s, background 0.2s;
+  width: 32px;
+  height: 32px;
+  border-radius: 0;
+  background: #FFFFFF;
+  border: 2px solid #111111;
+  box-shadow: 2px 2px 0 #111111;
+  font-size: 0.85rem;
+  font-weight: 900;
+  color: #111111;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.08s ease, background-color 0.08s ease;
 }
 
 .close-btn:hover {
-  transform: scale(1.1);
-  background: rgba(43, 29, 90, 0.15);
+  background: #FF6B5E;
+  color: #FFFFFF;
+  transform: translate(-1px, -1px);
 }
 
 .modal-subtitle {
-  color: var(--muted);
-  font-size: 0.95rem;
-  margin-bottom: 1.5rem;
+  color: #555555;
+  font-size: 0.82rem;
+  margin: 10px 0 16px;
+  font-weight: 500;
 }
 
 .preview-stage {
   display: flex;
   align-items: center;
-  gap: 1.2rem;
-  padding: 1rem 1.4rem;
-  border-radius: 28px;
-  background: rgba(255, 255, 255, 0.6);
-  border: 1.5px solid rgba(255, 255, 255, 0.9);
-  margin-bottom: 1.5rem;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: 0;
+  background: #FFFDF8;
+  border: 2px solid #111111;
+  box-shadow: 3px 3px 0 #111111;
+  margin-bottom: 18px;
 }
 
-.preview-orb {
-  width: 72px;
-  height: 72px;
+.preview-badge {
+  width: 56px;
+  height: 56px;
   font-size: 2rem;
   flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #111111;
+  box-shadow: 2px 2px 0 #111111;
 }
 
 .preview-text h3 {
-  font-size: 1.3rem;
-  margin-bottom: 0.2rem;
+  font-family: var(--font-display, "Bricolage Grotesque", sans-serif);
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: #111111;
+  margin-bottom: 2px;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
 }
 
 .preview-text small {
-  color: var(--muted);
-  font-size: 0.85rem;
+  color: #666666;
+  font-size: 0.78rem;
 }
 
 .bubble-form {
   display: flex;
   flex-direction: column;
-  gap: 1.2rem;
+  gap: 16px;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 6px;
 }
 
-.form-group label {
-  font-size: 0.82rem;
-  font-weight: 700;
-  color: var(--muted);
+.field-label {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #111111;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.05em;
 }
 
-.glass-input {
+.sw-text-input {
   width: 100%;
-  padding: 0.85rem 1.2rem;
-  border-radius: 99px;
-  background: rgba(255, 255, 255, 0.7);
-  border: 1.5px solid rgba(255, 255, 255, 0.9);
-  color: var(--ink);
-  font-size: 1rem;
-  font-weight: 500;
+  padding: 10px 14px;
+  border-radius: 0;
+  background: #FFFFFF;
+  border: 2px solid #111111;
+  box-shadow: 3px 3px 0 #111111;
+  color: #111111;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.88rem;
+  font-weight: 600;
   outline: none;
-  transition: all 0.2s;
+  transition: box-shadow 0.08s ease, background-color 0.08s ease;
 }
 
-.glass-input:focus {
-  background: #ffffff;
-  border-color: var(--ink);
-  box-shadow: 0 0 0 3px rgba(43, 29, 90, 0.1);
+.sw-text-input:focus {
+  background: #FFFDE6;
+  box-shadow: 4px 4px 0 #111111;
 }
 
 .emoji-picker {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 8px;
 }
 
 .emoji-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  font-size: 1.3rem;
-  display: grid;
-  place-items: center;
-  background: rgba(255, 255, 255, 0.6);
-  border: 1.5px solid rgba(255, 255, 255, 0.9);
-  transition: transform 0.2s, background 0.2s;
+  width: 38px;
+  height: 38px;
+  border-radius: 0;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #FFFFFF;
+  border: 1.5px solid #111111;
+  box-shadow: 2px 2px 0 #111111;
+  cursor: pointer;
+  transition: transform 0.08s ease, background-color 0.08s ease;
 }
 
 .emoji-btn:hover {
-  transform: scale(1.15);
-  background: #ffffff;
+  background: #FFFDF8;
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 #111111;
 }
 
 .emoji-btn.selected {
-  background: #ffffff;
-  border-color: var(--ink);
-  transform: scale(1.2);
-  box-shadow: 0 4px 12px rgba(43, 29, 90, 0.15);
+  background: #FFD84A;
+  border: 2px solid #111111;
+  box-shadow: 3px 3px 0 #111111;
+  transform: translate(-1px, -1px);
 }
 
 .palette-picker {
   display: flex;
-  gap: 0.8rem;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .palette-btn {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  border: 2px solid #ffffff;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s;
+  width: 36px;
+  height: 36px;
+  border-radius: 0;
+  border: 2px solid #111111;
+  box-shadow: 2px 2px 0 #111111;
+  cursor: pointer;
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
 }
 
 .palette-btn:hover {
-  transform: scale(1.15);
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 #111111;
 }
 
 .palette-btn.selected {
-  outline: 3px solid var(--ink);
-  outline-offset: 2px;
-  transform: scale(1.2);
+  outline: 2px solid #111111;
+  box-shadow: 4px 4px 0 #111111;
+  transform: translate(-1px, -1px);
 }
 
 .public-toggle-group {
-  margin-top: 0.5rem;
-  background: rgba(255, 255, 255, 0.5);
-  padding: 0.75rem 1rem;
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.8);
+  margin-top: 4px;
+  background: #FFFDF8;
+  padding: 10px 14px;
+  border-radius: 0;
+  border: 2px solid #111111;
+  box-shadow: 2px 2px 0 #111111;
 }
 
 .toggle-label {
   display: flex;
   align-items: center;
-  gap: 0.8rem;
+  gap: 10px;
   cursor: pointer;
-  text-transform: none !important;
 }
 
 .toggle-checkbox {
   width: 18px;
   height: 18px;
-  accent-color: var(--o2, #ff4f9a);
+  accent-color: #111111;
   cursor: pointer;
 }
 
@@ -392,43 +427,72 @@ const handleSubmit = async (event) => {
 }
 
 .toggle-title {
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: var(--ink);
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #111111;
+  letter-spacing: 0.03em;
 }
 
 .toggle-desc {
-  font-size: 0.75rem;
-  color: var(--muted);
+  font-size: 0.72rem;
+  color: #666666;
 }
 
 .modal-actions {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 0.9rem;
-  margin-top: 1rem;
+  gap: 12px;
+  margin-top: 8px;
+  border-top: 2px solid #111111;
+  padding-top: 16px;
 }
 
-.cancel-btn {
-  padding: 0.8rem 1.4rem;
-  border-radius: 99px;
-  font-weight: 700;
-  color: var(--muted);
-  transition: color 0.2s;
+.btn-cancel,
+.btn-submit {
+  padding: 10px 18px;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.82rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 2px solid #111111;
+  box-shadow: 3px 3px 0 #111111;
+  cursor: pointer;
+  border-radius: 0;
+  transition: transform 0.08s ease, box-shadow 0.08s ease, background-color 0.08s ease;
 }
 
-.cancel-btn:hover {
-  color: var(--ink);
+.btn-cancel {
+  background-color: #FFFFFF;
+  color: #111111;
 }
 
-.submit-btn {
-  padding: 0.85rem 1.8rem;
+.btn-cancel:hover {
+  background-color: #F3EFE8;
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 #111111;
 }
 
-.submit-btn:disabled {
+.btn-submit {
+  background-color: #5DE3A6;
+  color: #111111;
+}
+
+.btn-submit:hover:not(:disabled) {
+  background-color: #4BD898;
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 #111111;
+}
+
+.btn-cancel:active,
+.btn-submit:active:not(:disabled) {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 #111111;
+}
+
+.btn-submit:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  transform: none !important;
 }
 </style>

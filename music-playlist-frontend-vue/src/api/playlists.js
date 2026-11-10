@@ -21,6 +21,11 @@ export const playlistApi = {
     return res.data;
   },
 
+  duplicatePlaylist: async (id, data = {}) => {
+    const res = await api.post(`/api/playlists/${id}/duplicate`, data);
+    return res.data;
+  },
+
   createPlaylist: async (data) => {
     const res = await api.post('/api/playlists', data);
     return res.data;
@@ -36,8 +41,14 @@ export const playlistApi = {
     return res.data;
   },
 
-  addSong: async (playlistId, songData) => {
-    const res = await api.post(`/api/playlists/${playlistId}/songs`, songData);
+  addSong: async (playlistId, songData, allowDuplicate = false) => {
+    const payload = allowDuplicate ? { ...songData, allowDuplicate: true } : songData;
+    const res = await api.post(`/api/playlists/${playlistId}/songs`, payload);
+    return res.data;
+  },
+
+  addBatchSongs: async (playlistId, songs, allowDuplicate = false) => {
+    const res = await api.post(`/api/playlists/${playlistId}/songs/batch`, { songs, allowDuplicate });
     return res.data;
   },
 

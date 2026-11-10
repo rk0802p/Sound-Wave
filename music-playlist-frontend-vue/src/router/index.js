@@ -2,7 +2,6 @@ import { createRouter, createWebHistory } from 'vue-router';
 import HomeView from '../views/HomeView.vue';
 import LoginView from '../views/LoginView.vue';
 import SignupView from '../views/SignupView.vue';
-import { MOOD_PLAYLISTS } from '../data/moodPlaylists';
 
 const routes = [
   {
@@ -35,13 +34,13 @@ const routes = [
   },
   {
     path: '/playlist/:id',
-    name: 'PlaylistPreview',
-    component: () => import('../views/PlaylistPreviewView.vue'),
+    name: 'Playlist',
+    component: () => import('../views/PlayListView.vue'),
     meta: { requiresAuth: false },
   },
   {
     path: '/playlists/:id',
-    name: 'PlaylistView',
+    name: 'PlaylistRedirect',
     redirect: (to) => ({ path: `/playlist/${to.params.id}` }),
   },
   {
@@ -77,6 +76,18 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('token');
   const isAuthenticated = Boolean(token);
+
+  // Redirect /?playlist=<id> to /playlist/<id> unless id starts with mood-
+  if (to.path === '/' && to.query.playlist) {
+    const playlistId = String(to.query.playlist);
+    if (!playlistId.startsWith('mood-')) {
+      const { playlist, ...restQuery } = to.query;
+      return next({
+        path: `/playlist/${playlistId}`,
+        query: restQuery,
+      });
+    }
+  }
 
   if (to.meta.requiresAuth && !isAuthenticated) {
     return next({ name: 'Login' });

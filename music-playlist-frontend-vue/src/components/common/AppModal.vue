@@ -4,7 +4,7 @@
       v-if="isOpen"
       class="sw-modal-backdrop"
       @click.self="handleBackdropClick"
-      @keydown.esc="handleClose"
+      @keydown="handleKeydown"
       tabindex="-1"
       ref="backdropRef"
     >
@@ -82,15 +82,57 @@ const handleBackdropClick = () => {
   }
 };
 
+const handleKeydown = (e) => {
+  if (e.key === 'Escape') {
+    handleClose();
+    return;
+  }
+  if (e.key === 'Tab') {
+    if (!backdropRef.value) return;
+    const focusable = backdropRef.value.querySelectorAll(
+      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    );
+    if (!focusable || focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.shiftKey) {
+      if (document.activeElement === first || document.activeElement === backdropRef.value) {
+        last.focus();
+        e.preventDefault();
+      }
+    } else {
+      if (document.activeElement === last) {
+        first.focus();
+        e.preventDefault();
+      }
+    }
+  }
+};
+
+const focusInitialElement = () => {
+  if (!backdropRef.value) return;
+  const autofocusEl = backdropRef.value.querySelector('[autofocus]');
+  if (autofocusEl && typeof autofocusEl.focus === 'function') {
+    autofocusEl.focus();
+    return;
+  }
+  const firstFocusable = backdropRef.value.querySelector(
+    'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [href]'
+  );
+  if (firstFocusable && typeof firstFocusable.focus === 'function') {
+    firstFocusable.focus();
+  } else {
+    backdropRef.value.focus();
+  }
+};
+
 // Trap focus and prevent background scroll
 watch(
   () => props.isOpen,
   (open) => {
     if (open) {
       document.body.style.overflow = 'hidden';
-      nextTick(() => {
-        backdropRef.value?.focus();
-      });
+      nextTick(focusInitialElement);
     } else {
       document.body.style.overflow = '';
     }
@@ -101,9 +143,7 @@ watch(
 onMounted(() => {
   if (props.isOpen) {
     document.body.style.overflow = 'hidden';
-    nextTick(() => {
-      backdropRef.value?.focus();
-    });
+    nextTick(focusInitialElement);
   }
 });
 
@@ -116,100 +156,110 @@ onUnmounted(() => {
 .sw-modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(20, 16, 30, 0.45);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  background: rgba(17, 17, 17, 0.65);
   z-index: 2100;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 24px;
-  animation: fadeIn 200ms ease;
+  animation: fadeIn 150ms ease;
   outline: none;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
+  from { opacity: 0.5; }
   to { opacity: 1; }
 }
 
 .sw-modal-panel {
   width: 100%;
-  background: var(--pg-canvas);
-  border: 2px solid var(--pg-border);
-  border-radius: var(--pg-radius-xl);
-  box-shadow: var(--pg-shadow-solid-xl);
+  background: #FFFFFF;
+  border: 3px solid #111111;
+  border-radius: 0;
+  box-shadow: 6px 6px 0 #111111;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  animation: scaleIn var(--pg-transition-spring);
+  animation: scaleIn 100ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes scaleIn {
   from {
-    transform: scale(0.96) translateY(12px);
-    opacity: 0;
+    transform: scale(0.98) translateY(4px);
   }
   to {
     transform: scale(1) translateY(0);
-    opacity: 1;
   }
 }
 
 .sw-modal-header {
-  padding: 24px 28px 18px 28px;
+  padding: 20px 24px 16px 24px;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  border-bottom: 2px solid var(--pg-border);
+  border-bottom: 2px solid #111111;
+  background-color: #FFFDF8;
 }
 
 .modal-title {
+  font-family: var(--font-display, "Bricolage Grotesque", Figtree, sans-serif);
   font-size: 1.45rem;
-  font-weight: 800;
-  color: var(--pg-ink);
+  font-weight: 900;
+  color: #111111;
   margin-bottom: 4px;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
 }
 
 .modal-desc {
-  font-size: 0.88rem;
-  color: var(--pg-ink-secondary);
+  font-family: var(--font-mono, monospace);
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #555555;
 }
 
 .close-icon-btn {
-  background: var(--pg-surface-soft);
-  border: 1.5px solid var(--pg-border);
-  color: var(--pg-ink);
+  background: #FFFFFF;
+  border: 2px solid #111111;
+  color: #111111;
   font-size: 0.85rem;
-  font-weight: 800;
+  font-weight: 900;
   width: 32px;
   height: 32px;
-  border-radius: 50%;
+  border-radius: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 2px 2px 0px var(--pg-border);
-  transition: all var(--pg-transition-spring);
+  box-shadow: 2px 2px 0 #111111;
+  transition: transform 0.08s ease, box-shadow 0.08s ease, background-color 0.08s ease;
+  flex-shrink: 0;
 }
 
 .close-icon-btn:hover {
-  background: var(--pg-coral);
-  color: #fff;
+  background: #FF6B5E;
+  color: #FFFFFF;
   transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 #111111;
+}
+
+.close-icon-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 #111111;
 }
 
 .sw-modal-body {
-  padding: 24px 28px;
+  padding: 24px;
   overflow-y: auto;
   max-height: calc(85vh - 140px);
+  background-color: #FFFFFF;
 }
 
 .sw-modal-footer {
-  padding: 18px 28px 24px 28px;
-  border-top: 2px solid var(--pg-border);
+  padding: 16px 24px;
+  border-top: 2px solid #111111;
+  background-color: #FFFDF8;
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -222,8 +272,9 @@ onUnmounted(() => {
     align-items: flex-end;
   }
   .sw-modal-panel {
-    border-radius: var(--pg-radius-xl) var(--pg-radius-xl) 0 0;
+    border-radius: 0;
     max-height: 90vh;
+    border-bottom: none;
   }
 }
 </style>

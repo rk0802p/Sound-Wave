@@ -1,661 +1,652 @@
 <template>
-  <div class="pg-playlist-root">
-    <!-- Back to Vault Navigation Pill -->
-    <div class="back-nav-container">
-      <router-link to="/library" class="back-vault-btn font-mono">
-        <span class="back-arrow">←</span>
-        <span>BACK TO MIXTAPE VAULT</span>
+  <div class="pg-unified-playlist font-mono">
+    <!-- Top Nav Back Bar -->
+    <nav class="playlist-nav-bar">
+      <router-link to="/" class="nav-back-link font-mono">
+        ← BACK TO HOME
       </router-link>
-    </div>
-
-    <!-- Loading State -->
-    <div v-if="playlistStore.isLoading && !playlist" class="pg-playlist-loading">
-      <div class="loading-soundmark">
-        <span></span><span></span><span></span><span></span>
+      <div class="nav-breadcrumbs font-mono">
+        <span class="bc-root">SOUNDWAVE</span>
+        <span class="bc-sep">/</span>
+        <span class="bc-type">PLAYLIST</span>
+        <span v-if="playlist" class="bc-sep">/</span>
+        <span v-if="playlist" class="bc-current font-display">{{ playlist.name }}</span>
       </div>
-      <p class="font-mono">RETRIEVING MIXTAPE MASTER DATA...</p>
-    </div>
+      <router-link to="/explore" class="nav-explore-link font-mono">
+        EXPLORE MIXTAPES ↗
+      </router-link>
+    </nav>
 
-    <!-- Error State -->
-    <div v-else-if="playlistStore.error" class="pg-playlist-error">
-      <div class="error-badge font-mono">ARCHIVE UNAVAILABLE</div>
-      <h2 class="font-display">Mixtape Inaccessible</h2>
-      <p>{{ playlistStore.error }}</p>
-      <router-link to="/library" class="back-vault-btn font-mono">Return to Vault</router-link>
-    </div>
-
-    <!-- Main Editorial Playlist Stage -->
-    <div v-else-if="playlist" class="pg-playlist-stage">
-      <!-- 1. Asymmetric Hero Stage -->
-      <section class="playlist-hero-card">
-        <!-- Left: Physical 12-inch Vinyl Sleeve Showcase -->
-        <div class="hero-vinyl-stage">
-          <div class="vinyl-sleeve-container">
-            <!-- Vinyl Record Disc sliding out -->
-            <div
-              class="physical-vinyl-disc"
-              :class="{ 'is-spinning': isThisPlaylistPlaying }"
-            >
-              <div class="disc-groove g1"></div>
-              <div class="disc-groove g2"></div>
-              <div class="disc-center-label">
-                <span class="disc-spindle"></span>
-              </div>
-            </div>
-
-            <!-- Front Sleeve Jacket Cover -->
-            <div class="sleeve-jacket">
-              <img
-                v-if="playlist.coverImage && !imageFailed"
-                :src="playlist.coverImage"
-                :alt="playlist.name"
-                class="sleeve-artwork"
-                @error="imageFailed = true"
-              />
-              <div v-else class="generative-jacket font-display">
-                {{ playlistMonogram }}
-              </div>
-            </div>
-          </div>
+    <!-- Main Container -->
+    <main class="playlist-main-content">
+      <!-- Loading State -->
+      <div v-if="isLoading" class="state-loading font-mono">
+        <div class="loading-soundbar">
+          <span></span><span></span><span></span><span></span>
         </div>
+        <p>RETRIEVING MIXTAPE MASTER DATA...</p>
+      </div>
 
-        <!-- Right: Editorial Typographic Title & Meta -->
-        <div class="hero-narrative-stage">
-          <div class="narrative-kicker font-mono">
-            <span class="kicker-badge">CURATED MIXTAPE</span>
-            <span class="kicker-index">#{{ playlist.songs?.length || 0 }} AUDIO TRACKS</span>
-          </div>
-
-          <h1 class="narrative-title font-display">{{ playlist.name }}</h1>
-
-          <p v-if="playlist.description" class="narrative-description">
-            {{ playlist.description }}
-          </p>
-
-          <!-- Metrics Ledger -->
-          <div class="narrative-ledger font-mono">
-            <div class="ledger-item">
-              <span class="ledger-label">CURATOR</span>
-              <span class="ledger-value font-display">{{ playlist.user?.username || 'Curator' }}</span>
-            </div>
-            <div class="ledger-item">
-              <span class="ledger-label">RUNTIME</span>
-              <span class="ledger-value">{{ formattedDuration }}</span>
-            </div>
-            <div class="ledger-item">
-              <span class="ledger-label">AUDIO ENGINE</span>
-              <span class="ledger-value accent-cobalt">MULTI-SOURCE</span>
-            </div>
-          </div>
-
-          <!-- Tactical Action Cluster -->
-          <div class="narrative-action-cluster">
-            <button
-              class="action-btn primary font-display"
-              @click="handlePlayAll"
-              :disabled="!playlist.songs?.length"
-            >
-              <span class="btn-glyph">{{ isThisPlaylistPlaying ? '❚❚' : '▶' }}</span>
-              <span>{{ isThisPlaylistPlaying ? 'Pause Mixtape' : 'Play Mixtape' }}</span>
-            </button>
-
-            <button
-              class="action-btn secondary font-mono"
-              @click="handleShufflePlay"
-              :disabled="!playlist.songs?.length"
-              title="Shuffle all tracks"
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <polyline points="16 3 21 3 21 8"></polyline>
-                <line x1="4" y1="20" x2="21" y2="3"></line>
-                <polyline points="21 16 21 21 16 21"></polyline>
-                <line x1="15" y1="15" x2="21" y2="21"></line>
-                <line x1="4" y1="4" x2="9" y2="9"></line>
-              </svg>
-              <span>Shuffle</span>
-            </button>
-
-            <button
-              class="action-btn citron font-mono"
-              @click="showAddSongModal = true"
-            >
-              <span class="btn-plus">+</span>
-              <span>Add Audio Track</span>
-            </button>
-
-            <button
-              class="action-btn icon-only"
-              @click="showEditModal = true"
-              title="Edit Mixtape Details"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-              </svg>
-            </button>
-
-            <button
-              class="action-btn icon-only danger"
-              @click="handleDeletePlaylist"
-              title="Delete Mixtape"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-              </svg>
-            </button>
-          </div>
+      <!-- Error / Inaccessible State -->
+      <div v-else-if="error" class="state-error font-mono">
+        <div class="error-badge font-display">{{ errorCode || '404' }}</div>
+        <h2 class="error-heading font-display">Mixtape Inaccessible</h2>
+        <p class="error-detail">{{ error }}</p>
+        <div class="error-actions font-mono">
+          <router-link to="/" class="btn-error-action font-mono">Return to Home</router-link>
+          <router-link to="/explore" class="btn-error-action outline font-mono">Explore Public Playlists</router-link>
+          <button v-if="!authStore.isAuthenticated" class="btn-error-action login font-mono" @click="showLoginModal = true">
+            Log In
+          </button>
         </div>
-      </section>
+      </div>
 
-      <!-- 2. Acoustic Track Sequence Section -->
-      <section class="pg-sequence-section">
-        <div class="sequence-header-row">
-          <span class="sequence-kicker font-mono">TRACK SEQUENCE</span>
-          <h2 class="sequence-heading font-display">Audio Tracklist</h2>
-        </div>
-
-        <AcousticTrackStream
-          :songs="playlist.songs || []"
+      <!-- Real Loaded Playlist -->
+      <div v-else-if="playlist" class="playlist-body">
+        <!-- 1. Header -->
+        <PlaylistHeader
           :playlist="playlist"
-          @open-add-song="showAddSongModal = true"
-          @edit-song="openEditSong"
-          @delete-song="handleDeleteSong"
-          @reorder-songs="handleReorderSongs"
+          :isOwner="isOwner"
+          :isPlaying="isThisPlaylistPlaying"
+          @play-all="handlePlayAll"
+          @shuffle="handleShuffle"
+          @open-add-songs="handleRequireAuthOrOpenAdd"
+          @fork="handleFork"
+          @rename="handleRename"
+          @edit-details="handleRequireAuthOrEdit"
+          @toggle-visibility="handleToggleVisibility"
+          @duplicate="handleDuplicate"
+          @delete="handleRequireAuthOrDelete"
         />
-      </section>
 
-      <!-- Modals -->
-      <AddSongModal
-        v-if="showAddSongModal"
-        :playlist-id="playlist._id"
-        @close="showAddSongModal = false"
-        @song-added="refreshPlaylist"
-      />
+        <!-- 2. Track List -->
+        <section class="playlist-tracks-section">
+          <PlaylistTrackList
+            :songs="playlist.songs || []"
+            :playlist="playlist"
+            :isOwner="isOwner"
+            @open-add-songs="handleRequireAuthOrOpenAdd"
+            @play-song="handlePlaySong"
+            @remove-song="handleRemoveSong"
+            @reorder-songs="handleReorderSongs"
+          />
+        </section>
+      </div>
+    </main>
 
-      <EditPlaylistModal
-        v-if="showEditModal"
-        :playlist="playlist"
-        @close="showEditModal = false"
-        @updated="refreshPlaylist"
-      />
+    <!-- MODALS & OVERLAYS -->
 
-      <EditSongModal
-        v-if="showEditSongModal"
-        :playlist-id="playlist._id"
-        :song="editingSong"
-        @close="showEditSongModal = false"
-        @song-updated="refreshPlaylist"
-      />
-    </div>
+    <!-- Add Songs Drawer -->
+    <AddSongsDrawer
+      v-if="showAddDrawer"
+      :isOpen="showAddDrawer"
+      :playlistId="playlistId"
+      :existingSongs="playlist?.songs || []"
+      @close="showAddDrawer = false"
+      @songs-added="refreshPlaylist"
+    />
+
+    <!-- Edit Playlist Modal -->
+    <EditPlaylistModal
+      v-if="showEditModal && playlist"
+      :playlist="playlist"
+      @close="showEditModal = false"
+      @updated="refreshPlaylist"
+    />
+
+    <!-- Delete Confirmation Dialog -->
+    <ConfirmDialog
+      v-if="showDeleteDialog"
+      :isOpen="showDeleteDialog"
+      title="Delete Playlist"
+      :message="`Delete '${playlist?.name}'? This can't be undone.`"
+      confirmText="DELETE PLAYLIST"
+      :loading="isDeleting"
+      @cancel="showDeleteDialog = false"
+      @confirm="executeDeletePlaylist"
+    />
+
+    <!-- Undo Toast (5 seconds on track remove) -->
+    <UndoToast
+      v-if="undoInfo"
+      :song="undoInfo.song"
+      :position="undoInfo.position"
+      @undo="executeUndoRemove"
+      @dismiss="undoInfo = null"
+    />
+
+    <!-- Guest Login Modal -->
+    <LoginModal
+      v-if="showLoginModal"
+      :isOpen="showLoginModal"
+      :onSuccess="pendingGuestAction"
+      @login-success="handleLoginSuccess"
+      @close="showLoginModal = false"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { usePlaylistStore } from '../stores/playlist';
 import { usePlayerStore } from '../stores/player';
+import { useAuthStore } from '../stores/auth';
 import { useToastStore } from '../stores/toast';
 
-import AcousticTrackStream from '../components/playlists/AcousticTrackStream.vue';
-import AddSongModal from '../components/playlists/AddSongModal.vue';
+import PlaylistHeader from '../components/playlists/PlaylistHeader.vue';
+import PlaylistTrackList from '../components/playlists/PlaylistTrackList.vue';
+import AddSongsDrawer from '../components/playlists/AddSongsDrawer.vue';
 import EditPlaylistModal from '../components/playlists/EditPlaylistModal.vue';
-import EditSongModal from '../components/playlists/EditSongModal.vue';
+import ConfirmDialog from '../components/common/ConfirmDialog.vue';
+import UndoToast from '../components/playlists/UndoToast.vue';
+import LoginModal from '../components/common/LoginModal.vue';
 
 const route = useRoute();
 const router = useRouter();
 const playlistStore = usePlaylistStore();
 const playerStore = usePlayerStore();
+const authStore = useAuthStore();
 const toastStore = useToastStore();
 
-const showAddSongModal = ref(false);
+const isLoading = ref(true);
+const error = ref(null);
+const errorCode = ref(null);
+
+const showAddDrawer = ref(false);
 const showEditModal = ref(false);
-const showEditSongModal = ref(false);
-const editingSong = ref(null);
-const imageFailed = ref(false);
+const showDeleteDialog = ref(false);
+const showLoginModal = ref(false);
+const isDeleting = ref(false);
+const pendingGuestAction = ref(null);
 
-const playlist = computed(() => playlistStore.currentPlaylist);
+const undoInfo = ref(null);
 
-const playlistMonogram = computed(() => {
-  if (!playlist.value?.name) return 'SW';
-  return playlist.value.name.slice(0, 2).toUpperCase();
+const playlistId = computed(() => route.params.id);
+
+const playlist = computed(() => {
+  return playlistStore.currentPlaylist;
+});
+
+const currentUserId = computed(() => {
+  const u = authStore.user;
+  return u?._id || u?.id || null;
+});
+
+const isOwner = computed(() => {
+  if (!authStore.isAuthenticated || !playlist.value) return false;
+  if (playlist.value.isOwner !== undefined) return Boolean(playlist.value.isOwner);
+  const pUser = playlist.value.userId?._id || playlist.value.userId;
+  const cUser = playlist.value.creator?._id || playlist.value.creator;
+  return Boolean(
+    (pUser && pUser === currentUserId.value) ||
+    (cUser && cUser === currentUserId.value)
+  );
 });
 
 const isThisPlaylistPlaying = computed(() => {
   return (
     playerStore.isPlaying &&
-    playerStore.currentPlaylistId === playlist.value?._id
+    (playerStore.currentPlaylist?._id === playlistId.value ||
+     playerStore.currentPlaylist?.id === playlistId.value)
   );
 });
 
-const formattedDuration = computed(() => {
-  if (!playlist.value?.songs?.length) return '0 min';
-  const totalSeconds = playlist.value.songs.reduce((acc, song) => {
-    return acc + (Number(song.duration) || 0);
-  }, 0);
-  const minutes = Math.floor(totalSeconds / 60);
-  return `${minutes} min`;
-});
-
-const handlePlayAll = () => {
-  if (!playlist.value?.songs?.length) return;
-  if (isThisPlaylistPlaying.value) {
-    playerStore.togglePlay();
-  } else {
-    playerStore.playTrack(playlist.value.songs[0], playlist.value, playlist.value.songs);
-    toastStore.info(`Playing ${playlist.value.name}`);
-  }
-};
-
-const handleShufflePlay = () => {
-  if (!playlist.value?.songs?.length) return;
-  const songs = [...playlist.value.songs];
-  for (let i = songs.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [songs[i], songs[j]] = [songs[j], songs[i]];
-  }
-  playerStore.playTrack(songs[0], playlist.value, songs);
-  toastStore.info(`Shuffling ${playlist.value.name}`);
-};
-
-const openEditSong = (song) => {
-  editingSong.value = song;
-  showEditSongModal.value = true;
-};
-
-const handleDeleteSong = async (songId) => {
-  if (!confirm('Remove this audio track from the mixtape?')) return;
+const loadPlaylist = async () => {
+  if (!playlistId.value) return;
+  isLoading.value = true;
+  error.value = null;
+  errorCode.value = null;
   try {
-    await playlistStore.removeSong(playlist.value._id, songId);
-    toastStore.success('Track removed from mixtape');
-    await refreshPlaylist();
+    const data = await playlistStore.fetchPlaylist(playlistId.value);
+    if (!data) {
+      error.value = 'Mixtape not found.';
+      errorCode.value = 404;
+    }
   } catch (err) {
-    toastStore.error(err.response?.data?.message || 'Failed to remove track');
-  }
-};
-
-const handleReorderSongs = async (songIds) => {
-  try {
-    await playlistStore.reorderSongs(playlist.value._id, songIds);
-    toastStore.success('Sequence reordered');
-    await refreshPlaylist();
-  } catch (err) {
-    toastStore.error('Could not save reordered sequence');
-  }
-};
-
-const handleDeletePlaylist = async () => {
-  if (!confirm(`Are you sure you want to delete "${playlist.value.name}"?`)) return;
-  try {
-    await playlistStore.deletePlaylist(playlist.value._id);
-    toastStore.success('Mixtape deleted');
-    router.push('/library');
-  } catch (err) {
-    toastStore.error(err.response?.data?.message || 'Failed to delete mixtape');
+    errorCode.value = err.response?.status || 500;
+    if (err.response?.status === 404) {
+      error.value = 'This playlist does not exist or has been removed.';
+    } else if (err.response?.status === 401 || err.response?.status === 403) {
+      error.value = 'This playlist is private and requires owner authentication.';
+    } else {
+      error.value = err.response?.data?.message || err.message || 'Failed to load playlist.';
+    }
+  } finally {
+    isLoading.value = false;
   }
 };
 
 const refreshPlaylist = async () => {
-  const id = route.params.id;
-  if (id) {
-    await playlistStore.fetchPlaylist(id);
+  try {
+    await playlistStore.fetchPlaylist(playlistId.value);
+  } catch {}
+};
+
+// Playback Handlers
+const handlePlayAll = () => {
+  const songs = playlist.value?.songs || [];
+  if (!songs.length) return;
+  if (isThisPlaylistPlaying.value) {
+    playerStore.togglePlay();
+  } else {
+    playerStore.playTrack(songs[0], songs, 0);
+    playerStore.currentPlaylist = playlist.value;
+    toastStore.show(`Playing "${playlist.value.name}"`, 'success');
   }
 };
 
-onMounted(async () => {
-  await refreshPlaylist();
+const handleShuffle = () => {
+  const songs = [...(playlist.value?.songs || [])];
+  if (!songs.length) return;
+  // Fisher-Yates shuffle
+  for (let i = songs.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [songs[i], songs[j]] = [songs[j], songs[i]];
+  }
+  playerStore.playTrack(songs[0], songs, 0);
+  playerStore.currentPlaylist = playlist.value;
+  playerStore.shuffle = true;
+  toastStore.show(`Shuffling "${playlist.value.name}"`, 'info');
+};
+
+const handlePlaySong = ({ track, index, songsList }) => {
+  playerStore.playTrack(track, songsList, index);
+  playerStore.currentPlaylist = playlist.value;
+};
+
+// Owner Operations with Guest Protection
+const runWithAuthGuard = (action) => {
+  if (!authStore.isAuthenticated) {
+    pendingGuestAction.value = action;
+    showLoginModal.value = true;
+    return;
+  }
+  action();
+};
+
+const handleLoginSuccess = async () => {
+  await loadPlaylist();
+};
+
+const handleRequireAuthOrOpenAdd = () => {
+  runWithAuthGuard(() => {
+    showAddDrawer.value = true;
+  });
+};
+
+const handleRequireAuthOrEdit = () => {
+  runWithAuthGuard(() => {
+    showEditModal.value = true;
+  });
+};
+
+const handleRequireAuthOrDelete = () => {
+  runWithAuthGuard(() => {
+    showDeleteDialog.value = true;
+  });
+};
+
+// Rename
+const handleRename = async (newName) => {
+  runWithAuthGuard(async () => {
+    try {
+      await playlistStore.updatePlaylist(playlistId.value, { name: newName });
+      toastStore.show('Playlist renamed!', 'success');
+    } catch (err) {
+      toastStore.show(err.response?.data?.message || 'Failed to rename playlist', 'error');
+    }
+  });
+};
+
+// Toggle Visibility
+const handleToggleVisibility = async (isPublic) => {
+  runWithAuthGuard(async () => {
+    try {
+      await playlistStore.updatePlaylist(playlistId.value, { isPublic });
+      toastStore.show(`Playlist is now ${isPublic ? 'Public' : 'Private'}.`, 'success');
+    } catch (err) {
+      toastStore.show(err.response?.data?.message || 'Failed to update visibility', 'error');
+    }
+  });
+};
+
+// Duplicate
+const handleDuplicate = async () => {
+  runWithAuthGuard(async () => {
+    try {
+      const duplicated = await playlistStore.duplicatePlaylist(playlistId.value);
+      toastStore.show(`Duplicated as "${duplicated.name}"`, 'success');
+      router.push(`/playlist/${duplicated._id || duplicated.id}`);
+    } catch (err) {
+      toastStore.show(err.response?.data?.message || 'Failed to duplicate playlist', 'error');
+    }
+  });
+};
+
+// Fork
+const handleFork = async () => {
+  runWithAuthGuard(async () => {
+    try {
+      const forked = await playlistStore.forkPlaylist(playlistId.value);
+      toastStore.show(`Forked "${playlist.value.name}" to your library!`, 'success');
+      router.push(`/playlist/${forked._id || forked.id}`);
+    } catch (err) {
+      toastStore.show(err.response?.data?.message || 'Failed to fork playlist', 'error');
+    }
+  });
+};
+
+// Delete
+const executeDeletePlaylist = async () => {
+  isDeleting.value = true;
+  try {
+    const pName = playlist.value?.name;
+    await playlistStore.deletePlaylist(playlistId.value);
+    showDeleteDialog.value = false;
+    toastStore.show(`Deleted "${pName}".`, 'success');
+    router.push('/library');
+  } catch (err) {
+    toastStore.show(err.response?.data?.message || 'Failed to delete playlist', 'error');
+  } finally {
+    isDeleting.value = false;
+  }
+};
+
+// Remove Song with Undo Toast (5s)
+const handleRemoveSong = async ({ track, index }) => {
+  const songId = track._id || track.id;
+  try {
+    await playlistStore.removeSong(playlistId.value, songId);
+    undoInfo.value = {
+      song: track,
+      position: index,
+    };
+  } catch (err) {
+    toastStore.show(err.response?.data?.message || 'Failed to remove song', 'error');
+  }
+};
+
+const executeUndoRemove = async ({ song, position }) => {
+  try {
+    await playlistStore.restoreSong(playlistId.value, song, position);
+    toastStore.show(`Restored "${song.title}"`, 'success');
+    undoInfo.value = null;
+  } catch (err) {
+    toastStore.show(err.response?.data?.message || 'Failed to restore song', 'error');
+  }
+};
+
+// Reorder
+const handleReorderSongs = async (newSongIds) => {
+  try {
+    await playlistStore.reorderSongs(playlistId.value, newSongIds);
+  } catch (err) {
+    toastStore.show(err.response?.data?.message || 'Failed to reorder songs', 'error');
+  }
+};
+
+watch(() => route.params.id, (newId) => {
+  if (newId) {
+    loadPlaylist();
+  }
+});
+
+onMounted(() => {
+  loadPlaylist();
 });
 </script>
 
 <style scoped>
-.pg-playlist-root {
+.pg-unified-playlist {
+  min-height: 100vh;
+  background-color: var(--bg, #F3EFE8);
+  color: #111111;
   display: flex;
   flex-direction: column;
-  gap: 32px;
-  padding-bottom: 40px;
+  font-family: var(--font-body, Figtree, sans-serif);
 }
 
-/* Back Nav */
-.back-nav-container {
+/* Nav Bar */
+.playlist-nav-bar {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-}
-
-.back-vault-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 14px;
-  background: var(--pg-canvas);
-  border: 1.5px solid var(--pg-border);
-  border-radius: var(--pg-radius-full);
-  box-shadow: 2px 2px 0px var(--pg-border);
-  font-size: 0.72rem;
+  padding: 14px 24px;
+  background-color: #EFEAE1;
+  border-bottom: 2px solid #111111;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.82rem;
   font-weight: 800;
-  color: var(--pg-ink);
-  text-decoration: none;
-  transition: all var(--pg-transition-spring);
-}
-
-.back-vault-btn:hover {
-  background: var(--pg-surface-butter);
-  transform: translateY(-2px);
-  box-shadow: 3px 3px 0px var(--pg-border);
-}
-
-.back-arrow {
-  font-size: 0.9rem;
-}
-
-/* 1. Hero Card */
-.playlist-hero-card {
-  background: var(--pg-surface-peach);
-  border: 2px solid var(--pg-border);
-  border-radius: var(--pg-radius-xl);
-  box-shadow: var(--pg-shadow-solid-lg);
-  padding: 36px 40px;
-  display: grid;
-  grid-template-columns: 260px 1fr;
-  align-items: center;
-  gap: 48px;
-}
-
-.hero-vinyl-stage {
-  display: flex;
-  justify-content: center;
-}
-
-.vinyl-sleeve-container {
-  position: relative;
-  width: 220px;
-  height: 220px;
-}
-
-.physical-vinyl-disc {
-  position: absolute;
-  top: 0;
-  left: 30px;
-  width: 220px;
-  height: 220px;
-  border-radius: 50%;
-  background: #14101E;
-  border: 2px solid var(--pg-border);
-  box-shadow: var(--pg-shadow-solid);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1;
-  transition: transform 400ms var(--pg-ease-spring);
-}
-
-.vinyl-sleeve-container:hover .physical-vinyl-disc {
-  transform: translateX(45px) rotate(20deg);
-}
-
-.physical-vinyl-disc.is-spinning {
-  animation: vinylSpin 3s linear infinite;
-}
-
-.disc-center-label {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background: var(--pg-coral);
-  border: 2px solid #14101E;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.disc-spindle {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: #14101E;
-}
-
-.sleeve-jacket {
-  position: relative;
-  width: 220px;
-  height: 220px;
-  border-radius: var(--pg-radius-md);
-  border: 2px solid var(--pg-border);
-  box-shadow: var(--pg-shadow-solid);
-  overflow: hidden;
-  background: var(--pg-canvas);
-  z-index: 2;
-}
-
-.sleeve-artwork {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.generative-jacket {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 3.5rem;
-  font-weight: 800;
-  background: var(--pg-surface-butter);
-  color: var(--pg-cobalt);
-}
-
-/* Narrative */
-.hero-narrative-stage {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.narrative-kicker {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.kicker-badge {
-  font-size: 0.68rem;
-  font-weight: 800;
-  padding: 3px 8px;
-  background: var(--pg-ink);
-  color: var(--pg-citron);
-  border-radius: var(--pg-radius-full);
-}
-
-.kicker-index {
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: var(--pg-ink-secondary);
-}
-
-.narrative-title {
-  font-size: clamp(2.2rem, 4.5vw, 3.4rem);
-  font-weight: 800;
-  color: var(--pg-ink);
-  line-height: 1.05;
-  letter-spacing: -0.04em;
-}
-
-.narrative-description {
-  font-size: 0.95rem;
-  line-height: 1.5;
-  color: var(--pg-ink-secondary);
-  max-width: 620px;
-}
-
-.narrative-ledger {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 16px;
-  padding: 10px 16px;
-  background: var(--pg-canvas);
-  border: 1.5px solid var(--pg-border);
-  border-radius: var(--pg-radius-md);
-  box-shadow: 2px 2px 0px var(--pg-border);
-  font-size: 0.75rem;
-  width: fit-content;
-}
-
-.ledger-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.ledger-label {
-  color: var(--pg-ink-muted);
-  font-weight: 800;
-}
-
-.ledger-value {
-  font-weight: 800;
-  color: var(--pg-ink);
-}
-
-.ledger-value.accent-cobalt {
-  color: var(--pg-cobalt);
-}
-
-/* Action Cluster */
-.narrative-action-cluster {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
   gap: 12px;
-  margin-top: 4px;
+  flex-wrap: wrap;
 }
 
-.action-btn {
+.nav-back-link {
+  color: #111111;
+  text-decoration: none;
+  padding: 6px 12px;
+  background-color: #FFFFFF;
+  border: 2px solid #111111;
+  box-shadow: 2px 2px 0 #111111;
+  border-radius: 0;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  transition: transform 0.08s ease, box-shadow 0.08s ease, background-color 0.08s ease;
+}
+
+.nav-back-link:hover {
+  background-color: #FFD84A;
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 #111111;
+}
+
+.nav-back-link:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 #111111;
+}
+
+.nav-explore-link {
+  color: #111111;
+  text-decoration: none;
+  padding: 6px 12px;
+  background-color: #5DE3A6;
+  border: 2px solid #111111;
+  box-shadow: 2px 2px 0 #111111;
+  border-radius: 0;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  transition: transform 0.08s ease, box-shadow 0.08s ease, background-color 0.08s ease;
+}
+
+.nav-explore-link:hover {
+  background-color: #4BD898;
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 #111111;
+}
+
+.nav-explore-link:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 #111111;
+}
+
+.nav-breadcrumbs {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 11px 22px;
-  border-radius: var(--pg-radius-full);
-  font-size: 0.9rem;
+  font-family: var(--font-mono, monospace);
+}
+
+.bc-root {
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+
+.bc-sep {
+  font-weight: 900;
+  color: #111111;
+}
+
+.bc-type {
   font-weight: 800;
-  border: 2px solid var(--pg-border);
-  cursor: pointer;
-  box-shadow: var(--pg-shadow-solid);
-  transition: all var(--pg-transition-spring);
+  font-size: 0.72rem;
+  background-color: #B9A6FF;
+  color: #111111;
+  border: 1.5px solid #111111;
+  padding: 2px 6px;
+  box-shadow: 1.5px 1.5px 0 #111111;
 }
 
-.action-btn.primary {
-  background: var(--pg-cobalt);
-  color: #fff;
+.bc-current {
+  font-family: var(--font-display, "Bricolage Grotesque", sans-serif);
+  font-weight: 900;
+  color: #111111;
+  letter-spacing: -0.01em;
 }
 
-.action-btn.primary:hover:not(:disabled) {
-  background: var(--pg-coral);
-  transform: translate(-2px, -2px);
-  box-shadow: var(--pg-shadow-solid-lg);
+/* Main */
+.playlist-main-content {
+  flex: 1;
+  max-width: 1240px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 28px 24px calc(var(--player-h, 88px) + 2rem);
+  box-sizing: border-box;
 }
 
-.action-btn.secondary {
-  background: var(--pg-canvas);
-  color: var(--pg-ink);
-}
-
-.action-btn.secondary:hover:not(:disabled) {
-  background: var(--pg-surface-butter);
-  transform: translateY(-2px);
-  box-shadow: 3px 3px 0px var(--pg-border);
-}
-
-.action-btn.citron {
-  background: var(--pg-citron);
-  color: var(--pg-ink);
-}
-
-.action-btn.citron:hover {
-  background: var(--pg-coral);
-  color: #fff;
-  transform: translate(-2px, -2px);
-  box-shadow: var(--pg-shadow-solid-lg);
-}
-
-.action-btn.icon-only {
-  width: 42px;
-  height: 42px;
-  padding: 0;
-  justify-content: center;
-  background: var(--pg-canvas);
-  color: var(--pg-ink);
-}
-
-.action-btn.icon-only:hover {
-  background: var(--pg-surface-soft);
-  transform: translateY(-2px);
-  box-shadow: 3px 3px 0px var(--pg-border);
-}
-
-.action-btn.icon-only.danger:hover {
-  background: var(--pg-coral);
-  color: #fff;
-}
-
-.action-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-/* Sequence Section */
-.pg-sequence-section {
+/* Loading */
+.state-loading {
+  text-align: center;
+  padding: 60px 24px;
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 16px;
+  background-color: #FFFFFF;
+  border: 3px solid #111111;
+  box-shadow: 6px 6px 0 #111111;
+  max-width: 480px;
+  margin: 60px auto;
 }
 
-.sequence-header-row {
+.loading-soundbar {
+  display: flex;
+  gap: 6px;
+  height: 28px;
+  align-items: flex-end;
+}
+
+.loading-soundbar span {
+  width: 8px;
+  background-color: #FFD84A;
+  border: 2px solid #111111;
+  animation: loadingBar 0.8s ease-in-out infinite alternate;
+}
+
+.loading-soundbar span:nth-child(2) { animation-delay: 0.2s; }
+.loading-soundbar span:nth-child(3) { animation-delay: 0.4s; }
+.loading-soundbar span:nth-child(4) { animation-delay: 0.6s; }
+
+@keyframes loadingBar {
+  from { height: 6px; }
+  to { height: 28px; }
+}
+
+/* Error */
+.state-error {
+  max-width: 520px;
+  margin: 60px auto;
+  padding: 36px 28px;
+  background-color: #FFFFFF;
+  border: 3px solid #111111;
+  box-shadow: 6px 6px 0 #111111;
+  text-align: center;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  gap: 14px;
 }
 
-.sequence-kicker {
-  font-size: 0.68rem;
-  font-weight: 800;
-  color: var(--pg-cobalt);
-  letter-spacing: 0.08em;
+.error-badge {
+  font-family: var(--font-display, "Bricolage Grotesque", sans-serif);
+  font-size: 2rem;
+  font-weight: 900;
+  background-color: #FF6B5E;
+  color: #FFFFFF;
+  border: 2px solid #111111;
+  box-shadow: 3px 3px 0 #111111;
+  padding: 4px 18px;
 }
 
-.sequence-heading {
+.error-heading {
+  font-family: var(--font-display, "Bricolage Grotesque", sans-serif);
   font-size: 1.8rem;
-  font-weight: 800;
-  color: var(--pg-ink);
-  letter-spacing: -0.03em;
+  font-weight: 900;
+  margin: 0;
+  text-transform: uppercase;
 }
 
-@media (max-width: 900px) {
-  .playlist-hero-card {
-    grid-template-columns: 1fr;
-    padding: 24px 20px;
-    gap: 24px;
-  }
+.error-detail {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #555555;
+  margin: 0;
+  line-height: 1.5;
+}
 
-  .hero-vinyl-stage {
-    justify-content: flex-start;
-  }
+.error-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 14px;
+}
 
-  .vinyl-sleeve-container {
-    width: 180px;
-    height: 180px;
-  }
+.btn-error-action {
+  padding: 10px 18px;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.82rem;
+  font-weight: 900;
+  background-color: #FFD84A;
+  color: #111111;
+  border: 2px solid #111111;
+  box-shadow: 3px 3px 0 #111111;
+  text-decoration: none;
+  cursor: pointer;
+  text-transform: uppercase;
+  border-radius: 0;
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
 
-  .physical-vinyl-disc {
-    width: 180px;
-    height: 180px;
-    left: 20px;
-  }
+.btn-error-action:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 #111111;
+}
 
-  .sleeve-jacket {
-    width: 180px;
-    height: 180px;
-  }
+.btn-error-action:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 #111111;
+}
+
+.btn-error-action.outline {
+  background-color: #FFFFFF;
+}
+
+.btn-error-action.login {
+  background-color: #5DE3A6;
+}
+
+/* Body */
+.playlist-body {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.playlist-tracks-section {
+  width: 100%;
 }
 </style>

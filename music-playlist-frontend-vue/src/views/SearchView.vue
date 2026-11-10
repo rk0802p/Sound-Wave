@@ -221,13 +221,16 @@
               >
                 + QUEUE
               </button>
-              <button
-                class="add-to-mixtape-btn font-mono"
-                @click="openAddModal(track)"
-                title="Add to Mixtape"
-              >
-                + ADD TO MIXTAPE
-              </button>
+              <AddToPlaylistMenu :track="track">
+                <template #trigger>
+                  <button
+                    class="add-to-mixtape-btn font-mono"
+                    title="Add to Playlist"
+                  >
+                    + ADD TO PLAYLIST
+                  </button>
+                </template>
+              </AddToPlaylistMenu>
               <a
                 v-if="track.providerTrackUrl"
                 :href="track.providerTrackUrl"
@@ -329,6 +332,16 @@
               >
                 + QUEUE
               </button>
+              <AddToPlaylistMenu :track="item.song">
+                <template #trigger>
+                  <button
+                    class="add-to-mixtape-btn font-mono"
+                    title="Add to Playlist"
+                  >
+                    + ADD TO PLAYLIST
+                  </button>
+                </template>
+              </AddToPlaylistMenu>
             </div>
 
             <span class="result-track-time font-mono">
@@ -452,6 +465,7 @@ import { useToastStore } from '../stores/toast';
 import { detectProviderType } from '../services/providers/detector';
 import { searchApi } from '../api/search';
 import FloatingPlayerDock from '../components/player/FloatingPlayerDock.vue';
+import AddToPlaylistMenu from '../components/playlists/AddToPlaylistMenu.vue';
 
 const router = useRouter();
 const route = useRoute();

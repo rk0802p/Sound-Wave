@@ -50,31 +50,64 @@ const resolveWithDedup = async (provider, providerTrackId) => {
 };
 
 
+const loadPersistedPlaybackState = () => {
+  if (typeof localStorage === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem('soundwave_playback_state_v1');
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+};
+
 export const usePlayerStore = defineStore('player', {
   state: () => {
+    const persisted = loadPersistedPlaybackState();
     const initialPlaylist = MOOD_PLAYLISTS[0];
-    const initialTrack = initialPlaylist.songs[0];
+    const initialTrack = persisted?.currentTrack || initialPlaylist.songs[0];
+    const initialQueue = (Array.isArray(persisted?.queue) && persisted.queue.length > 0)
+      ? persisted.queue
+      : initialPlaylist.songs;
+    const initialTrackIndex = (typeof persisted?.trackIndex === 'number' && persisted.trackIndex >= 0 && persisted.trackIndex < initialQueue.length)
+      ? persisted.trackIndex
+      : 0;
+    const initialVolume = (typeof persisted?.volume === 'number' && !isNaN(persisted.volume))
+      ? Math.max(0, Math.min(1, persisted.volume))
+      : 0.85;
+    const validRates = [0.5, 0.75, 1, 1.25, 1.5, 2];
+    const initialSpeed = validRates.includes(persisted?.playbackSpeed) ? persisted.playbackSpeed : 1;
+    const initialLoopA = typeof persisted?.loopA === 'number' ? persisted.loopA : null;
+    const initialLoopB = typeof persisted?.loopB === 'number' ? persisted.loopB : null;
+    const hasValidLoop = initialLoopA !== null && initialLoopB !== null && initialLoopB > initialLoopA;
+    const initialIsLooping = hasValidLoop && Boolean(persisted?.isLooping);
 
     return {
       playlistIndex: 0,
-      trackIndex: 0,
+      trackIndex: initialTrackIndex,
       currentPlaylist: initialPlaylist,
       currentTrack: initialTrack,
-      queue: initialPlaylist.songs,
+      queue: initialQueue,
       isPlaying: false,
       isLoading: false,
       playbackState: 'idle', // 'idle' | 'resolving' | 'loading' | 'playing' | 'paused' | 'recovering' | 'failed' | 'ended'
-      repeat: 'off', // 'off' | 'all' | 'one'
-      shuffle: false,
+      repeat: ['off', 'all', 'one'].includes(persisted?.repeat) ? persisted.repeat : 'off',
+      shuffle: typeof persisted?.shuffle === 'boolean' ? persisted.shuffle : false,
       recoveryNotice: null,
       playRequestId: 0,
       currentAttemptId: null,
       currentTime: 0,
       duration: initialTrack?.duration || 233,
-      volume: 0.85,
-      muted: false,
+      volume: initialVolume,
+      muted: typeof persisted?.muted === 'boolean' ? persisted.muted : false,
       error: null,
       isEngineReady: false,
+
+      // Play-Along / Practice Mode: A-B loop & speed
+      playbackSpeed: initialSpeed,
+      loopA: initialLoopA,
+      loopB: initialLoopB,
+      isLooping: initialIsLooping,
       
       // Theme colors for glossy bubbles and wash
       o1: initialPlaylist.o1,
@@ -154,13 +187,30 @@ export const usePlayerStore = defineStore('player', {
         },
         onTimeUpdate: (time) => {
           this.currentTime = time;
+          // Play-Along A-B seamless loop
+          if (this.isLooping && this.loopA !== null && this.loopB !== null && this.loopB > this.loopA) {
+            if (time >= this.loopB) {
+              this.seek(this.loopA);
+            }
+          }
         },
         onLoadedMetadata: (dur) => {
           if (dur && dur > 0) {
             this.duration = dur;
+            if (this.loopB !== null && this.loopB > dur) {
+              this.loopB = dur;
+              if (this.loopA !== null && this.loopA >= this.loopB) {
+                this.isLooping = false;
+              }
+            }
           }
         },
         onEnded: () => {
+          if (this.isLooping && this.loopA !== null && this.loopB !== null && this.loopB > this.loopA) {
+            this.seek(this.loopA);
+            soundController.play();
+            return;
+          }
           if (this.repeat === 'one') {
             this.seek(0);
             this.playTrack(this.currentTrack, this.queue, this.trackIndex);
@@ -187,6 +237,7 @@ export const usePlayerStore = defineStore('player', {
 
       soundController.setVolume(this.volume);
       soundController.setMuted(this.muted);
+      soundController.setPlaybackRate(this.playbackSpeed);
       this.isEngineReady = true;
       this.syncProviderCapabilities();
     },
@@ -241,6 +292,7 @@ export const usePlayerStore = defineStore('player', {
 
       // Update theme to this playlist's colors
       this.setTheme(p.o1, p.o2, p.tint);
+      this.persistState();
 
       if (autoPlay && this.currentTrack) {
         await this.playTrack(this.currentTrack, this.queue, 0);
@@ -263,7 +315,7 @@ export const usePlayerStore = defineStore('player', {
         let streamUrl = alt.streamUrl;
         if (!streamUrl && alt.needsResolution && alt.provider && alt.providerTrackId) {
           try {
-            if (blockedProviders.has(alt.provider) || alt.provider !== 'jamendo') continue;
+            if (blockedProviders.has(alt.provider) || !['jamendo', 'deezer', 'itunes', 'apple'].includes(alt.provider)) continue;
             const resolved = await resolveWithDedup(alt.provider, alt.providerTrackId);
             if (this.playRequestId !== reqId) return false;
             if (resolved?.streamUrl) {
@@ -357,8 +409,9 @@ export const usePlayerStore = defineStore('player', {
         return;
       }
 
-      // Policy Gate: Non-Jamendo providers are rejected or pending verification
-      if (!provider || provider !== 'jamendo') {
+      // Policy Gate: Multi-source direct audio providers (Jamendo, Deezer, iTunes/Apple)
+      const AUTHORIZED_PROVIDERS = ['jamendo', 'deezer', 'itunes', 'apple'];
+      if (!provider || !AUTHORIZED_PROVIDERS.includes(provider)) {
         soundController.pause();
         this.isPlaying = false;
         this.isLoading = false;
@@ -471,6 +524,8 @@ export const usePlayerStore = defineStore('player', {
         });
         await soundController.load(track, this.currentAttemptId);
         if (this.playRequestId !== reqId) return;
+        soundController.setPlaybackRate(this.playbackSpeed);
+        this.persistState();
         // Keep isLoading true until onPlaying confirms actual media progression
         if (this.currentTime > 0) {
           this.playbackState = 'playing';
@@ -605,10 +660,12 @@ export const usePlayerStore = defineStore('player', {
       const modes = ['off', 'all', 'one'];
       const nextIdx = (modes.indexOf(this.repeat) + 1) % modes.length;
       this.repeat = modes[nextIdx];
+      this.persistState();
     },
 
     toggleShuffle() {
       this.shuffle = !this.shuffle;
+      this.persistState();
     },
 
     seek(seconds) {
@@ -621,11 +678,151 @@ export const usePlayerStore = defineStore('player', {
     setVolume(vol) {
       this.volume = Math.max(0, Math.min(1, vol));
       soundController.setVolume(this.volume);
+      this.persistState();
     },
 
     setMuted(muted) {
       this.muted = Boolean(muted);
       soundController.setMuted(this.muted);
+      this.persistState();
+    },
+
+    setPlaybackSpeed(speed) {
+      const validRates = [0.5, 0.75, 1, 1.25, 1.5, 2];
+      const rate = validRates.includes(speed) ? speed : 1;
+      this.playbackSpeed = rate;
+      soundController.setPlaybackRate(rate);
+      this.persistState();
+    },
+
+    cyclePlaybackSpeed() {
+      const validRates = [0.5, 0.75, 1, 1.25, 1.5, 2];
+      const currentIdx = validRates.indexOf(this.playbackSpeed);
+      const nextIdx = (currentIdx + 1) % validRates.length;
+      this.setPlaybackSpeed(validRates[nextIdx]);
+    },
+
+    setLoopA(seconds = null) {
+      const time = typeof seconds === 'number' ? seconds : Math.floor(this.currentTime * 10) / 10;
+      this.loopA = Math.max(0, time);
+      if (this.loopB !== null && this.loopA >= this.loopB) {
+        this.loopB = null;
+        this.isLooping = false;
+      }
+      this.persistState();
+    },
+
+    setLoopB(seconds = null) {
+      const time = typeof seconds === 'number' ? seconds : Math.floor(this.currentTime * 10) / 10;
+      this.loopB = Math.min(this.duration || 9999, time);
+      if (this.loopA === null) {
+        this.loopA = 0;
+      }
+      if (this.loopB > this.loopA) {
+        this.isLooping = true;
+      } else {
+        this.isLooping = false;
+      }
+      this.persistState();
+    },
+
+    toggleLoop() {
+      if (this.loopA !== null && this.loopB !== null && this.loopB > this.loopA) {
+        this.isLooping = !this.isLooping;
+        if (this.isLooping && (this.currentTime < this.loopA || this.currentTime >= this.loopB)) {
+          this.seek(this.loopA);
+        }
+      } else {
+        this.isLooping = false;
+      }
+      this.persistState();
+    },
+
+    clearLoop() {
+      this.loopA = null;
+      this.loopB = null;
+      this.isLooping = false;
+      this.persistState();
+    },
+
+    persistState() {
+      if (typeof localStorage === 'undefined') return;
+      try {
+        const payload = {
+          queue: Array.isArray(this.queue) ? this.queue.slice(0, 100) : [],
+          trackIndex: this.trackIndex,
+          currentTrack: this.currentTrack,
+          volume: this.volume,
+          muted: this.muted,
+          shuffle: this.shuffle,
+          repeat: this.repeat,
+          playbackSpeed: this.playbackSpeed,
+          loopA: this.loopA,
+          loopB: this.loopB,
+          isLooping: this.isLooping,
+          savedAt: Date.now(),
+        };
+        localStorage.setItem('soundwave_playback_state_v1', JSON.stringify(payload));
+      } catch (e) {
+        console.warn('Failed to persist playback state:', e);
+      }
+    },
+
+    rehydrateState() {
+      if (typeof localStorage === 'undefined') return;
+      try {
+        const raw = localStorage.getItem('soundwave_playback_state_v1');
+        if (!raw) return;
+        const data = JSON.parse(raw);
+        if (data && typeof data === 'object') {
+          if (Array.isArray(data.queue) && data.queue.length > 0) {
+            this.queue = data.queue;
+          }
+          if (typeof data.trackIndex === 'number' && data.trackIndex >= 0 && data.trackIndex < this.queue.length) {
+            this.trackIndex = data.trackIndex;
+          }
+          if (data.currentTrack) {
+            this.currentTrack = data.currentTrack;
+            this.duration = data.currentTrack.duration || 240;
+          }
+          if (typeof data.volume === 'number' && !isNaN(data.volume)) {
+            this.volume = Math.max(0, Math.min(1, data.volume));
+          }
+          if (typeof data.muted === 'boolean') {
+            this.muted = data.muted;
+          }
+          if (typeof data.shuffle === 'boolean') {
+            this.shuffle = data.shuffle;
+          }
+          if (['off', 'all', 'one'].includes(data.repeat)) {
+            this.repeat = data.repeat;
+          }
+          if (typeof data.playbackSpeed === 'number' && data.playbackSpeed > 0) {
+            this.playbackSpeed = data.playbackSpeed;
+            if (this.isEngineReady) {
+              soundController.setPlaybackRate(this.playbackSpeed);
+            }
+          }
+          if (typeof data.loopA === 'number') this.loopA = data.loopA;
+          if (typeof data.loopB === 'number') this.loopB = data.loopB;
+          if (typeof data.isLooping === 'boolean') this.isLooping = data.isLooping;
+        }
+      } catch (e) {
+        console.warn('Failed to rehydrate playback state:', e);
+      }
+    },
+
+    playNext(track) {
+      if (!track) return;
+      if (!Array.isArray(this.queue)) {
+        this.queue = [];
+      }
+      const insertIdx = this.trackIndex >= 0 ? this.trackIndex + 1 : this.queue.length;
+      this.queue.splice(insertIdx, 0, track);
+      this.persistState();
+      if (!this.currentTrack) {
+        this.playTrack(track, this.queue, 0);
+      }
     },
 
     addToQueue(track) {
@@ -634,6 +831,7 @@ export const usePlayerStore = defineStore('player', {
         this.queue = [];
       }
       this.queue.push(track);
+      this.persistState();
       if (!this.currentTrack) {
         this.playTrack(track, this.queue, this.queue.length - 1);
       }
@@ -645,6 +843,7 @@ export const usePlayerStore = defineStore('player', {
       if (this.trackIndex >= this.queue.length) {
         this.trackIndex = Math.max(0, this.queue.length - 1);
       }
+      this.persistState();
     },
   },
 });

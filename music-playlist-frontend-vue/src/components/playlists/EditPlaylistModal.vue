@@ -78,17 +78,16 @@
 
       <!-- Form Actions -->
       <div class="form-actions-footer">
-        <AppButton variant="ghost" size="md" @click="$emit('close')">
-          Cancel
-        </AppButton>
-        <AppButton
+        <button type="button" class="btn-cancel font-mono" @click="$emit('close')">
+          CANCEL
+        </button>
+        <button
           type="submit"
-          variant="primary"
-          size="md"
-          :loading="loading"
+          class="btn-save font-mono"
+          :disabled="loading"
         >
-          Save Changes
-        </AppButton>
+          {{ loading ? 'SAVING...' : 'SAVE CHANGES' }}
+        </button>
       </div>
     </form>
   </AppModal>
@@ -165,13 +164,13 @@ const savePlaylist = async () => {
 .sw-edit-form {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
 }
 
 .modal-layout-grid {
   display: grid;
   grid-template-columns: 160px 1fr;
-  gap: 28px;
+  gap: 24px;
   align-items: flex-start;
 }
 
@@ -183,15 +182,20 @@ const savePlaylist = async () => {
 }
 
 .preview-caption {
-  font-size: 0.65rem;
-  color: var(--sw-text-muted);
+  font-family: var(--font-mono, monospace);
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #111111;
+  background-color: #EFEAE1;
+  border: 1.5px solid #111111;
+  padding: 2px 8px;
   letter-spacing: 0.08em;
 }
 
 .form-inputs-column {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
 .sw-field-group {
@@ -201,28 +205,31 @@ const savePlaylist = async () => {
 }
 
 .field-label {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--sw-text-secondary);
+  font-family: var(--font-mono, monospace);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #111111;
 }
 
 .sw-textarea {
-  background: var(--sw-surface-hover);
-  border: 1px solid var(--sw-border);
-  border-radius: var(--sw-radius-md);
+  background-color: #FFFFFF;
+  border: 2px solid #111111;
+  box-shadow: 3px 3px 0 #111111;
+  border-radius: 0;
   padding: 10px 14px;
-  color: var(--sw-text-primary);
+  color: #111111;
+  font-family: var(--font-mono, monospace);
   font-size: 0.86rem;
-  font-family: inherit;
   resize: vertical;
   outline: none;
-  transition: all var(--sw-transition-fast);
+  transition: box-shadow 0.08s ease, background-color 0.08s ease;
 }
 
 .sw-textarea:focus {
-  border-color: var(--sw-accent);
-  background: var(--sw-surface-active);
-  box-shadow: 0 0 14px var(--sw-accent-soft);
+  background-color: #FFFDE6;
+  box-shadow: 4px 4px 0 #111111;
 }
 
 .sw-checkbox-row {
@@ -233,15 +240,17 @@ const savePlaylist = async () => {
 }
 
 .sw-checkbox {
-  width: 16px;
-  height: 16px;
-  accent-color: var(--sw-accent);
+  width: 18px;
+  height: 18px;
+  accent-color: #111111;
   cursor: pointer;
 }
 
 .checkbox-label {
+  font-family: var(--font-mono, monospace);
   font-size: 0.82rem;
-  color: var(--sw-text-secondary);
+  font-weight: 700;
+  color: #111111;
   cursor: pointer;
 }
 
@@ -249,22 +258,23 @@ const savePlaylist = async () => {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  border-top: 1px solid var(--sw-border-subtle);
-  padding-top: 18px;
+  border-top: 2px solid #111111;
+  padding-top: 16px;
 }
 
 .section-label {
-  font-size: 0.68rem;
-  font-weight: 700;
-  color: var(--sw-text-muted);
-  letter-spacing: 0.1em;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #111111;
+  letter-spacing: 0.06em;
 }
 
 .presets-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
   gap: 10px;
-  max-height: 220px;
+  max-height: 200px;
   overflow-y: auto;
   padding-right: 4px;
 }
@@ -272,48 +282,53 @@ const savePlaylist = async () => {
 .preset-card {
   position: relative;
   aspect-ratio: 1;
-  border-radius: var(--sw-radius-md);
+  border: 2px solid #111111;
+  box-shadow: 2px 2px 0 #111111;
+  border-radius: 0;
   overflow: hidden;
-  border: 2px solid transparent;
   cursor: pointer;
-  transition: all var(--sw-transition-fast);
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
 }
 
 .preset-card:hover {
-  transform: scale(1.03);
-  border-color: var(--sw-border-hover);
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 #111111;
 }
 
 .preset-card.selected {
-  border-color: var(--sw-accent);
-  box-shadow: 0 0 14px var(--sw-accent-glow);
+  border: 3px solid #111111;
+  box-shadow: 4px 4px 0 #111111;
+  outline: 2px solid #FFD84A;
 }
 
 .preset-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .preset-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, transparent 40%, rgba(6, 7, 9, 0.9) 100%);
+  background: linear-gradient(180deg, transparent 40%, rgba(17, 17, 17, 0.9) 100%);
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  padding: 8px;
+  padding: 6px 8px;
 }
 
 .preset-name {
   font-size: 0.72rem;
-  font-weight: 700;
-  color: #fff;
+  font-weight: 800;
+  color: #FFFFFF;
 }
 
 .preset-genre {
-  font-size: 0.6rem;
-  color: var(--sw-accent);
+  font-family: var(--font-mono, monospace);
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: #FFD84A;
 }
 
 .custom-url-box {
@@ -325,14 +340,62 @@ const savePlaylist = async () => {
   align-items: center;
   justify-content: flex-end;
   gap: 12px;
-  border-top: 1px solid var(--sw-border-subtle);
-  padding-top: 18px;
+  border-top: 2px solid #111111;
+  padding-top: 16px;
+}
+
+.btn-cancel,
+.btn-save {
+  padding: 10px 18px;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.82rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 2px solid #111111;
+  box-shadow: 3px 3px 0 #111111;
+  cursor: pointer;
+  border-radius: 0;
+  transition: transform 0.08s ease, box-shadow 0.08s ease, background-color 0.08s ease;
+}
+
+.btn-cancel {
+  background-color: #FFFFFF;
+  color: #111111;
+}
+
+.btn-cancel:hover {
+  background-color: #F3EFE8;
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 #111111;
+}
+
+.btn-save {
+  background-color: #5DE3A6;
+  color: #111111;
+}
+
+.btn-save:hover:not(:disabled) {
+  background-color: #4BD898;
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 #111111;
+}
+
+.btn-cancel:active,
+.btn-save:active:not(:disabled) {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 #111111;
+}
+
+.btn-save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 @media (max-width: 640px) {
   .modal-layout-grid {
     grid-template-columns: 1fr;
-    gap: 18px;
+    gap: 16px;
   }
   .art-preview-column {
     display: none;
