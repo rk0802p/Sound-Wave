@@ -15,6 +15,7 @@ export class DirectAudioProvider {
     this.currentTrack = null;
     this.currentAttemptId = null;
     this._lastLoggedSecond = -1;
+    this.playbackRate = 1;
 
     if (this.audio) {
       this.audio.preload = 'metadata';
@@ -36,13 +37,19 @@ export class DirectAudioProvider {
     if (p === 'jamendo') {
       badge = 'JAMENDO';
       providerName = 'Jamendo CC Stream';
+    } else if (p === 'deezer') {
+      badge = '30s PREVIEW';
+      providerName = 'Deezer Preview (30s)';
+    } else if (p === 'itunes' || p === 'apple') {
+      badge = '30s PREVIEW';
+      providerName = 'iTunes Preview (30s)';
     } else {
       badge = 'UNAUTHORIZED';
       providerName = 'Unauthorized Provider';
     }
 
     return {
-      canSeek: p === 'jamendo',
+      canSeek: ['jamendo', 'deezer', 'itunes', 'apple'].includes(p),
       canVolume: true,
       hasTimeEvents: true,
       isEmbedded: false,
@@ -111,6 +118,9 @@ export class DirectAudioProvider {
     });
 
     bindEvent('loadedmetadata', () => {
+      if (this.audio && this.playbackRate) {
+        this.audio.playbackRate = this.playbackRate;
+      }
       infoPlayback('HTML_AUDIO_ELEMENT', this.currentAttemptId, 'event_loadedmetadata', {
         duration: this.audio.duration,
         readyState: this.audio.readyState
@@ -165,7 +175,8 @@ export class DirectAudioProvider {
     });
 
     // Security Gate 1: Reject unverified or unapproved providers
-    if (provider !== 'jamendo') {
+    const ALLOWED_PROVIDERS = ['jamendo', 'deezer', 'itunes', 'apple'];
+    if (!ALLOWED_PROVIDERS.includes(provider)) {
       if (this.audio) this.audio.pause();
       const errDetail = {
         code: 403,
@@ -214,7 +225,7 @@ export class DirectAudioProvider {
 
     infoPlayback('AUDIO_URL_VALIDATION', attemptId, 'url_validated_authorized', {
       isHttps: url.startsWith('https://'),
-      host: 'jamendo.com (verified CDN)'
+      host: `authorized CDN (${provider})`
     });
 
     if (this.audio.src !== url) {
@@ -222,6 +233,9 @@ export class DirectAudioProvider {
         previousSrc: this.audio.src ? 'configured' : 'empty'
       });
       this.audio.src = url;
+      if (this.playbackRate && this.audio) {
+        this.audio.playbackRate = this.playbackRate;
+      }
       this.audio.load();
       infoPlayback('HTML_AUDIO_ELEMENT', attemptId, 'load_invoked', {
         readyState: this.audio.readyState,
@@ -236,6 +250,9 @@ export class DirectAudioProvider {
   async play() {
     if (!this.audio) return;
     try {
+      if (this.playbackRate && this.audio && this.audio.playbackRate !== this.playbackRate) {
+        this.audio.playbackRate = this.playbackRate;
+      }
       infoPlayback('HTML_AUDIO_ELEMENT', this.currentAttemptId, 'play_invoked');
       await this.audio.play();
       infoPlayback('HTML_AUDIO_ELEMENT', this.currentAttemptId, 'play_promise_resolved', {
@@ -284,6 +301,16 @@ export class DirectAudioProvider {
     if (!this.audio) return;
     this.audio.muted = Boolean(muted);
     infoPlayback('HTML_AUDIO_ELEMENT', this.currentAttemptId, 'mute_toggled', { muted: Boolean(muted) });
+  }
+
+  setPlaybackRate(rate) {
+    const clamped = typeof rate === 'number' && !isNaN(rate) && rate > 0 ? rate : 1;
+    this.playbackRate = clamped;
+    if (this.audio) {
+      this.audio.defaultPlaybackRate = clamped;
+      this.audio.playbackRate = clamped;
+      infoPlayback('HTML_AUDIO_ELEMENT', this.currentAttemptId, 'playback_rate_changed', { rate: clamped });
+    }
   }
 
   get duration() {

@@ -63,6 +63,10 @@ export class UnifiedSoundController {
     this.provider.setMuted(this._muted);
   }
 
+  setPlaybackRate(rate) {
+    this.provider.setPlaybackRate(rate);
+  }
+
   getCapabilities(track) {
     return this.provider.getCapabilities(track);
   }

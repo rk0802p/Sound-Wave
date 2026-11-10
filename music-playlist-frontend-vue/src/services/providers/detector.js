@@ -13,8 +13,20 @@ export const isAuthorizedStreamUrl = (url) => {
     if (parsed.username || parsed.password) return false;
     if (parsed.port && parsed.port !== '443' && parsed.port !== '') return false;
     const host = parsed.hostname.toLowerCase();
-    // In SOUNDWAVE V2, only Jamendo CDN is conditionally authorized for direct audio streaming
-    return host === 'jamendo.com' || host.endsWith('.jamendo.com');
+    // Authorized direct audio stream CDNs:
+    // 1. Jamendo CC stream CDN
+    // 2. Deezer 30s preview CDN (*.dzcdn.net)
+    // 3. Apple Music / iTunes preview CDN (audio-ssl.itunes.apple.com / *.itunes.apple.com)
+    return (
+      host === 'jamendo.com' ||
+      host.endsWith('.jamendo.com') ||
+      host === 'dzcdn.net' ||
+      host.endsWith('.dzcdn.net') ||
+      host === 'itunes.apple.com' ||
+      host.endsWith('.itunes.apple.com') ||
+      host === 'apple.com' ||
+      host.endsWith('.apple.com')
+    );
   } catch {
     return false;
   }
@@ -30,6 +42,17 @@ export const detectProviderType = (url) => {
     if (host === 'jamendo.com' || host.endsWith('.jamendo.com')) {
       return 'jamendo';
     }
+    if (host === 'dzcdn.net' || host.endsWith('.dzcdn.net') || host === 'deezer.com' || host.endsWith('.deezer.com')) {
+      return 'deezer';
+    }
+    if (
+      host === 'itunes.apple.com' ||
+      host.endsWith('.itunes.apple.com') ||
+      host === 'apple.com' ||
+      host.endsWith('.apple.com')
+    ) {
+      return 'itunes';
+    }
     if (host === 'spotify.com' || host.endsWith('.spotify.com')) {
       return 'spotify';
     }
@@ -41,7 +64,7 @@ export const detectProviderType = (url) => {
     return 'spotify';
   }
 
-  // Direct playable media on verified Jamendo CDN
+  // Direct playable media on verified Jamendo, Deezer, or iTunes CDNs
   if (isAuthorizedStreamUrl(url)) {
     return 'direct';
   }
