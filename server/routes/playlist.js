@@ -5,16 +5,19 @@ const {
   requirePlaylistOwner,
   requirePlaylistAccess,
 } = require("../middleware/ownership");
+const writeRateLimiter = require("../middleware/writeRateLimiter");
 const {
   getPlaylists,
   getPlaylistById,
   getPublicExplorePlaylists,
   forkPlaylist,
+  duplicatePlaylist,
   getPlaylistOgMeta,
   createPlaylist,
   updatePlaylist,
   deletePlaylist,
   addSong,
+  addBatchSongs,
   updateSong,
   deleteSong,
   reorderSongs,
@@ -29,23 +32,27 @@ router.get("/resolve/track", verifyToken, resolveTrack);
 
 // Playlist CRUD routes
 router.get("/", verifyToken, getPlaylists);
-router.post("/", verifyToken, createPlaylist);
+router.post("/", verifyToken, writeRateLimiter(), createPlaylist);
 
 // OpenGraph HTML preview for social crawlers
 router.get("/:id/og", getPlaylistOgMeta);
 
 // Fork a public playlist into user's own library
-router.post("/:id/fork", verifyToken, forkPlaylist);
+router.post("/:id/fork", verifyToken, writeRateLimiter(), forkPlaylist);
+
+// Duplicate playlist
+router.post("/:id/duplicate", verifyToken, requirePlaylistAccess, writeRateLimiter(), duplicatePlaylist);
 
 // Single playlist view: public playlists allow guest access, private playlists require owner
 router.get("/:id", optionalAuth, requirePlaylistAccess, getPlaylistById);
-router.put("/:id", verifyToken, requirePlaylistOwner, updatePlaylist);
-router.delete("/:id", verifyToken, requirePlaylistOwner, deletePlaylist);
+router.put("/:id", verifyToken, requirePlaylistOwner, writeRateLimiter(), updatePlaylist);
+router.delete("/:id", verifyToken, requirePlaylistOwner, writeRateLimiter(), deletePlaylist);
 
-// Granular song operations
-router.post("/:id/songs", verifyToken, requirePlaylistOwner, addSong);
-router.put("/:id/songs/reorder", verifyToken, requirePlaylistOwner, reorderSongs);
-router.put("/:id/songs/:songId", verifyToken, requirePlaylistOwner, updateSong);
-router.delete("/:id/songs/:songId", verifyToken, requirePlaylistOwner, deleteSong);
+// Granular and batch song operations
+router.post("/:id/songs/batch", verifyToken, requirePlaylistOwner, writeRateLimiter(), addBatchSongs);
+router.post("/:id/songs", verifyToken, requirePlaylistOwner, writeRateLimiter(), addSong);
+router.put("/:id/songs/reorder", verifyToken, requirePlaylistOwner, writeRateLimiter(), reorderSongs);
+router.put("/:id/songs/:songId", verifyToken, requirePlaylistOwner, writeRateLimiter(), updateSong);
+router.delete("/:id/songs/:songId", verifyToken, requirePlaylistOwner, writeRateLimiter(), deleteSong);
 
 module.exports = router;

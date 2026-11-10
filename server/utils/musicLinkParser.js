@@ -17,6 +17,8 @@ const MUSIC_PROVIDERS = {
   ARCHIVE: "archive",
   JAMENDO: "jamendo",
   AUDIUS: "audius",
+  DEEZER: "deezer",
+  ITUNES: "itunes",
   EXTERNAL: "external",
 };
 
@@ -259,7 +261,37 @@ const parseMusicSource = (rawUrl) => {
     };
   }
 
-  // 6. Direct audio file
+  // 6. Deezer Detection
+  if (clean.includes("deezer.com")) {
+    const match = url.match(/(?:deezer\.com\/(?:[a-z]{2}\/)?track\/|api\.deezer\.com\/track\/)([0-9]+)/i);
+    const id = match ? match[1] : null;
+    return {
+      provider: MUSIC_PROVIDERS.DEEZER,
+      externalId: id,
+      url,
+      isValid: Boolean(id),
+      error: id ? null : "Invalid Deezer URL: missing track ID",
+    };
+  }
+
+  // 7. iTunes / Apple Music Detection
+  if (clean.includes("apple.com") || clean.includes("itunes.apple.com")) {
+    const match =
+      url.match(/[?&]i=([0-9]+)/i) ||
+      url.match(/\/(?:album|song)\/[^/]+\/([0-9]+)/i) ||
+      url.match(/\/song\/([0-9]+)/i) ||
+      url.match(/\/id([0-9]+)/i);
+    const id = match ? match[1] : null;
+    return {
+      provider: MUSIC_PROVIDERS.ITUNES,
+      externalId: id,
+      url,
+      isValid: Boolean(id),
+      error: id ? null : "Invalid iTunes/Apple Music URL: missing track ID",
+    };
+  }
+
+  // 8. Direct audio file
   if (isDirectAudioUrl(url)) {
     return {
       provider: MUSIC_PROVIDERS.DIRECT,
@@ -564,7 +596,7 @@ const resolveTrackMetadata = async (url, timeoutMs = 3500) => {
   // External Fallback
   return {
     provider: parsed.provider,
-    externalId: null,
+    externalId: parsed.externalId || null,
     url: parsed.url,
     title: "External Audio",
     artist: "External Stream",

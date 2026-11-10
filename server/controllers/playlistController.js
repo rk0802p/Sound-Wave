@@ -6,10 +6,29 @@ const {
 } = require("../utils/validation");
 const { parseMusicSource, resolveTrackMetadata } = require("../utils/musicLinkParser");
 
+// Helper to format summary mode representation of a playlist
+const formatPlaylistSummary = (p) => ({
+  _id: p._id,
+  id: p._id,
+  name: p.name,
+  description: p.description || "",
+  isPublic: Boolean(p.isPublic),
+  songCount: p.songs ? p.songs.length : 0,
+  totalDurationMs: (p.songs || []).reduce((acc, s) => acc + ((s.duration || 0) * 1000), 0),
+  totalDuration: (p.songs || []).reduce((acc, s) => acc + (s.duration || 0), 0),
+  coverImage: p.coverImage || "",
+  cover: p.coverImage || "",
+  forkCount: p.forkCount || 0,
+  tags: p.tags || [],
+  updatedAt: p.updatedAt,
+  createdAt: p.createdAt,
+});
+
 // GET /api/playlists
 const getPlaylists = async (req, res, next) => {
   try {
-    const { search, page, limit } = req.query;
+    const { search, page, limit, summary } = req.query;
+    const isSummary = summary === "true" || summary === "1";
     const query = { userId: req.user.id };
 
     if (search && search.trim()) {
@@ -28,7 +47,7 @@ const getPlaylists = async (req, res, next) => {
       ]);
 
       return res.status(200).json({
-        playlists,
+        playlists: isSummary ? playlists.map(formatPlaylistSummary) : playlists,
         total,
         page: pageNum,
         totalPages: Math.ceil(total / limitNum),
@@ -37,7 +56,7 @@ const getPlaylists = async (req, res, next) => {
 
     // Default: return full array preserving existing frontend contract
     const playlists = await Playlist.find(query).sort({ createdAt: -1 });
-    res.status(200).json(playlists);
+    res.status(200).json(isSummary ? playlists.map(formatPlaylistSummary) : playlists);
   } catch (err) {
     next(err);
   }
@@ -151,26 +170,38 @@ const forkPlaylist = async (req, res, next) => {
     const { name } = req.body || {};
 
     if (!isValidObjectId(id)) {
-      return res.status(400).json({ message: "Invalid playlist ID format" });
+      return res.status(400).json({ message: "Invalid playlist ID format", code: "INVALID_ID" });
     }
 
     const source = await Playlist.findById(id).lean();
     if (!source) {
-      return res.status(404).json({ message: "Playlist not found" });
+      return res.status(404).json({ message: "Playlist not found", code: "NOT_FOUND" });
     }
 
     const isSourceOwner = String(source.userId) === String(req.user.id);
     if (!source.isPublic && !isSourceOwner) {
-      return res.status(403).json({ message: "Cannot fork a private playlist" });
+      return res.status(403).json({ message: "Cannot fork a private playlist", code: "FORBIDDEN" });
     }
 
-    const clonedSongs = (source.songs || []).map((s, idx) => ({
+    const userPlaylistCount = await Playlist.countDocuments({ userId: req.user.id });
+    if (userPlaylistCount >= 100) {
+      return res.status(400).json({
+        message: "User playlist limit reached (maximum 100 playlists)",
+        code: "LIMIT_REACHED",
+      });
+    }
+
+    const clonedSongs = (source.songs || []).slice(0, 1000).map((s, idx) => ({
       title: s.title,
       artist: s.artist,
       album: s.album || "",
       duration: s.duration || 0,
       position: idx,
       url: s.url || "",
+      provider: s.provider || s.source?.provider || "direct",
+      providerTrackId: s.providerTrackId || s.source?.externalId || null,
+      isPreview: Boolean(s.isPreview),
+      previewDurationMs: s.previewDurationMs || null,
       source: s.source
         ? {
             provider: s.source.provider || "direct",
@@ -184,11 +215,12 @@ const forkPlaylist = async (req, res, next) => {
       attribution: s.attribution || "",
     }));
 
+    const forkedName = name && String(name).trim() ? String(name).trim().slice(0, 80) : ("Copy of " + source.name).slice(0, 80);
     const forked = new Playlist({
-      name: name && String(name).trim() ? String(name).trim() : "Copy of " + source.name,
+      name: forkedName,
       description: source.description
-        ? source.description + " (Forked from " + source.name + ")"
-        : "Forked from " + source.name,
+        ? (source.description + " (Forked from " + source.name + ")").slice(0, 300)
+        : ("Forked from " + source.name).slice(0, 300),
       coverImage: source.coverImage || "",
       userId: req.user.id,
       isPublic: false,
@@ -200,6 +232,70 @@ const forkPlaylist = async (req, res, next) => {
     const saved = await forked.save();
     await Playlist.findByIdAndUpdate(source._id, { $inc: { forkCount: 1 } });
 
+    res.status(201).json(saved);
+  } catch (err) {
+    next(err);
+  }
+};
+
+// POST /api/playlists/:id/duplicate
+const duplicatePlaylist = async (req, res, next) => {
+  try {
+    const userPlaylistCount = await Playlist.countDocuments({ userId: req.user.id });
+    if (userPlaylistCount >= 100) {
+      return res.status(400).json({
+        message: "User playlist limit reached (maximum 100 playlists)",
+        code: "LIMIT_REACHED",
+      });
+    }
+
+    const source = req.playlist;
+    const requestedName = typeof req.body?.name === "string" ? req.body.name.trim() : "";
+    let duplicateName = requestedName || `${source.name} (Copy)`;
+    if (duplicateName.length > 80) {
+      duplicateName = duplicateName.slice(0, 80).trim();
+    }
+
+    const requestedDesc = typeof req.body?.description === "string"
+      ? req.body.description.trim().slice(0, 300)
+      : (source.description || "").slice(0, 300);
+
+    const clonedSongs = (source.songs || []).slice(0, 1000).map((s, idx) => ({
+      title: s.title,
+      artist: s.artist,
+      album: s.album || "",
+      duration: s.duration || 0,
+      position: idx,
+      url: s.url || "",
+      provider: s.provider || s.source?.provider || "direct",
+      providerTrackId: s.providerTrackId || s.source?.externalId || null,
+      isPreview: Boolean(s.isPreview),
+      previewDurationMs: s.previewDurationMs || null,
+      source: s.source
+        ? {
+            provider: s.source.provider || "direct",
+            externalId: s.source.externalId || null,
+            url: s.source.url || "",
+          }
+        : { provider: "direct", externalId: null, url: s.url || "" },
+      coverImage: s.coverImage || "",
+      license: s.license || "",
+      licenseUrl: s.licenseUrl || "",
+      attribution: s.attribution || "",
+    }));
+
+    const duplicate = new Playlist({
+      name: duplicateName,
+      description: requestedDesc,
+      coverImage: source.coverImage || "",
+      userId: req.user.id,
+      isPublic: false,
+      forkedFrom: source._id,
+      tags: source.tags || [],
+      songs: clonedSongs,
+    });
+
+    const saved = await duplicate.save();
     res.status(201).json(saved);
   } catch (err) {
     next(err);
@@ -237,23 +333,54 @@ const getPlaylistOgMeta = async (req, res, next) => {
     next(err);
   }
 };
+
 // POST /api/playlists
 const createPlaylist = async (req, res, next) => {
   try {
-    const { name, description, coverImage, isPublic, songs } = req.body;
+    const { name, description, coverImage, isPublic, songs } = req.body || {};
 
     if (!name || typeof name !== "string" || !name.trim()) {
-      return res.status(400).json({ message: "Playlist name is required" });
+      return res.status(400).json({ message: "Playlist name is required", code: "VALIDATION_ERROR" });
+    }
+
+    const trimmedName = name.trim().replace(/\0/g, "");
+    if (trimmedName.length > 80) {
+      return res.status(400).json({
+        message: "Playlist name cannot exceed 80 characters",
+        code: "LIMIT_REACHED",
+      });
+    }
+
+    const trimmedDescription = typeof description === "string" ? description.trim().replace(/\0/g, "") : "";
+    if (trimmedDescription.length > 300) {
+      return res.status(400).json({
+        message: "Playlist description cannot exceed 300 characters",
+        code: "LIMIT_REACHED",
+      });
+    }
+
+    const userPlaylistCount = await Playlist.countDocuments({ userId: req.user.id });
+    if (userPlaylistCount >= 100) {
+      return res.status(400).json({
+        message: "User playlist limit reached (maximum 100 playlists)",
+        code: "LIMIT_REACHED",
+      });
     }
 
     let initialSongs = [];
     if (Array.isArray(songs)) {
+      if (songs.length > 1000) {
+        return res.status(400).json({
+          message: "Playlist cannot contain more than 1,000 songs",
+          code: "LIMIT_REACHED",
+        });
+      }
       initialSongs = songs.map((s, idx) => sanitizeSongInput(s, idx)).filter(Boolean);
     }
 
     const newPlaylist = new Playlist({
-      name: name.trim(),
-      description: typeof description === "string" ? description.trim() : "",
+      name: trimmedName,
+      description: trimmedDescription,
       coverImage: typeof coverImage === "string" ? coverImage.trim() : "",
       isPublic: Boolean(isPublic),
       userId: req.user.id,
@@ -275,12 +402,24 @@ const updatePlaylist = async (req, res, next) => {
 
     if (sanitized.name !== undefined) {
       if (!sanitized.name) {
-        return res.status(400).json({ message: "Playlist name cannot be empty" });
+        return res.status(400).json({ message: "Playlist name cannot be empty", code: "VALIDATION_ERROR" });
+      }
+      if (sanitized.name.length > 80) {
+        return res.status(400).json({
+          message: "Playlist name cannot exceed 80 characters",
+          code: "LIMIT_REACHED",
+        });
       }
       playlist.name = sanitized.name;
     }
 
     if (sanitized.description !== undefined) {
+      if (sanitized.description.length > 300) {
+        return res.status(400).json({
+          message: "Playlist description cannot exceed 300 characters",
+          code: "LIMIT_REACHED",
+        });
+      }
       playlist.description = sanitized.description;
     }
 
@@ -294,6 +433,12 @@ const updatePlaylist = async (req, res, next) => {
 
     // Backwards-compatibility for existing frontend bulk song update
     if (sanitized.songs !== undefined) {
+      if (sanitized.songs.length > 1000) {
+        return res.status(400).json({
+          message: "Playlist cannot contain more than 1,000 songs",
+          code: "LIMIT_REACHED",
+        });
+      }
       playlist.songs = sanitized.songs;
     }
 
@@ -319,7 +464,7 @@ const resolveTrack = async (req, res, next) => {
   try {
     const rawUrl = req.query.url || req.body?.url;
     if (!rawUrl || typeof rawUrl !== "string" || !rawUrl.trim()) {
-      return res.status(400).json({ message: "URL parameter is required" });
+      return res.status(400).json({ message: "URL parameter is required", code: "VALIDATION_ERROR" });
     }
 
     const trimmedUrl = rawUrl.trim();
@@ -330,6 +475,7 @@ const resolveTrack = async (req, res, next) => {
         message: parsed.error || "Invalid music source URL",
         provider: parsed.provider,
         url: trimmedUrl,
+        code: "INVALID_URL",
       });
     }
 
@@ -343,7 +489,31 @@ const resolveTrack = async (req, res, next) => {
 // POST /api/playlists/:id/songs
 const addSong = async (req, res, next) => {
   try {
-    const { title, artist, album, duration, url, source, coverImage, allowDuplicate, license, licenseUrl, attribution } = req.body;
+    if (req.playlist.songs.length >= 1000) {
+      return res.status(400).json({
+        message: "Playlist song limit reached (maximum 1,000 songs)",
+        code: "LIMIT_REACHED",
+      });
+    }
+
+    const {
+      title,
+      artist,
+      album,
+      duration,
+      url,
+      source,
+      coverImage,
+      allowDuplicate,
+      license,
+      licenseUrl,
+      attribution,
+      position,
+      provider,
+      providerTrackId,
+      isPreview,
+      previewDurationMs,
+    } = req.body || {};
 
     const rawUrl =
       (typeof url === "string" ? url.trim() : "") ||
@@ -354,18 +524,23 @@ const addSong = async (req, res, next) => {
     if (rawUrl) {
       const canonical = parseMusicSource(rawUrl);
       if (!canonical.isValid) {
-        return res.status(400).json({ message: canonical.error || "Invalid music source URL" });
+        return res.status(400).json({
+          message: canonical.error || "Invalid music source URL",
+          code: "INVALID_URL",
+        });
       }
       // If client supplied source, verify it does not contradict the canonical source
       if (source && source.provider && source.provider !== canonical.provider) {
         return res.status(400).json({
           message: `Provider mismatch: URL belongs to '${canonical.provider}' but source.provider was specified as '${source.provider}'`,
+          code: "PROVIDER_MISMATCH",
         });
       }
       const clientExtId = source && source.externalId ? source.externalId.replace(new RegExp('^' + canonical.provider + ':'), '') : null;
       if (source && clientExtId && canonical.externalId && clientExtId !== canonical.externalId) {
         return res.status(400).json({
           message: `External ID mismatch for ${canonical.provider} URL: expected '${canonical.externalId}', received '${source.externalId}'`,
+          code: "EXTERNAL_ID_MISMATCH",
         });
       }
       parsedSource = {
@@ -390,22 +565,34 @@ const addSong = async (req, res, next) => {
     }
 
     if (!trimmedTitle) {
-      return res.status(400).json({ message: "Song title is required" });
+      return res.status(400).json({ message: "Song title is required", code: "VALIDATION_ERROR" });
     }
 
     if (!trimmedArtist) {
-      return res.status(400).json({ message: "Song artist is required" });
+      return res.status(400).json({ message: "Song artist is required", code: "VALIDATION_ERROR" });
     }
 
-    // Duplicate detection (by title+artist, or provider externalId, or identical URL)
+    const finalProvider = parsedSource?.provider || provider || "direct";
+    const finalExternalId = parsedSource?.externalId || providerTrackId || null;
+    const isPreviewFlag = Boolean(isPreview || finalProvider === "deezer" || finalProvider === "itunes");
+    const previewMs = typeof previewDurationMs === "number" && previewDurationMs >= 0
+      ? previewDurationMs
+      : (isPreviewFlag ? 30000 : null);
+
+    // Duplicate detection (by title+artist, or matching provider+externalId, or identical URL)
     const existingIndex = req.playlist.songs.findIndex((s) => {
       const matchTitleArtist =
         s.title.toLowerCase() === trimmedTitle.toLowerCase() &&
         s.artist.toLowerCase() === trimmedArtist.toLowerCase();
 
-      const sExtId = s.source?.externalId;
-      const targetExtId = parsedSource?.externalId;
-      const matchExternalId = Boolean(sExtId && targetExtId && sExtId === targetExtId);
+      const sExtId = s.providerTrackId || s.source?.externalId;
+      const sProvider = s.provider || s.source?.provider || "direct";
+      const matchExternalId = Boolean(
+        sExtId &&
+        finalExternalId &&
+        sExtId === finalExternalId &&
+        sProvider === finalProvider
+      );
 
       const sUrl = s.url || s.source?.url;
       const matchUrl = Boolean(sUrl && rawUrl && sUrl.toLowerCase() === rawUrl.toLowerCase());
@@ -417,36 +604,215 @@ const addSong = async (req, res, next) => {
       return res.status(409).json({
         message: `"${trimmedTitle}" by ${trimmedArtist} is already in this playlist`,
         isDuplicate: true,
+        code: "DUPLICATE_TRACK",
         existingSong: req.playlist.songs[existingIndex],
       });
     }
 
-    const nextPosition = req.playlist.songs.length;
+    let targetPosition = req.playlist.songs.length;
+    const parsedPos = typeof position === "number" ? position : (typeof position === "string" && position.trim() !== "" ? Number(position) : NaN);
+    const hasPosition = !isNaN(parsedPos) && parsedPos >= 0;
+    if (hasPosition) {
+      targetPosition = Math.max(0, Math.min(req.playlist.songs.length, Math.floor(parsedPos)));
+    }
+
     const songData = sanitizeSongInput(
       {
         title: trimmedTitle,
         artist: trimmedArtist,
         album,
         duration: typeof duration === "number" ? duration : 0,
-        position: nextPosition,
+        position: targetPosition,
         url: rawUrl,
-        source: parsedSource,
+        provider: finalProvider,
+        providerTrackId: finalExternalId,
+        isPreview: isPreviewFlag,
+        previewDurationMs: previewMs,
+        source: parsedSource || source,
         coverImage: finalCoverImage,
         license,
         licenseUrl,
         attribution,
       },
-      nextPosition
+      targetPosition
     );
 
-    req.playlist.songs.push(songData);
+    if (hasPosition) {
+      req.playlist.songs.splice(targetPosition, 0, songData);
+      req.playlist.songs.forEach((s, idx) => {
+        s.position = idx;
+      });
+    } else {
+      req.playlist.songs.push(songData);
+    }
+
     const updated = await req.playlist.save();
-    const addedSong = updated.songs[updated.songs.length - 1];
+    const addedSong = updated.songs[targetPosition] || updated.songs[updated.songs.length - 1];
 
     res.status(201).json({
       playlist: updated,
       addedSong,
       message: "Song added successfully",
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// POST /api/playlists/:id/songs/batch
+const addBatchSongs = async (req, res, next) => {
+  try {
+    const { songs, allowDuplicate } = req.body || {};
+
+    if (!Array.isArray(songs) || songs.length === 0) {
+      return res.status(400).json({
+        message: "A non-empty 'songs' array is required",
+        code: "INVALID_INPUT",
+      });
+    }
+
+    if (songs.length > 50) {
+      return res.status(400).json({
+        message: "Batch size cannot exceed 50 songs",
+        code: "LIMIT_REACHED",
+      });
+    }
+
+    if (req.playlist.songs.length >= 1000) {
+      return res.status(400).json({
+        message: "Playlist song limit reached (maximum 1,000 songs)",
+        code: "LIMIT_REACHED",
+      });
+    }
+
+    const added = [];
+    const duplicates = [];
+    const failures = [];
+    const allowDupGlobal = Boolean(allowDuplicate);
+
+    for (const rawSong of songs) {
+      if (!rawSong || typeof rawSong !== "object") {
+        failures.push({ song: rawSong, error: "Invalid song object", code: "INVALID_INPUT" });
+        continue;
+      }
+
+      if (req.playlist.songs.length >= 1000) {
+        failures.push({
+          song: rawSong,
+          error: "Playlist song limit reached (maximum 1,000 songs)",
+          code: "LIMIT_REACHED",
+        });
+        continue;
+      }
+
+      let title = typeof rawSong.title === "string" ? rawSong.title.trim() : "";
+      let artist = typeof rawSong.artist === "string" ? rawSong.artist.trim() : "";
+      const rawUrl = typeof rawSong.url === "string" ? rawSong.url.trim() : (rawSong.source?.url?.trim() || "");
+
+      // Auto-resolve if needed and url present
+      if ((!title || !artist) && rawUrl) {
+        try {
+          const resolved = await resolveTrackMetadata(rawUrl);
+          if (resolved) {
+            if (!title && resolved.title) title = resolved.title;
+            if (!artist && resolved.artist) artist = resolved.artist;
+          }
+        } catch (_) {}
+      }
+
+      if (!title) {
+        failures.push({ song: rawSong, error: "Song title is required", code: "VALIDATION_ERROR" });
+        continue;
+      }
+
+      if (!artist) {
+        failures.push({ song: rawSong, error: "Song artist is required", code: "VALIDATION_ERROR" });
+        continue;
+      }
+
+      let parsedSource = null;
+      if (rawUrl) {
+        const canonical = parseMusicSource(rawUrl);
+        if (!canonical.isValid) {
+          failures.push({ song: rawSong, error: canonical.error || "Invalid music source URL", code: "INVALID_URL" });
+          continue;
+        }
+        parsedSource = {
+          provider: canonical.provider,
+          externalId: canonical.externalId || null,
+          url: canonical.url || rawUrl,
+        };
+      }
+
+      const finalProvider = parsedSource?.provider || rawSong.provider || "direct";
+      const finalExternalId = parsedSource?.externalId || rawSong.providerTrackId || null;
+      const isPreviewFlag = Boolean(rawSong.isPreview || finalProvider === "deezer" || finalProvider === "itunes");
+      const previewMs = typeof rawSong.previewDurationMs === "number" && rawSong.previewDurationMs >= 0
+        ? rawSong.previewDurationMs
+        : (isPreviewFlag ? 30000 : null);
+
+      const itemAllowDup = allowDupGlobal || Boolean(rawSong.allowDuplicate);
+
+      const dupMatch = req.playlist.songs.find((s) => {
+        const matchTitleArtist =
+          s.title.toLowerCase() === title.toLowerCase() &&
+          s.artist.toLowerCase() === artist.toLowerCase();
+        const sExtId = s.providerTrackId || s.source?.externalId;
+        const sProvider = s.provider || s.source?.provider || "direct";
+        const matchExt = Boolean(
+          sExtId &&
+          finalExternalId &&
+          sExtId === finalExternalId &&
+          sProvider === finalProvider
+        );
+        const sUrl = s.url || s.source?.url;
+        const matchUrl = Boolean(sUrl && rawUrl && sUrl.toLowerCase() === rawUrl.toLowerCase());
+        return matchTitleArtist || matchExt || matchUrl;
+      });
+
+      if (dupMatch && !itemAllowDup) {
+        duplicates.push({
+          song: { title, artist, url: rawUrl, provider: finalProvider },
+          reason: `"${title}" by ${artist} is already in this playlist`,
+          code: "DUPLICATE_TRACK",
+          existingSongId: dupMatch._id,
+        });
+        continue;
+      }
+
+      const nextPos = req.playlist.songs.length;
+      const sanitized = sanitizeSongInput(
+        {
+          ...rawSong,
+          title,
+          artist,
+          position: nextPos,
+          url: rawUrl,
+          provider: finalProvider,
+          providerTrackId: finalExternalId,
+          isPreview: isPreviewFlag,
+          previewDurationMs: previewMs,
+          source: parsedSource || rawSong.source,
+        },
+        nextPos
+      );
+
+      req.playlist.songs.push(sanitized);
+      const addedDoc = req.playlist.songs[req.playlist.songs.length - 1];
+      added.push(addedDoc);
+    }
+
+    if (added.length > 0) {
+      await req.playlist.save();
+    }
+
+    const statusCode = added.length > 0 ? 201 : 200;
+    res.status(statusCode).json({
+      message: `Processed ${songs.length} tracks: ${added.length} added, ${duplicates.length} duplicates, ${failures.length} failures`,
+      added,
+      duplicates,
+      failures,
+      playlist: req.playlist,
     });
   } catch (err) {
     next(err);
@@ -459,34 +825,42 @@ const updateSong = async (req, res, next) => {
     const { songId } = req.params;
 
     if (!isValidObjectId(songId)) {
-      return res.status(400).json({ message: "Invalid song ID format" });
+      return res.status(400).json({ message: "Invalid song ID format", code: "INVALID_ID" });
     }
 
     const song = req.playlist.songs.id(songId);
     if (!song) {
-      return res.status(404).json({ message: "Song not found in playlist" });
+      return res.status(404).json({ message: "Song not found in playlist", code: "NOT_FOUND" });
     }
 
-    const { title, artist, album, duration, url, source, coverImage, position } = req.body;
+    const { title, artist, album, duration, url, source, coverImage, position, provider, providerTrackId, isPreview, previewDurationMs, allowDuplicate } = req.body || {};
 
     // Duplicate detection on update (performed before mutating document)
     const targetTitle = typeof title === "string" && title.trim() ? title.trim() : song.title;
     const targetArtist = typeof artist === "string" && artist.trim() ? artist.trim() : song.artist;
     const targetUrl = typeof url === "string" ? url.trim() : (source?.url?.trim() ?? song.url);
-    const targetExternalId = targetUrl ? parseMusicSource(targetUrl).externalId : null;
+    const parsedTargetSource = targetUrl ? parseMusicSource(targetUrl) : null;
+    const targetExternalId = parsedTargetSource ? parsedTargetSource.externalId : (providerTrackId || song.providerTrackId);
+    const targetProvider = parsedTargetSource ? parsedTargetSource.provider : (provider || song.provider || song.source?.provider || "direct");
     const isIdentityChanged =
       targetTitle.toLowerCase() !== song.title.toLowerCase() ||
       targetArtist.toLowerCase() !== song.artist.toLowerCase() ||
       targetUrl.toLowerCase() !== (song.url || "").toLowerCase();
 
-    if (isIdentityChanged && !req.body.allowDuplicate) {
+    if (isIdentityChanged && !allowDuplicate) {
       const duplicateSong = req.playlist.songs.find((s) => {
         if (s._id.toString() === songId) return false;
         const matchTitleArtist =
           s.title.toLowerCase() === targetTitle.toLowerCase() &&
           s.artist.toLowerCase() === targetArtist.toLowerCase();
-        const sExtId = s.source?.externalId;
-        const matchExternalId = Boolean(sExtId && targetExternalId && sExtId === targetExternalId);
+        const sExtId = s.providerTrackId || s.source?.externalId;
+        const sProvider = s.provider || s.source?.provider || "direct";
+        const matchExternalId = Boolean(
+          sExtId &&
+          targetExternalId &&
+          sExtId === targetExternalId &&
+          sProvider === targetProvider
+        );
         const sUrl = s.url || s.source?.url;
         const matchUrl = Boolean(sUrl && targetUrl && sUrl.toLowerCase() === targetUrl.toLowerCase());
         return matchTitleArtist || matchExternalId || matchUrl;
@@ -496,6 +870,7 @@ const updateSong = async (req, res, next) => {
         return res.status(409).json({
           message: `"${targetTitle}" by ${targetArtist} is already in this playlist`,
           isDuplicate: true,
+          code: "DUPLICATE_TRACK",
           existingSong: duplicateSong,
         });
       }
@@ -510,25 +885,31 @@ const updateSong = async (req, res, next) => {
     if (typeof req.body.license === "string") song.license = req.body.license.trim();
     if (typeof req.body.licenseUrl === "string") song.licenseUrl = req.body.licenseUrl.trim();
     if (typeof req.body.attribution === "string") song.attribution = req.body.attribution.trim();
+    if (typeof isPreview === "boolean") song.isPreview = isPreview;
+    if (typeof previewDurationMs === "number" && previewDurationMs >= 0) song.previewDurationMs = previewDurationMs;
 
-    if (typeof url === "string" || (source && typeof source === "object")) {
+    if (typeof url === "string" || (source && typeof source === "object") || provider || providerTrackId) {
       const newUrl = typeof url === "string" ? url.trim() : (source?.url?.trim() ?? song.url);
       if (newUrl) {
         const canonical = parseMusicSource(newUrl);
         if (!canonical.isValid) {
-          return res.status(400).json({ message: canonical.error || "Invalid music source URL" });
+          return res.status(400).json({ message: canonical.error || "Invalid music source URL", code: "INVALID_URL" });
         }
         if (source && source.provider && source.provider !== canonical.provider) {
           return res.status(400).json({
             message: `Provider mismatch: URL belongs to '${canonical.provider}' but source.provider was specified as '${source.provider}'`,
+            code: "PROVIDER_MISMATCH",
           });
         }
         if (source && source.externalId && canonical.externalId && source.externalId !== canonical.externalId) {
           return res.status(400).json({
             message: `External ID mismatch for ${canonical.provider} URL: expected '${canonical.externalId}', received '${source.externalId}'`,
+            code: "EXTERNAL_ID_MISMATCH",
           });
         }
         song.url = newUrl;
+        song.provider = canonical.provider;
+        song.providerTrackId = canonical.externalId || null;
         song.source = {
           provider: canonical.provider,
           externalId: canonical.externalId || null,
@@ -536,16 +917,24 @@ const updateSong = async (req, res, next) => {
         };
       } else {
         song.url = "";
+        song.provider = provider || "direct";
+        song.providerTrackId = providerTrackId || null;
         song.source = {
-          provider: "direct",
-          externalId: null,
+          provider: provider || "direct",
+          externalId: providerTrackId || null,
           url: "",
         };
       }
     }
 
     const updated = await req.playlist.save();
-    res.status(200).json(updated);
+    const updatedObj = updated.toObject ? updated.toObject() : updated;
+    res.status(200).json({
+      ...updatedObj,
+      playlist: updatedObj,
+      updatedSong: song,
+      message: "Song updated successfully",
+    });
   } catch (err) {
     next(err);
   }
@@ -557,12 +946,12 @@ const deleteSong = async (req, res, next) => {
     const { songId } = req.params;
 
     if (!isValidObjectId(songId)) {
-      return res.status(400).json({ message: "Invalid song ID format" });
+      return res.status(400).json({ message: "Invalid song ID format", code: "INVALID_ID" });
     }
 
     const song = req.playlist.songs.id(songId);
     if (!song) {
-      return res.status(404).json({ message: "Song not found in playlist" });
+      return res.status(404).json({ message: "Song not found in playlist", code: "NOT_FOUND" });
     }
 
     req.playlist.songs.pull({ _id: songId });
@@ -576,6 +965,8 @@ const deleteSong = async (req, res, next) => {
     res.status(200).json({
       message: "Song removed successfully",
       playlist: updated,
+      deletedSong: song,
+      removedSong: song,
     });
   } catch (err) {
     next(err);
@@ -585,10 +976,10 @@ const deleteSong = async (req, res, next) => {
 // PUT /api/playlists/:id/songs/reorder
 const reorderSongs = async (req, res, next) => {
   try {
-    const { songIds } = req.body;
+    const { songIds } = req.body || {};
 
     if (!Array.isArray(songIds)) {
-      return res.status(400).json({ message: "songIds array is required" });
+      return res.status(400).json({ message: "songIds array is required", code: "INVALID_INPUT" });
     }
 
     // Map existing songs by their ID string
@@ -602,12 +993,12 @@ const reorderSongs = async (req, res, next) => {
     for (const rawId of songIds) {
       const idStr = String(rawId);
       if (seenIds.has(idStr)) {
-        return res.status(400).json({ message: "Duplicate song ID in reorder request" });
+        return res.status(400).json({ message: "Duplicate song ID in reorder request", code: "INVALID_INPUT" });
       }
       seenIds.add(idStr);
 
       if (!songMap.has(idStr)) {
-        return res.status(400).json({ message: `Song ID '${idStr}' does not belong to this playlist` });
+        return res.status(400).json({ message: `Song ID '${idStr}' does not belong to this playlist`, code: "NOT_FOUND" });
       }
     }
 
@@ -645,11 +1036,13 @@ module.exports = {
   getPlaylistById,
   getPublicExplorePlaylists,
   forkPlaylist,
+  duplicatePlaylist,
   getPlaylistOgMeta,
   createPlaylist,
   updatePlaylist,
   deletePlaylist,
   addSong,
+  addBatchSongs,
   updateSong,
   deleteSong,
   reorderSongs,

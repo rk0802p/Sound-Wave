@@ -30,21 +30,23 @@ const isValidPassword = (password) => {
  */
 const sanitizePlaylistInput = (body) => {
   const allowed = {};
+  if (!body || typeof body !== "object") return allowed;
+
   if (typeof body.name === "string") {
-    allowed.name = body.name.trim();
+    allowed.name = body.name.trim().replace(/\0/g, "");
   }
   if (typeof body.description === "string") {
-    allowed.description = body.description.trim();
+    allowed.description = body.description.trim().replace(/\0/g, "");
   }
   if (typeof body.coverImage === "string") {
-    allowed.coverImage = body.coverImage.trim();
+    allowed.coverImage = body.coverImage.trim().replace(/\0/g, "");
   }
   if (typeof body.isPublic === "boolean") {
     allowed.isPublic = body.isPublic;
   }
   // Backwards compatibility: allow updating songs array if provided
   if (Array.isArray(body.songs)) {
-    allowed.songs = body.songs.map((s, index) => sanitizeSongInput(s, index));
+    allowed.songs = body.songs.map((s, index) => sanitizeSongInput(s, index)).filter(Boolean);
   }
   return allowed;
 };
@@ -59,10 +61,22 @@ const sanitizeSongInput = (song, fallbackPosition = 0) => {
   const rawSourceUrl = song.source && typeof song.source.url === "string" ? song.source.url.trim() : "";
   const effectiveUrl = rawUrl || rawSourceUrl;
 
+  const validProviders = [
+    "direct",
+    "youtube",
+    "spotify",
+    "archive",
+    "jamendo",
+    "audius",
+    "deezer",
+    "itunes",
+    "external",
+  ];
+
   let parsedSource;
   if (song.source && typeof song.source === "object" && song.source.provider) {
     parsedSource = {
-      provider: ["direct", "youtube", "spotify", "archive", "jamendo", "audius", "external"].includes(song.source.provider)
+      provider: validProviders.includes(song.source.provider)
         ? song.source.provider
         : "direct",
       externalId: typeof song.source.externalId === "string" ? song.source.externalId.trim() : null,
@@ -72,19 +86,39 @@ const sanitizeSongInput = (song, fallbackPosition = 0) => {
     parsedSource = parseMusicSource(effectiveUrl);
   }
 
+  const finalProvider = song.provider && validProviders.includes(song.provider)
+    ? song.provider
+    : (parsedSource.provider || "direct");
+  const finalExternalId = (typeof song.providerTrackId === "string" && song.providerTrackId.trim())
+    ? song.providerTrackId.trim()
+    : (parsedSource.externalId || null);
+
+  const isPreview = Boolean(song.isPreview || finalProvider === "deezer" || finalProvider === "itunes");
+  const previewDurationMs = typeof song.previewDurationMs === "number" && song.previewDurationMs >= 0
+    ? song.previewDurationMs
+    : (isPreview ? 30000 : null);
+
   return {
     ...(song._id && isValidObjectId(song._id) ? { _id: song._id } : {}),
-    title: typeof song.title === "string" ? song.title.trim() : "Untitled Track",
-    artist: typeof song.artist === "string" ? song.artist.trim() : "Unknown Artist",
-    album: typeof song.album === "string" ? song.album.trim() : "",
+    title: typeof song.title === "string" ? song.title.trim().replace(/\0/g, "") : "Untitled Track",
+    artist: typeof song.artist === "string" ? song.artist.trim().replace(/\0/g, "") : "Unknown Artist",
+    album: typeof song.album === "string" ? song.album.trim().replace(/\0/g, "") : "",
     duration: typeof song.duration === "number" && song.duration >= 0 ? song.duration : 0,
     position: typeof song.position === "number" && song.position >= 0 ? song.position : fallbackPosition,
     url: effectiveUrl,
-    source: parsedSource,
-    coverImage: typeof song.coverImage === "string" ? song.coverImage.trim() : "",
-    license: typeof song.license === "string" ? song.license.trim() : "",
-    licenseUrl: typeof song.licenseUrl === "string" ? song.licenseUrl.trim() : "",
-    attribution: typeof song.attribution === "string" ? song.attribution.trim() : "",
+    provider: finalProvider,
+    providerTrackId: finalExternalId,
+    isPreview,
+    previewDurationMs,
+    source: {
+      provider: finalProvider,
+      externalId: finalExternalId,
+      url: effectiveUrl,
+    },
+    coverImage: typeof song.coverImage === "string" ? song.coverImage.trim().replace(/\0/g, "") : "",
+    license: typeof song.license === "string" ? song.license.trim().replace(/\0/g, "") : "",
+    licenseUrl: typeof song.licenseUrl === "string" ? song.licenseUrl.trim().replace(/\0/g, "") : "",
+    attribution: typeof song.attribution === "string" ? song.attribution.trim().replace(/\0/g, "") : "",
     addedAt: song.addedAt ? new Date(song.addedAt) : new Date(),
   };
 };

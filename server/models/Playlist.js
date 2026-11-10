@@ -5,7 +5,7 @@ const sourceSchema = new mongoose.Schema(
   {
     provider: {
       type: String,
-      enum: ["direct", "youtube", "spotify", "archive", "jamendo", "audius", "external"],
+      enum: ["direct", "youtube", "spotify", "archive", "jamendo", "audius", "deezer", "itunes", "external"],
       default: "direct",
     },
     externalId: {
@@ -53,6 +53,26 @@ const songSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
+    provider: {
+      type: String,
+      enum: ["direct", "youtube", "spotify", "archive", "jamendo", "audius", "deezer", "itunes", "external"],
+      default: "direct",
+      trim: true,
+    },
+    providerTrackId: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+    isPreview: {
+      type: Boolean,
+      default: false,
+    },
+    previewDurationMs: {
+      type: Number,
+      default: null,
+      min: 0,
+    },
     source: {
       type: sourceSchema,
       default: () => ({ provider: "direct", externalId: null, url: "" }),
@@ -87,13 +107,21 @@ const songSchema = new mongoose.Schema(
 
 // Hydrate source for legacy documents that only have url
 songSchema.pre("init", function (doc) {
-  if (doc && doc.url && (!doc.source || !doc.source.url)) {
-    const parsed = parseMusicSource(doc.url);
-    doc.source = {
-      provider: parsed.provider,
-      externalId: parsed.externalId,
-      url: doc.url,
-    };
+  if (doc) {
+    if (doc.url && (!doc.source || !doc.source.url)) {
+      const parsed = parseMusicSource(doc.url);
+      doc.source = {
+        provider: parsed.provider,
+        externalId: parsed.externalId,
+        url: doc.url,
+      };
+    }
+    if (!doc.provider) {
+      doc.provider = doc.source?.provider || "direct";
+    }
+    if (doc.providerTrackId === undefined) {
+      doc.providerTrackId = doc.source?.externalId || null;
+    }
   }
 });
 
@@ -103,13 +131,13 @@ const playlistSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
-      maxlength: 100,
+      maxlength: 80,
     },
     description: {
       type: String,
       trim: true,
       default: "",
-      maxlength: 500,
+      maxlength: 300,
     },
     coverImage: {
       type: String,
@@ -165,6 +193,11 @@ playlistSchema.virtual("totalDuration").get(function () {
   return this.songs.reduce((acc, song) => acc + (song.duration || 0), 0);
 });
 
+playlistSchema.virtual("totalDurationMs").get(function () {
+  if (!this.songs || !this.songs.length) return 0;
+  return this.songs.reduce((acc, song) => acc + ((song.duration || 0) * 1000), 0);
+});
+
 // Pre-save hook: ensure deterministic ordering and provider synchronization
 playlistSchema.pre("save", function (next) {
   if (this.songs && this.songs.length > 0) {
@@ -186,6 +219,23 @@ playlistSchema.pre("save", function (next) {
         }
         if (!song.url) {
           song.url = effectiveUrl;
+        }
+      }
+
+      // Synchronize provider and providerTrackId
+      song.provider = song.source?.provider || song.provider || "direct";
+      song.providerTrackId = song.source?.externalId || song.providerTrackId || null;
+      if (song.source && song.providerTrackId && !song.source.externalId) {
+        song.source.externalId = song.providerTrackId;
+      }
+      if (song.source && song.provider) {
+        song.source.provider = song.provider;
+      }
+
+      if ((song.provider === "deezer" || song.provider === "itunes") && !song.isPreview) {
+        song.isPreview = true;
+        if (!song.previewDurationMs) {
+          song.previewDurationMs = 30000;
         }
       }
     });
