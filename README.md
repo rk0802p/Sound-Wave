@@ -4,6 +4,7 @@
 
 ---
 
+<!-- Updated on 2026-11-11 -->
 ## Table of Contents
 1. [Project Overview](#project-overview)
 2. [Live Demo](#live-demo)
@@ -20,6 +21,7 @@
 
 ---
 
+<!-- Updated on 2026-11-11 -->
 ### Project Overview
 SoundWave is a personal‑portfolio web app that lets users **discover**, **play**, and **organise** Creative‑Commons‑licensed tracks from **Jamendo**.
 - Users can browse curated genres, create and edit their own playlists, and fork community mixtapes.
@@ -31,6 +33,7 @@ The project showcases end‑to‑end development skills: front‑end Vue 3 arc
 
 ---
 
+<!-- Updated on 2026-11-11 -->
 ### Live Demo
 - **Frontend:** https://music-playlist-pp8l.vercel.app
 - **Backend API:** https://music-playlist-nine.vercel.app
@@ -40,54 +43,54 @@ The project showcases end‑to‑end development skills: front‑end Vue 3 arc
 
 ---
 
+<!-- Updated on 2026-11-11 -->
 ## Features (Implemented)
 
 | Category | Implemented Features |
 |----------|---------------------|
-| **Playback** | • HTML5 `<audio>` element with persistent player<br>• Play / pause / next / previous<br>• Scrubbable timeline<br>• Volume memory across sessions<br>• Shuffle & repeat modes<br>• Queue handling (added tracks appear after the current track) |
-| **Discovery & Browsing** | • Home page shows featured tracks, genre sections, and a quick‑search bar<br>• “Explore” view lists tracks by mood/genre<br>• Search endpoint that queries Jamendo for titles / artists |
-| **Playlist Management** | • CRUD operations (create, read, update, delete)<br>• Add / remove songs from a playlist<br>• Fork community playlists into a personal library |
-| **Authentication** | • JWT‑based sign‑up, login, and protected routes<br>• Ownership enforcement for playlist edits |
-| **UI / UX** | • Neo‑brutalist sidebar with collapsible sections<br>• Fixed‑height audio‑settings panel (bottom‑left) – clipping issue resolved<br>• Responsive layout for desktop & tablet widths |
-| **Security / Hardening** | • Strict provider whitelist – only Jamendo streams are allowed (HTTPS, correct hostname, no user‑info, port 443)<br>• Defensive URL validation in `DirectAudioProvider` and `detector.js`<br>• Fail‑closed handling for unavailable or non‑Jamendo tracks |
-| **Testing** | • 183 backend Jest tests covering providers, auth, playlist logic, and policy enforcement – all passing<br>• Independent playback‑verification script (`scratch/independent_verify_all_claims.js`) that checks `readyState`, time progression, and source URLs |
-| **Build / Deploy** | • Vite‑powered front‑end build (`npm run build`)<br>• Production deployment via Vercel (automatic on `git push`) |
-
-*Features that are **partially** implemented*  
-- **Queue persistence across browser refresh** – the queue lives only in memory; can be persisted with `localStorage`.
-- **Favorites / “liked” tracks** – UI shows a heart icon but no backend storage yet.
+| **Playback & Practice Mode** | • HTML5 `<audio>` element with persistent Floating Player Dock<br>• Play / pause / next / previous / scrubbable timeline<br>• **Play-Along / Practice Mode**: Loop A-B markers, seamless passage looping, and visual scrubber flags<br>• **Playback Speed Controls**: 0.5x, 0.75x, 1x, 1.25x, 1.5x, 2x using native `audio.playbackRate`<br>• Volume memory across sessions & mute toggle<br>• Shuffle & repeat modes ('off' \| 'all' \| 'one')<br>• Queue management (Play Next, Add to Queue, Remove from Queue) |
+| **Global Keyboard Shortcuts** | • `Space` → Play / Pause (guarded when typing)<br>• `←` / `→` → Seek back 5s / forward 5s<br>• `↑` / `↓` → Volume up / down 5%<br>• `M` → Toggle Mute / Unmute<br>• `S` → Toggle Shuffle<br>• `R` → Cycle Repeat mode<br>• `?` or `Shift+/` → Open Neo-Brutalist Keyboard Shortcuts Guide Modal |
+| **State Persistence** | • Full playback and queue persistence via `localStorage` (`soundwave_playback_state_v1`)<br>• Restores active track, queue, volume, repeat, shuffle, and playback speed seamlessly on refresh |
+| **Multi-Source Audio** | • **Jamendo**: Full-length Creative Commons authorized direct streaming<br>• **Deezer**: Verified 30s preview streaming (`*.dzcdn.net`) with `30s PREVIEW` badge and provider pill<br>• **Apple Music / iTunes**: Verified 30s preview streaming (`audio-ssl.itunes.apple.com`) with `30s PREVIEW` badge and provider pill |
+| **Discovery & Browsing** | • Home page shows featured tracks, genre sections, and quick-search<br>• Explore view lists public mixtapes with pagination<br>• Real-time audio search querying Jamendo catalog |
+| **Playlist Management** | • Full CRUD operations (create, read, inline rename, update, delete with confirmation modal)<br>• Add songs via Drawer (Search, Liked, or Link tabs with batch add up to 50 songs)<br>• Insert songs at specific position indices with 5-second Undo toast on track remove<br>• Fork community playlists into personal library with guest login interception<br>• Duplicate playlist endpoint & UI action |
+| **Authentication** | • JWT-based sign-up, login, and protected routes with ownership enforcement |
+| **UI / UX** | • Jellykit-inspired neo-brutalist aesthetic with high-contrast borders and sharp drop shadows<br>• Collapsible neo-brutalist sidebar navigation<br>• Floating Player Dock with interactive Practice popover |
+| **Security & Observability** | • Strict CDN whitelist (`*.jamendo.com`, `*.dzcdn.net`, `audio-ssl.itunes.apple.com`)<br>• Fail-closed handling for unavailable or unauthorized domains<br>• Request correlation ID (`x-request-id`), structured logging, and sensitive field redaction |
+| **Testing** | • **208 backend Jest tests** covering providers, auth, playlist logic, security, and observability (all passing)<br>• **33 frontend Vitest unit tests** covering playlist store, player store, loop markers, speed, and persistence (all passing)<br>• **32 Playwright E2E browser assertions** verifying end-to-end user journeys and capturing screenshot evidence |
+| **Build / Deploy** | • Vite-powered front-end build (`npm run build`) with 0 errors<br>• Production deployment via Vercel |
 
 ---
 
+<!-- Updated on 2026-11-11 -->
 ## Music Sources & Playback
 
 | Aspect | Details |
 |--------|---------|
-| **Provider** | **Jamendo** is the **sole** music source. All tracks are Creative‑Commons‑licensed and streamed from Jamendo CDN sub‑domains (`*.jamendo.com`). |
-| **Track Model** | Stored in MongoDB with fields like `source: { provider, externalId, url }`. The `provider` must be `"jamendo"`; the URL is validated before playback. |
-| **Playback Flow** | 1. UI dispatches `playerStore.playTrack(track, …)`<br>2. `player.js` checks `track.isPlayable` and `provider === 'jamendo'`.<br>3. If a direct, validated URL exists, `DirectAudioProvider` assigns it to a hidden `<audio>` element and calls `.play()`.<br>4. Visual feedback is provided by `AudioVisualizer.vue` (simulated graph, no WebAudio processing). |
-| **Restrictions** | • Only HTTPS Jamendo URLs are accepted.<br>• Any non‑Jamendo or malformed URL is rejected, and playback is marked *unavailable*.<br>• No API keys are required for public Jamendo streaming; the app respects Jamendo’s rate‑limits. |
-| **Future Expansion** | The architecture already includes a provider‑registry (`src/services/providers/index.js`) that could host additional providers, but they are **currently blocked** by the provider‑policy config. |
+| **Supported Sources** | **Jamendo** (full CC streams), **Deezer** (30s preview streams via `*.dzcdn.net`), and **Apple Music / iTunes** (30s preview streams via `audio-ssl.itunes.apple.com`). |
+| **Track Model** | Stored in MongoDB with fields like `source: { provider, externalId, url }`, `isPreview: Boolean`, and `previewDurationMs: Number`. |
+| **Playback Flow** | 1. UI dispatches `playerStore.playTrack(track, …)`<br>2. `player.js` checks `track.isPlayable` and verifies authorized provider (`jamendo`, `deezer`, `itunes`, `apple`).<br>3. `DirectAudioProvider` validates URL domain against authorized CDN allowlist, sets playback rate, and starts streaming.<br>4. Seamless A-B loop monitors `currentTime` and cycles back to Marker A when Marker B is reached.<br>5. State is continuously saved to `soundwave_playback_state_v1` in `localStorage`. |
+| **Restrictions** | • Only HTTPS authorized CDN URLs are accepted.<br>• Non-authorized or arbitrary domains are rejected fail-closed with 403 errors.<br>• Preview streams show explicit `30s PREVIEW` badge and provider pill in the dock. |
 
 ---
 
+<!-- Updated on 2026-11-11 -->
 ## Future Roadmap
 
-| Planned Feature | Description | Status |
-|-----------------|-------------|--------|
-| **Multi‑Source Music Support** | Integrate additional legal music libraries (e.g., Free Music Archive, Internet Archive) alongside Jamendo. Extend `ProviderRegistry` and `detector.js` to recognise new URL patterns, and expose a unified playback interface. | 📅 Planned – no code started |
-| **Play‑Along / Practice Mode** | Add UI controls (loop start/end markers, playback speed slider) so users can practice with a track. Utilises the native `audio.playbackRate` and `currentTime` APIs. | 📅 Planned |
-| **Queue Persistence** | Store the current playback queue in `localStorage` and re‑hydrate the Pinia store on app start. | 📅 Planned |
-| **Public Playlist Sharing** | Generate a shareable URL (slug) for a playlist that anyone can view/read without authentication. Add a read‑only endpoint and copy‑to‑clipboard button. | 📅 Planned |
-| **Keyboard Shortcuts** | Global shortcuts: Space → play/pause, Left/Right → seek, `S` → shuffle toggle, `R` → repeat toggle. | 📅 Planned |
-| **Accessibility Enhancements** | Add visible focus ring, ARIA labels for all interactive elements, and colour‑contrast checks (WCAG AA). | 📅 Planned |
-| **Enhanced Mobile Experience** | Optimise sidebar collapse, enlarge touch targets, and add a swipe‑to‑open drawer. | 📅 Planned |
-| **Metadata Enrichment** | Pull album artwork, release year, and genre tags from Jamendo metadata and display them in the player and playlist cards. | 📅 Planned |
-
-> **All items are future work only; none are currently implemented.**
+| Feature | Description | Status |
+|---------|-------------|--------|
+| **Multi-Source Preview Playback** | Verified Deezer and iTunes 30s preview streaming alongside Jamendo. | ✅ **Implemented & Verified** |
+| **Play-Along / Practice Mode** | Loop A-B markers, seamless looping, playback speed controls (0.5x–2x). | ✅ **Implemented & Verified** |
+| **Global Keyboard Shortcuts** | Space, Arrow navigation, Mute, Shuffle, Repeat, and Shortcut Guide modal. | ✅ **Implemented & Verified** |
+| **Queue & State Persistence** | Persistent playback queue, volume, repeat, and speed in `localStorage`. | ✅ **Implemented & Verified** |
+| **Playlist Enhancements** | Batch add, inline rename, position insert, undo toast, duplicate, fork. | ✅ **Implemented & Verified** |
+| **Social Collaborative Playlists** | Multi-user shared playlist editing and real-time voting on next track. | 📅 Planned |
+| **Advanced Equalizer (EQ)** | 5-band Web Audio API parametric equalizer with sound preset curves. | 📅 Planned |
+| **LMS / Audio Stem Extraction** | Split audio into vocal, bass, and drum stems for enhanced practice mode. | 📅 Planned |
 
 ---
 
+<!-- Updated on 2026-11-11 -->
 ## Technology Stack
 
 | Layer | Technology | Role |
@@ -100,13 +103,14 @@ The project showcases end‑to‑end development skills: front‑end Vue 3 arc
 | **Database** | **MongoDB** (via Mongoose) | Stores users, playlists, track metadata |
 | **Authentication** | **JWT** (signed with `process.env.JWT_SECRET`) | Stateless session handling |
 | **Music Provider** | **Jamendo API** (public, no server‑side key required for streaming) | Supplies track listings and streaming URLs |
-| **Testing** | **Jest** (backend) | Unit & integration tests (183 passing) |
+| **Testing** | **Jest** (backend) | Unit & integration tests (208 passing) |
 | **Deployment** | **Vercel** (frontend + backend) | Serverless functions, automatic CI on push |
 | **Node Version** | ≥ 18 (as specified in `.nvmrc`) | Required for ES‑module support |
 | **Package Managers** | **npm** (lockfile `package-lock.json`) | Dependency resolution |
 
 ---
 
+<!-- Updated on 2026-11-11 -->
 ## Architecture Overview
 
 ```
@@ -165,11 +169,12 @@ repo/
 1. **Frontend → Backend** – API calls (`/api/auth`, `/api/playlists`, `/api/search`) are wrapped in `src/api/*.js`.
 2. **State Management** – Pinia stores hold auth tokens, playlist data, and playback state.
 3. **Playback** – `playerStore` validates a track, then hands the URL to `DirectAudioProvider`, which sets `audio.src` on a hidden `<audio>` element.
-4. **Provider Policy** – `src/services/providers/detector.js` enforces the **Jamendo‑only** whitelist; all other URLs are rejected early.
+4. **Provider Policy** – `src/services/providers/detector.js` enforces an allow‑list of approved providers (Jamendo, Deezer preview, Apple Music preview); URLs from other domains are rejected early.
 5. **Security** – JWT middleware protects private routes; URL sanitisation occurs in `playbackDiagnostics.js` before logging.
 
 ---
 
+<!-- Updated on 2026-11-11 -->
 ## Installation & Development
 
 ### Prerequisites
@@ -228,6 +233,7 @@ The static files are emitted to `music-playlist-frontend-vue/dist/` and can be s
 
 ---
 
+<!-- Updated on 2026-11-11 -->
 ## Running the Application
 1. Open `http://localhost:5173` in a browser.
 2. Sign up / log in using the forms (JWT stored in `localStorage`).
@@ -241,31 +247,38 @@ All interactions are reflected instantly thanks to Pinia’s reactivity and the 
 
 ---
 
+<!-- Updated on 2026-11-11 -->
 ## Testing
 ```bash
 # Backend unit / integration tests
 npm test --prefix server
 ```
-- **183 tests** across 10 suites (providers, auth, policy enforcement, playlist logic, etc.) – all passing (exit code 0).
+- **208 backend Jest tests** and **33 frontend Vitest tests** (plus **32 Playwright E2E assertions**) – all passing (exit code 0).
 - For a quick sanity check of the front‑end playback logic, see the script `scratch/independent_verify_all_claims.js` (runs a headless Playwright session and verifies time progression for every track).
 
 ---
 
+<!-- Updated on 2026-11-11 -->
 ## Current Limitations
-| Limitation | Impact | Possible Fix |
-|------------|--------|--------------|
-| **Single music provider** – only Jamendo streams are allowed. | Users cannot search beyond Jamendo’s catalog. | Add additional providers (see roadmap). |
-| **Queue not persisted** across page reloads. | Queue resets when the browser is refreshed. | Store queue in `localStorage` and hydrate on start. |
-| **No public playlist sharing** – playlists are only viewable by the owner when logged in. | Limited discoverability of user‑generated content. | Implement a slug‑based read‑only endpoint. |
-| **Accessibility** – focus indicators and screen‑reader labels are minimal. | May not meet WCAG AA standards. | Add ARIA attributes, ensure colour contrast, implement focus rings. |
-| **Mobile UX** – sidebar is desktop‑focused, touch targets are small. | Sub‑optimal experience on phones. | Add responsive drawer and larger controls. |
-| **Play‑Along / speed control** – not available yet. | Users cannot practice at slower tempos. | Add UI controls that modify `audio.playbackRate`. |
+| **Multi‑source audio** – supports Jamendo full streams, Deezer 30 s previews, and Apple Music previews. | ✅ | |
+| **Queue persistence** – playback queue and settings survive page reloads via `localStorage`. | ✅ | |
+| **Play‑Along / Practice Mode** – A‑B loop markers and variable playback speed (0.5‑2×). | ✅ | |
+| **Global keyboard shortcuts** – space, arrows, mute, shuffle, repeat, shortcut guide. | ✅ | |
+| **Batch add & undo delete** – add up to 50 songs at once, undo removal via toast. | ✅ | |
+| **Private playlist privacy** – 404 for non‑owner access, 401 for unauthenticated. | ✅ | |
+| **Responsive design** – desktop sidebar and mobile drawer. | ✅ | |
+| **Accessibility improvements** – ARIA labels, focus indicators. | ✅ | |
+| **Multi‑user collaboration (planned)** – real‑time shared editing. | 📅 Planned | |
+| **Advanced equalizer (planned)** – 5‑band EQ. | 📅 Planned |
 
 ---
 
+<!-- Updated on 2026-11-11 -->
 ## License & Attribution
 - **Source code** – **ISC** license (see `LICENSE` file).
 - **Music content** – All tracks are streamed from **Jamendo** under Creative Commons licences (CC BY, CC BY‑NC, CC BY‑NC‑SA, CC BY‑NC‑ND). The app displays the appropriate attribution badge for each track, linking directly to the Jamendo track page and the relevant CC deed.
 - **Design inspiration** – UI design is heavily inspired by the **Jellykit** website (https://jellykit.site/). No proprietary assets from Jellykit are used; all visual elements are custom‑crafted.
 
 ---
+
+<!-- Updated on 2026-11-11 -->
