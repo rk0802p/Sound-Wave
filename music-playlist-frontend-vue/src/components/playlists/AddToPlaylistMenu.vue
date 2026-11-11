@@ -1,6 +1,7 @@
 <template>
   <div class="add-to-playlist-container" ref="menuRoot">
     <div
+      ref="triggerBoxRef"
       class="trigger-box"
       @click.stop="toggleMenu"
       :title="title"
@@ -18,36 +19,55 @@
       </slot>
     </div>
 
-    <div v-if="isOpen" class="picker-dropdown font-mono" @click.stop>
-      <div class="picker-header">
-        <span class="picker-title font-display">ADD TO PLAYLIST</span>
-        <button class="picker-close" @click="closeMenu">✕</button>
-      </div>
-
-      <div class="picker-playlists">
-        <div v-if="isLoading" class="picker-loading">Loading playlists...</div>
-        <div v-else-if="userPlaylists.length === 0" class="picker-empty">
-          No playlists created yet.
+    <Teleport to="body">
+      <div
+        v-if="isOpen"
+        ref="popoverRef"
+        class="picker-dropdown font-mono"
+        :data-placement="popoverPlacement"
+        :style="popoverStyle"
+        role="dialog"
+        aria-label="Add to playlist menu"
+        @click.stop
+      >
+        <div class="picker-header">
+          <span class="picker-title font-display">ADD TO PLAYLIST</span>
+          <button
+            type="button"
+            class="picker-close"
+            @click="closeMenu"
+            aria-label="Close playlist picker"
+          >
+            ✕
+          </button>
         </div>
-        <button
-          v-for="p in userPlaylists"
-          :key="p._id || p.id"
-          class="picker-row font-mono"
-          @click="handleAddToPlaylist(p)"
-          :disabled="isAdding"
-        >
-          <span class="p-icon">🎵</span>
-          <span class="p-name">{{ p.name }}</span>
-          <span class="p-count font-mono">{{ p.songs?.length || p.songCount || 0 }}</span>
-        </button>
-      </div>
 
-      <div class="picker-footer">
-        <button class="btn-create-new font-mono" @click="openCreateModal">
-          ＋ CREATE NEW PLAYLIST
-        </button>
+        <div class="picker-playlists">
+          <div v-if="isLoading" class="picker-loading">Loading playlists...</div>
+          <div v-else-if="userPlaylists.length === 0" class="picker-empty">
+            No playlists created yet.
+          </div>
+          <button
+            v-for="p in userPlaylists"
+            :key="p._id || p.id"
+            type="button"
+            class="picker-row font-mono"
+            @click="handleAddToPlaylist(p)"
+            :disabled="isAdding"
+          >
+            <span class="p-icon">🎵</span>
+            <span class="p-name">{{ p.name }}</span>
+            <span class="p-count font-mono">{{ p.songs?.length || p.songCount || 0 }}</span>
+          </button>
+        </div>
+
+        <div class="picker-footer">
+          <button type="button" class="btn-create-new font-mono" @click="openCreateModal">
+            ＋ CREATE NEW PLAYLIST
+          </button>
+        </div>
       </div>
-    </div>
+    </Teleport>
 
     <!-- Create Playlist Modal -->
     <CreatePlaylistModal
@@ -68,10 +88,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue';
 import { usePlaylistStore } from '../../stores/playlist';
 import { useAuthStore } from '../../stores/auth';
 import { useToastStore } from '../../stores/toast';
+import { computePopoverPosition } from '../../utils/popoverPosition';
 import CreatePlaylistModal from './CreatePlaylistModal.vue';
 import LoginModal from '../common/LoginModal.vue';
 
@@ -98,13 +119,58 @@ const isAdding = ref(false);
 const showCreateModal = ref(false);
 const showLoginModal = ref(false);
 const pendingAction = ref(null);
+
 const menuRoot = ref(null);
+const triggerBoxRef = ref(null);
+const popoverRef = ref(null);
+
+const popoverCoords = ref({
+  top: 0,
+  left: 0,
+  width: 276,
+  maxHeight: 320,
+  placement: 'bottom',
+});
+
+const popoverPlacement = computed(() => popoverCoords.value.placement);
+
+const popoverStyle = computed(() => ({
+  position: 'fixed',
+  top: `${popoverCoords.value.top}px`,
+  left: `${popoverCoords.value.left}px`,
+  width: `${popoverCoords.value.width}px`,
+  maxHeight: `${popoverCoords.value.maxHeight}px`,
+  zIndex: 1400,
+}));
 
 const userPlaylists = computed(() => {
   return (playlistStore.playlists || []).filter(
     (p) => !p.isMood && !p.id?.startsWith('mood-') && !p._id?.startsWith('mood-')
   );
 });
+
+const updatePopoverPosition = () => {
+  if (!isOpen.value || !triggerBoxRef.value || typeof window === 'undefined') return;
+
+  const triggerRect = triggerBoxRef.value.getBoundingClientRect();
+  const dockEl = document.getElementById('dock');
+  const dockRect = dockEl ? dockEl.getBoundingClientRect() : null;
+  const topbarEl = document.querySelector('.jb-topbar');
+  const topbarRect = topbarEl ? topbarEl.getBoundingClientRect() : null;
+  const measuredHeight = popoverRef.value
+    ? Math.min(340, Math.max(220, popoverRef.value.scrollHeight))
+    : 300;
+
+  popoverCoords.value = computePopoverPosition({
+    triggerRect,
+    popoverWidth: 276,
+    popoverHeight: measuredHeight,
+    viewportWidth: window.innerWidth,
+    viewportHeight: window.innerHeight,
+    dockTop: dockRect && dockRect.height > 0 ? dockRect.top : null,
+    headerBottom: topbarRect && topbarRect.height > 0 ? topbarRect.bottom : 0,
+  });
+};
 
 const runWithAuthGuard = (action) => {
   if (!authStore.isAuthenticated) {
@@ -127,12 +193,17 @@ const toggleMenu = async () => {
     return;
   }
   isOpen.value = true;
-  if (!playlistStore.playlists.length) {
+  await nextTick();
+  updatePopoverPosition();
+
+  if (!playlistStore.playlists.length && authStore.isAuthenticated) {
     isLoading.value = true;
     try {
       await playlistStore.fetchPlaylists();
     } catch {}
     isLoading.value = false;
+    await nextTick();
+    updatePopoverPosition();
   }
 };
 
@@ -180,6 +251,7 @@ const handleAddToPlaylist = (playlist) => {
 
 const openCreateModal = () => {
   runWithAuthGuard(() => {
+    closeMenu();
     showCreateModal.value = true;
   });
 };
@@ -192,17 +264,33 @@ const handlePlaylistCreated = async (newPlaylist) => {
 };
 
 const handleOutsideClick = (e) => {
-  if (menuRoot.value && !menuRoot.value.contains(e.target)) {
+  if (!isOpen.value) return;
+  const insideTrigger = menuRoot.value && menuRoot.value.contains(e.target);
+  const insidePopover = popoverRef.value && popoverRef.value.contains(e.target);
+  if (!insideTrigger && !insidePopover) {
+    closeMenu();
+  }
+};
+
+const handleKeyDown = (e) => {
+  if (isOpen.value && e.key === 'Escape') {
+    e.preventDefault();
     closeMenu();
   }
 };
 
 onMounted(() => {
   document.addEventListener('click', handleOutsideClick);
+  document.addEventListener('keydown', handleKeyDown);
+  window.addEventListener('scroll', updatePopoverPosition, true);
+  window.addEventListener('resize', updatePopoverPosition);
 });
 
 onUnmounted(() => {
   document.removeEventListener('click', handleOutsideClick);
+  document.removeEventListener('keydown', handleKeyDown);
+  window.removeEventListener('scroll', updatePopoverPosition, true);
+  window.removeEventListener('resize', updatePopoverPosition);
 });
 </script>
 
@@ -251,21 +339,20 @@ onUnmounted(() => {
 }
 
 .picker-dropdown {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  margin-top: 6px;
-  width: 270px;
+  position: fixed;
+  display: flex;
+  flex-direction: column;
   background-color: #FFFFFF;
   border: 3px solid #111111;
   box-shadow: 5px 5px 0 #111111;
-  z-index: 10000;
   padding: 0;
   border-radius: 0;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
 .picker-header {
+  flex-shrink: 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -305,6 +392,8 @@ onUnmounted(() => {
 }
 
 .picker-playlists {
+  flex: 1 1 auto;
+  min-height: 0;
   max-height: 220px;
   overflow-y: auto;
   padding: 4px 0;
@@ -364,6 +453,7 @@ onUnmounted(() => {
 }
 
 .picker-footer {
+  flex-shrink: 0;
   border-top: 2px solid #111111;
   padding: 10px 12px;
   background-color: #FFFDF8;
