@@ -34,96 +34,11 @@
           </div>
         </section>
 
-        <!-- 2. FEATURED AUDIO RELEASES (3-UP) -->
-        <section v-if="featuredSpotlightTracks.length && !selectedGenreFilter && !activeMood" class="jb-section">
-          <div class="jb-section-head">
-            <h2 class="jb-section-title font-display">FEATURED SPOTLIGHT</h2>
-            <div class="jb-section-line"></div>
-          </div>
-
-          <div class="jb-featured-grid">
-            <article
-              v-for="(track, idx) in featuredSpotlightTracks"
-              :key="track._id || track.id"
-              class="jb-featured-card"
-              :class="{ 'is-active': isCurrentTrack(track) }"
-            >
-              <div class="jb-card-eyebrow font-mono">
-                <span>{{ (track.genre || 'ELECTRONIC').toUpperCase() }}</span>
-                <span class="accent-mono">SPOTLIGHT {{ idx + 1 }}</span>
-              </div>
-
-              <!-- Striped Art Box -->
-              <div class="jb-card-art-box" @click="handlePlayTrack(track, featuredSpotlightTracks, idx, $event)">
-                <img
-                  v-if="track.coverImage || track.artwork"
-                  :src="track.coverImage || track.artwork"
-                  :alt="track.title"
-                  class="jb-card-cover"
-                />
-                <div v-else class="jb-art-fallback font-display">
-                  {{ track.title.substring(0, 2).toUpperCase() }}
-                </div>
-                
-                <button
-                  class="jb-art-play-btn"
-                  :title="isCurrentTrack(track) && playerStore.isPlaying ? 'Pause' : 'Play ' + track.title"
-                >
-                  {{ isCurrentTrack(track) && playerStore.isPlaying ? '❚❚' : '▶' }}
-                </button>
-              </div>
-
-              <div class="jb-card-body">
-                <h3 class="jb-card-title font-display" :title="track.title">{{ track.title }}</h3>
-                <p class="jb-card-artist">{{ track.artist }}</p>
-
-                <div class="jb-card-meta-row font-mono">
-                  <span class="jb-mono-chip" @click="openLicenseModal(track)">{{ track.license?.badge || 'CC BY' }}</span>
-                  <button
-                    class="jb-open-action font-mono"
-                    @click="handlePlayTrack(track, featuredSpotlightTracks, idx, $event)"
-                  >
-                    {{ isCurrentTrack(track) && playerStore.isPlaying ? 'PAUSE ❚❚' : 'PLAY →' }}
-                  </button>
-                </div>
-              </div>
-            </article>
-          </div>
-        </section>
-
-        <!-- 3. MOST PLAYED / POPULAR COMPACT TRACKS -->
-        <section v-if="popularTracks.length && !selectedGenreFilter && !activeMood" class="jb-section">
-          <div class="jb-section-head">
-            <h2 class="jb-section-title font-display">POPULAR ROTATION</h2>
-            <div class="jb-section-line"></div>
-          </div>
-
-          <div class="jb-popular-grid">
-            <div
-              v-for="(track, idx) in popularTracks"
-              :key="track._id || track.id"
-              class="jb-popular-row"
-              :class="{ 'is-active': isCurrentTrack(track) }"
-              @click="handlePlayTrack(track, popularTracks, idx, $event)"
-            >
-              <div class="jb-pop-tile" :style="{ backgroundColor: getGenreColor(track.genre) }">
-                <span v-if="isCurrentTrack(track) && playerStore.isPlaying">❚❚</span>
-                <span v-else>▶</span>
-              </div>
-              <div class="jb-pop-info">
-                <span class="jb-pop-title font-display">{{ track.title }}</span>
-                <span class="jb-pop-artist font-mono">{{ track.artist }} · {{ formatDuration(track.duration) }}</span>
-              </div>
-              <span class="jb-pop-badge font-mono">{{ (track.genre || 'JAMENDO').toUpperCase() }}</span>
-            </div>
-          </div>
-        </section>
-
-        <!-- 4. ALL TRACKS CATALOG GRID WITH FILTERS & SORT CHIPS -->
+        <!-- 2. ALL TRACKS CATALOG GRID WITH FILTERS & SORT CHIPS -->
         <section class="jb-section">
           <div class="jb-section-head">
             <div class="jb-head-left">
-              <h2 class="jb-section-title font-display">{{ activeMood ? activeMood.name.toUpperCase() : selectedGenreFilter ? selectedGenreFilter.toUpperCase() : 'ALL TRACKS' }}</h2>
+              <h2 class="jb-section-title font-display">{{ activeMood ? activeMood.name.toUpperCase() : selectedGenreFilter ? selectedGenreFilter.toUpperCase() : activeFilter === 'favorites' ? 'LIKED TRACKS' : 'ALL TRACKS' }}</h2>
               <span class="jb-head-count font-mono">({{ displayedTracks.length }})</span>
             </div>
             <div class="jb-section-line"></div>
@@ -263,6 +178,91 @@
                 </div>
               </div>
             </article>
+          </div>
+        </section>
+
+        <!-- 3. FEATURED AUDIO RELEASES (3-UP) -->
+        <section v-if="featuredSpotlightTracks.length && !selectedGenreFilter && !activeMood && !activeFilter" class="jb-section">
+          <div class="jb-section-head">
+            <h2 class="jb-section-title font-display">FEATURED SPOTLIGHT</h2>
+            <div class="jb-section-line"></div>
+          </div>
+
+          <div class="jb-featured-grid">
+            <article
+              v-for="(track, idx) in featuredSpotlightTracks"
+              :key="track._id || track.id"
+              class="jb-featured-card"
+              :class="{ 'is-active': isCurrentTrack(track) }"
+            >
+              <div class="jb-card-eyebrow font-mono">
+                <span>{{ (track.genre || 'ELECTRONIC').toUpperCase() }}</span>
+                <span class="accent-mono">SPOTLIGHT {{ idx + 1 }}</span>
+              </div>
+
+              <!-- Striped Art Box -->
+              <div class="jb-card-art-box" @click="handlePlayTrack(track, featuredSpotlightTracks, idx, $event)">
+                <img
+                  v-if="track.coverImage || track.artwork"
+                  :src="track.coverImage || track.artwork"
+                  :alt="track.title"
+                  class="jb-card-cover"
+                />
+                <div v-else class="jb-art-fallback font-display">
+                  {{ track.title.substring(0, 2).toUpperCase() }}
+                </div>
+                
+                <button
+                  class="jb-art-play-btn"
+                  :title="isCurrentTrack(track) && playerStore.isPlaying ? 'Pause' : 'Play ' + track.title"
+                >
+                  {{ isCurrentTrack(track) && playerStore.isPlaying ? '❚❚' : '▶' }}
+                </button>
+              </div>
+
+              <div class="jb-card-body">
+                <h3 class="jb-card-title font-display" :title="track.title">{{ track.title }}</h3>
+                <p class="jb-card-artist">{{ track.artist }}</p>
+
+                <div class="jb-card-meta-row font-mono">
+                  <span class="jb-mono-chip" @click="openLicenseModal(track)">{{ track.license?.badge || 'CC BY' }}</span>
+                  <button
+                    class="jb-open-action font-mono"
+                    @click="handlePlayTrack(track, featuredSpotlightTracks, idx, $event)"
+                  >
+                    {{ isCurrentTrack(track) && playerStore.isPlaying ? 'PAUSE ❚❚' : 'PLAY →' }}
+                  </button>
+                </div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <!-- 4. MOST PLAYED / POPULAR COMPACT TRACKS -->
+        <section v-if="popularTracks.length && !selectedGenreFilter && !activeMood && !activeFilter" class="jb-section">
+          <div class="jb-section-head">
+            <h2 class="jb-section-title font-display">POPULAR ROTATION</h2>
+            <div class="jb-section-line"></div>
+          </div>
+
+          <div class="jb-popular-grid">
+            <div
+              v-for="(track, idx) in popularTracks"
+              :key="track._id || track.id"
+              class="jb-popular-row"
+              :class="{ 'is-active': isCurrentTrack(track) }"
+              @click="handlePlayTrack(track, popularTracks, idx, $event)"
+            >
+              <div class="jb-pop-tile" :style="{ backgroundColor: getGenreColor(track.genre) }">
+                <span v-if="isCurrentTrack(track) && playerStore.isPlaying">❚❚</span>
+                <span v-else>▶</span>
+              </div>
+              <div class="jb-pop-info">
+                <span class="jb-pop-title font-display">{{ track.title }}</span>
+                <span class="jb-pop-artist font-mono">{{ track.artist }} · {{ formatDuration(track.duration) }}</span>
+              </div>
+              <span class="jb-pop-badge font-mono">{{ (track.genre || 'JAMENDO').toUpperCase() }}</span>
+            </div>
           </div>
         </section>
   </main>
@@ -492,14 +492,15 @@ onMounted(() => {
 
 /* 3. CONTENT STAGE */
 .jb-content-stage {
-  padding: 2rem;
-  max-width: 1400px;
+  padding: 1.75rem 2rem;
+  max-width: 1240px;
   margin: 0 auto;
   width: 100%;
+  min-width: 0;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 3rem;
+  gap: 2.5rem;
 }
 
 .jb-filter-banner {
@@ -632,23 +633,27 @@ onMounted(() => {
 .jb-section {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.25rem;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .jb-section-head {
   display: flex;
   align-items: center;
   gap: 1.25rem;
+  min-width: 0;
 }
 
 .jb-head-left {
   display: flex;
   align-items: baseline;
   gap: 0.65rem;
+  min-width: 0;
 }
 
 .jb-section-title {
-  font-size: 1.85rem;
+  font-size: 1.65rem;
   font-weight: 900;
   letter-spacing: -0.035em;
   text-transform: uppercase;
@@ -657,13 +662,14 @@ onMounted(() => {
 }
 
 .jb-head-count {
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--ink-muted, #4A4740);
 }
 
 .jb-section-line {
   flex: 1;
+  min-width: 24px;
   height: var(--bw, 2px);
   background-color: var(--border, #111111);
 }
@@ -671,17 +677,20 @@ onMounted(() => {
 /* FEATURED 3-UP CARDS */
 .jb-featured-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.5rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.15rem;
+  min-width: 0;
 }
 
 .jb-featured-card {
   background: var(--surface-2, #FFFFFF);
   border: var(--bw, 2px) solid var(--border, #111111);
-  border-radius: var(--r-lg, 18px);
-  box-shadow: var(--shadow-md, 5px 5px 0 var(--border, #111111));
+  border-radius: var(--r-md, 12px);
+  box-shadow: var(--shadow-sm, 4px 4px 0 var(--border, #111111));
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  max-width: 100%;
   overflow: hidden;
   transition: transform 0.08s ease, box-shadow 0.08s ease;
 }
@@ -770,14 +779,15 @@ onMounted(() => {
 }
 
 .jb-card-body {
-  padding: 1.25rem;
+  padding: 1rem;
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.35rem;
+  min-width: 0;
 }
 
 .jb-card-title {
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   font-weight: 900;
   letter-spacing: -0.03em;
   text-transform: uppercase;
@@ -787,9 +797,12 @@ onMounted(() => {
 }
 
 .jb-card-artist {
-  font-size: 0.95rem;
+  font-size: 0.88rem;
   color: var(--ink-muted, #4A4740);
   font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .jb-card-meta-row {
@@ -825,8 +838,9 @@ onMounted(() => {
 /* POPULAR ROWS */
 .jb-popular-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+  min-width: 0;
 }
 
 .jb-popular-row {
@@ -834,10 +848,12 @@ onMounted(() => {
   border: var(--bw, 2px) solid var(--border, #111111);
   border-radius: var(--r-md, 12px);
   box-shadow: var(--shadow-sm, 3px 3px 0 var(--border, #111111));
-  padding: 0.85rem 1rem;
+  padding: 0.8rem 0.95rem;
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.85rem;
+  min-width: 0;
+  max-width: 100%;
   cursor: pointer;
   transition: transform 0.08s ease;
 }
@@ -879,15 +895,19 @@ onMounted(() => {
 .jb-pop-artist {
   font-size: 0.78rem;
   color: var(--ink-muted, #4A4740);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .jb-pop-badge {
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   border: 1px solid var(--border, #111111);
-  padding: 0.2rem 0.5rem;
+  padding: 0.2rem 0.45rem;
   border-radius: 6px;
   background: #FAF8F5;
   font-weight: 700;
+  flex-shrink: 0;
 }
 
 /* CHIPS BAR */
@@ -931,8 +951,9 @@ onMounted(() => {
 /* 4-COLUMN CARDS GRID */
 .jb-cards-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1.5rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.1rem;
+  min-width: 0;
 }
 
 .jb-track-card {
@@ -943,8 +964,10 @@ onMounted(() => {
   box-shadow: var(--shadow-sm, 3px 3px 0 var(--border, #111111));
   display: flex;
   flex-direction: column;
-  padding: 1rem;
-  gap: 0.85rem;
+  min-width: 0;
+  max-width: 100%;
+  padding: 0.85rem;
+  gap: 0.65rem;
   transition: transform 0.08s ease, box-shadow 0.08s ease;
 }
 
@@ -970,8 +993,8 @@ onMounted(() => {
 }
 
 .jb-tc-art-wrap {
-  width: 72px;
-  height: 72px;
+  width: 58px;
+  height: 58px;
   position: relative;
   cursor: pointer;
   flex-shrink: 0;
@@ -1040,13 +1063,15 @@ onMounted(() => {
 .jb-tc-body {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.2rem;
+  min-width: 0;
 }
 
 .jb-tc-title {
-  font-size: 1.05rem;
+  font-size: 0.96rem;
   font-weight: 900;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.025em;
+  line-height: 1.25;
   text-transform: uppercase;
   white-space: nowrap;
   overflow: hidden;
@@ -1054,7 +1079,7 @@ onMounted(() => {
 }
 
 .jb-tc-artist {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: var(--ink-muted, #4A4740);
   font-weight: 600;
   white-space: nowrap;
@@ -1067,7 +1092,9 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-top: 0.65rem;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  padding-top: 0.55rem;
   border-top: 1.5px solid rgba(17, 17, 17, 0.08);
 }
 
@@ -1158,36 +1185,44 @@ onMounted(() => {
 }
 
 /* RESPONSIVE BREAKPOINTS */
-@media (max-width: 1200px) {
+@media (max-width: 1320px) {
   .jb-cards-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
-@media (max-width: 992px) {
+@media (max-width: 1024px) {
   .jb-cards-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .jb-featured-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .jb-popular-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
 @media (max-width: 768px) {
   .jb-cards-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .jb-featured-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .jb-content-stage {
     padding: 1rem;
+    gap: 2rem;
+  }
+  .jb-section-title {
+    font-size: 1.35rem;
+    white-space: normal;
+  }
+  .jb-hero-card {
+    padding: 2rem 1.35rem;
   }
   .jb-hero-title {
-    font-size: 2.5rem;
+    font-size: 2.35rem;
   }
 }
 </style>
