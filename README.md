@@ -260,16 +260,16 @@ npm test --prefix server
 
 <!-- Updated on 2026-11-11 -->
 ## Current Limitations
-| **Multi‑source audio** – supports Jamendo full streams, Deezer 30 s previews, and Apple Music previews. | ✅ | |
-| **Queue persistence** – playback queue and settings survive page reloads via `localStorage`. | ✅ | |
-| **Play‑Along / Practice Mode** – A‑B loop markers and variable playback speed (0.5‑2×). | ✅ | |
-| **Global keyboard shortcuts** – space, arrows, mute, shuffle, repeat, shortcut guide. | ✅ | |
-| **Batch add & undo delete** – add up to 50 songs at once, undo removal via toast. | ✅ | |
-| **Private playlist privacy** – 404 for non‑owner access, 401 for unauthenticated. | ✅ | |
-| **Responsive design** – desktop sidebar and mobile drawer. | ✅ | |
-| **Accessibility improvements** – ARIA labels, focus indicators. | ✅ | |
-| **Multi‑user collaboration (planned)** – real‑time shared editing. | 📅 Planned | |
-| **Advanced equalizer (planned)** – 5‑band EQ. | 📅 Planned |
+
+| Limitation | Impact |
+|------------|--------|
+| **30-second preview cap on Deezer & Apple Music / iTunes** | Only Jamendo Creative Commons tracks stream in full; Deezer and Apple Music / iTunes tracks are limited to 30-second previews (`30s PREVIEW`). |
+| **Strict authorized CDN domain allowlist** | Arbitrary external MP3 URLs and unauthorized streaming hosts are rejected fail-closed (`403` / playback policy error) to preserve licensing compliance. |
+| **Browser-local favorites, queue & playback state** | Liked tracks and active queue/player state are stored in `localStorage`, so they persist across reloads on the same browser but do not sync across devices. |
+| **Jamendo credentials required for live online search** | Live `/api/search` discovery depends on backend Jamendo API configuration; unconfigured environments cannot fetch live online search results. |
+| **Single-owner playlist write model** | Only the playlist creator can edit or delete a playlist (`404`/`401` on unauthorized access); real-time multi-user collaborative editing is not yet available. |
+| **Native HTML5 `<audio>` playback without DSP effects** | A–B Practice looping and speed controls (`0.5×–2×`) work natively, while a 5-band parametric equalizer (EQ) and vocal/instrument stem separation are not yet implemented. |
+| **Online-only streaming architecture** | Playback requires an active network connection to authorized CDNs; offline downloads and background caching are unsupported. |
 
 ---
 
