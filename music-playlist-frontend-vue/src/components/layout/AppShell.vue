@@ -123,6 +123,37 @@
       @confirm="confirmSidebarDelete"
     />
 
+    <!-- Rename Playlist Dialog for Sidebar Menu -->
+    <div
+      v-if="showRenameModal"
+      class="jb-modal-backdrop"
+      @click.self="closeRenameModal"
+    >
+      <form class="jb-dialog font-mono" role="dialog" aria-label="Rename Playlist" @submit.prevent="confirmSidebarRename">
+        <div class="jb-dialog-header">
+          <span class="jb-dialog-tag">RENAME PLAYLIST</span>
+          <button type="button" class="jb-dialog-close" @click="closeRenameModal">✕</button>
+        </div>
+        <div class="jb-dialog-field">
+          <label for="sidebar-rename-input">PLAYLIST NAME</label>
+          <input
+            id="sidebar-rename-input"
+            ref="renameInputRef"
+            v-model="renameDraft"
+            type="text"
+            maxlength="80"
+            required
+            class="jb-rename-input font-display"
+            @keydown.esc="closeRenameModal"
+          />
+        </div>
+        <div class="jb-rename-actions">
+          <button type="button" class="jb-rename-cancel font-mono" @click="closeRenameModal">CANCEL</button>
+          <button type="submit" class="jb-rename-save font-mono" :disabled="!renameDraft.trim()">SAVE NAME</button>
+        </div>
+      </form>
+    </div>
+
     <!-- Login Modal for Guest Authentication -->
     <LoginModal
       v-if="showLoginModal"
@@ -135,7 +166,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, nextTick, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useUiStore } from '../../stores/ui';
 import { usePlayerStore } from '../../stores/player';
@@ -163,10 +194,15 @@ const toastStore = useToastStore();
 const dockWrapperRef = ref(null);
 const showDeleteConfirm = ref(false);
 const playlistToDelete = ref(null);
+const showRenameModal = ref(false);
+const playlistToRename = ref(null);
+const renameDraft = ref('');
+const renameInputRef = ref(null);
 const showLoginModal = ref(false);
 const pendingGuestAction = ref(null);
 
 let dockResizeObserver = null;
+let lastWasCompactViewport = false;
 
 const runWithAuthGuard = (action) => {
   if (!authStore.isAuthenticated) {
@@ -198,16 +234,36 @@ const handlePlaylistCreated = () => {
 
 const handleSidebarRename = (p) => {
   runWithAuthGuard(async () => {
-    const newName = prompt('Enter new playlist name:', p.name);
-    if (newName && newName.trim() && newName.trim() !== p.name) {
-      try {
-        await playlistStore.updatePlaylist(p._id || p.id, { name: newName.trim() });
-        toastStore.show(`Playlist renamed to "${newName.trim()}"`, 'success');
-      } catch (err) {
-        toastStore.show(err.response?.data?.message || 'Failed to rename playlist', 'error');
-      }
-    }
+    playlistToRename.value = p;
+    renameDraft.value = p.name || '';
+    showRenameModal.value = true;
+    await nextTick();
+    renameInputRef.value?.focus();
+    renameInputRef.value?.select();
   });
+};
+
+const closeRenameModal = () => {
+  showRenameModal.value = false;
+  playlistToRename.value = null;
+  renameDraft.value = '';
+};
+
+const confirmSidebarRename = async () => {
+  if (!playlistToRename.value) return;
+  const trimmed = renameDraft.value.trim();
+  const target = playlistToRename.value;
+  if (!trimmed || trimmed === target.name) {
+    closeRenameModal();
+    return;
+  }
+  try {
+    await playlistStore.updatePlaylist(target._id || target.id, { name: trimmed });
+    toastStore.show(`Playlist renamed to "${trimmed}"`, 'success');
+    closeRenameModal();
+  } catch (err) {
+    toastStore.show(err.response?.data?.message || 'Failed to rename playlist', 'error');
+  }
 };
 
 const handleSidebarDuplicate = (p) => {
@@ -355,13 +411,33 @@ const measureDockHeight = () => {
     const h = Math.round(dockEl.getBoundingClientRect().height);
     if (h > 0) {
       uiStore.dockHeight = h;
+      if (typeof document !== 'undefined') {
+        document.documentElement.style.setProperty('--dock-height', `${h}px`);
+      }
     }
   }
+};
+
+const syncViewportSidebar = () => {
+  if (typeof window === 'undefined') return;
+  const w = window.innerWidth;
+  const isCompactDesktop = w <= 1100 && w > 768;
+  if (isCompactDesktop && !lastWasCompactViewport) {
+    uiStore.isSidebarCollapsed = true;
+  } else if (w > 1100 && lastWasCompactViewport) {
+    uiStore.isSidebarCollapsed = false;
+  }
+  if (w > 768 && uiStore.isMobileSidebarOpen) {
+    uiStore.closeMobileSidebar();
+  }
+  lastWasCompactViewport = isCompactDesktop;
 };
 
 onMounted(() => {
   uiStore.loadFavorites();
   playlistStore.fetchPlaylists().catch(() => {});
+  syncViewportSidebar();
+  window.addEventListener('resize', syncViewportSidebar);
   window.addEventListener('keydown', handleKeyDown);
   if (typeof window !== 'undefined') {
     window._soundwaveOpenShortcutsModal = () => {
@@ -377,6 +453,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  window.removeEventListener('resize', syncViewportSidebar);
   window.removeEventListener('keydown', handleKeyDown);
   dockResizeObserver?.disconnect();
 });
@@ -497,5 +574,50 @@ onUnmounted(() => {
 .jb-setting-row {
   border-bottom: 1px solid rgba(17, 17, 17, 0.1);
   padding: 0.75rem 0;
+}
+
+.jb-rename-input {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  background: #FFFFFF;
+  border: 2px solid var(--border, #111111);
+  box-shadow: 3px 3px 0 var(--border, #111111);
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--ink, #111111);
+}
+
+.jb-rename-input:focus {
+  outline: none;
+  background: #FFFDE6;
+}
+
+.jb-rename-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.jb-rename-cancel,
+.jb-rename-save {
+  padding: 0.55rem 1.1rem;
+  border: 2px solid var(--border, #111111);
+  box-shadow: 3px 3px 0 var(--border, #111111);
+  font-weight: 900;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.jb-rename-cancel {
+  background: #FFFFFF;
+}
+
+.jb-rename-save {
+  background: #5DE3A6;
+}
+
+.jb-rename-save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 </style>

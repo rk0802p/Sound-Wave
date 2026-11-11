@@ -355,6 +355,27 @@ watch(
   width: var(--sidebar-w-collapsed, 80px);
 }
 
+.jb-sidebar.collapsed .jb-sidebar-header {
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 0.85rem 0.5rem;
+}
+
+.jb-sidebar.collapsed .jb-nav-item,
+.jb-sidebar.collapsed .jb-collection-row {
+  justify-content: center;
+  padding: 0.45rem;
+}
+
+.jb-sidebar.collapsed .jb-sidebar-section {
+  padding: 0.6rem 0.5rem;
+}
+
+.jb-sidebar.collapsed .jb-sidebar-footer {
+  padding: 0.75rem 0.5rem calc(var(--dock-height, 88px) + 1rem);
+  min-height: 0;
+}
+
 .jb-sidebar-header {
   padding: 1.25rem 1rem;
   display: flex;

@@ -182,10 +182,18 @@ onUnmounted(() => {
 }
 
 .sidebar-item-container:hover .sidebar-menu-btn,
+.sidebar-playlist-link.is-active + .sidebar-menu-btn,
 .sidebar-menu-btn:focus {
   opacity: 1;
   border-color: #111111;
   box-shadow: 1.5px 1.5px 0 #111111;
+}
+
+@media (hover: none), (max-width: 1024px) {
+  .sidebar-menu-btn {
+    opacity: 1;
+    border-color: #111111;
+  }
 }
 
 .sidebar-menu-btn:hover {

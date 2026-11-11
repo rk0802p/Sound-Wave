@@ -737,4 +737,35 @@ onUnmounted(() => {
   background-color: #111111;
   margin: 4px 0;
 }
+
+@media (max-width: 640px) {
+  .playlist-header-root {
+    padding: 18px;
+    gap: 16px;
+  }
+  .cover-wrapper {
+    width: 136px;
+    height: 136px;
+  }
+  .cover-fallback {
+    font-size: 2.5rem;
+  }
+  .header-meta-stage {
+    min-width: 0;
+    width: 100%;
+  }
+  .header-title {
+    font-size: 1.85rem;
+  }
+  .inline-rename-form {
+    flex-wrap: wrap;
+  }
+  .inline-rename-input {
+    font-size: 1.35rem;
+  }
+  .btn-action {
+    padding: 8px 12px;
+    font-size: 0.78rem;
+  }
+}
 </style>

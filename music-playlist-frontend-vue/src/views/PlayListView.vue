@@ -1,22 +1,5 @@
 <template>
   <div class="pg-unified-playlist font-mono">
-    <!-- Top Nav Back Bar -->
-    <nav class="playlist-nav-bar">
-      <router-link to="/" class="nav-back-link font-mono">
-        ← BACK TO HOME
-      </router-link>
-      <div class="nav-breadcrumbs font-mono">
-        <span class="bc-root">SOUNDWAVE</span>
-        <span class="bc-sep">/</span>
-        <span class="bc-type">PLAYLIST</span>
-        <span v-if="playlist" class="bc-sep">/</span>
-        <span v-if="playlist" class="bc-current font-display">{{ playlist.name }}</span>
-      </div>
-      <router-link to="/explore" class="nav-explore-link font-mono">
-        EXPLORE MIXTAPES ↗
-      </router-link>
-    </nav>
-
     <!-- Main Container -->
     <main class="playlist-main-content">
       <!-- Loading State -->
@@ -345,7 +328,7 @@ const executeDeletePlaylist = async () => {
     await playlistStore.deletePlaylist(playlistId.value);
     showDeleteDialog.value = false;
     toastStore.show(`Deleted "${pName}".`, 'success');
-    router.push('/library');
+    router.push('/');
   } catch (err) {
     toastStore.show(err.response?.data?.message || 'Failed to delete playlist', 'error');
   } finally {
@@ -399,111 +382,11 @@ onMounted(() => {
 
 <style scoped>
 .pg-unified-playlist {
-  min-height: 100vh;
-  background-color: var(--bg, #F3EFE8);
+  width: 100%;
   color: #111111;
   display: flex;
   flex-direction: column;
   font-family: var(--font-body, Figtree, sans-serif);
-}
-
-/* Nav Bar */
-.playlist-nav-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 14px 24px;
-  background-color: #EFEAE1;
-  border-bottom: 2px solid #111111;
-  font-family: var(--font-mono, monospace);
-  font-size: 0.82rem;
-  font-weight: 800;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.nav-back-link {
-  color: #111111;
-  text-decoration: none;
-  padding: 6px 12px;
-  background-color: #FFFFFF;
-  border: 2px solid #111111;
-  box-shadow: 2px 2px 0 #111111;
-  border-radius: 0;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  transition: transform 0.08s ease, box-shadow 0.08s ease, background-color 0.08s ease;
-}
-
-.nav-back-link:hover {
-  background-color: #FFD84A;
-  transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0 #111111;
-}
-
-.nav-back-link:active {
-  transform: translate(1px, 1px);
-  box-shadow: 1px 1px 0 #111111;
-}
-
-.nav-explore-link {
-  color: #111111;
-  text-decoration: none;
-  padding: 6px 12px;
-  background-color: #5DE3A6;
-  border: 2px solid #111111;
-  box-shadow: 2px 2px 0 #111111;
-  border-radius: 0;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  transition: transform 0.08s ease, box-shadow 0.08s ease, background-color 0.08s ease;
-}
-
-.nav-explore-link:hover {
-  background-color: #4BD898;
-  transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0 #111111;
-}
-
-.nav-explore-link:active {
-  transform: translate(1px, 1px);
-  box-shadow: 1px 1px 0 #111111;
-}
-
-.nav-breadcrumbs {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-family: var(--font-mono, monospace);
-}
-
-.bc-root {
-  font-weight: 900;
-  letter-spacing: 0.04em;
-}
-
-.bc-sep {
-  font-weight: 900;
-  color: #111111;
-}
-
-.bc-type {
-  font-weight: 800;
-  font-size: 0.72rem;
-  background-color: #B9A6FF;
-  color: #111111;
-  border: 1.5px solid #111111;
-  padding: 2px 6px;
-  box-shadow: 1.5px 1.5px 0 #111111;
-}
-
-.bc-current {
-  font-family: var(--font-display, "Bricolage Grotesque", sans-serif);
-  font-weight: 900;
-  color: #111111;
-  letter-spacing: -0.01em;
 }
 
 /* Main */
@@ -512,8 +395,14 @@ onMounted(() => {
   max-width: 1240px;
   width: 100%;
   margin: 0 auto;
-  padding: 28px 24px calc(var(--player-h, 88px) + 2rem);
+  padding: 28px 24px calc(var(--dock-height, 88px) + 24px);
   box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .playlist-main-content {
+    padding: 16px 12px calc(var(--dock-height, 92px) + 24px);
+  }
 }
 
 /* Loading */

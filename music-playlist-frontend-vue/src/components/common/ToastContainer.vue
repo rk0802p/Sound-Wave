@@ -29,10 +29,11 @@ const toastStore = useToastStore();
 <style scoped>
 .toast-container {
   position: fixed;
-  bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+  bottom: calc(var(--dock-height, 88px) + 16px + env(safe-area-inset-bottom, 0px));
   right: 20px;
-  z-index: 9999;
+  z-index: 1500;
   pointer-events: none;
+  max-width: calc(100vw - 32px);
 }
 
 .toast-list {
