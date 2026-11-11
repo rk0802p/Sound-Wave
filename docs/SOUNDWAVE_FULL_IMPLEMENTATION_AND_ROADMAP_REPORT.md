@@ -219,7 +219,7 @@ All 32 browser assertions passed end-to-end against live backend and frontend in
 
 ## 4. Visual Evidence & Screenshot Gallery
 
-Screenshots captured automatically during test execution in `screenshots/`:
+Screenshots captured automatically during test execution in `docs/screenshots/`:
 
 | Screenshot File | Description | Acceptance Criteria Verified |
 |-----------------|-------------|-----------------------------|
