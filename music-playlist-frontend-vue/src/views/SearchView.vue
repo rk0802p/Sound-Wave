@@ -147,68 +147,109 @@
 
         <!-- Online Track Results -->
         <div v-else-if="onlineTracks.length" class="tracks-results-list">
-          <div
+          <article
             v-for="(track, idx) in onlineTracks"
             :key="track.id || track._id || idx"
             class="result-track-row online-track-row"
             :class="{ 'is-active': isTrackPlaying(track) }"
-            @click="handlePlayOnlineTrack(track)"
           >
-            <button class="result-play-icon font-mono" @click.stop="handlePlayOnlineTrack(track)">
-              {{ isTrackPlaying(track) && playerStore.isLoading ? '⏳' : (isTrackPlaying(track) && playerStore.isPlaying ? '❚❚' : '▶') }}
+            <!-- Artwork Thumbnail + Fallback + Play overlay -->
+            <button
+              type="button"
+              class="sr-art-wrap"
+              :aria-label="isTrackPlaying(track) && playerStore.isPlaying ? `Pause ${track.title}` : `Play ${track.title}`"
+              @click="handlePlayOnlineTrack(track)"
+            >
+              <img
+                v-if="(track.coverImage || track.artwork) && !failedImgMap[getTrackKey(track, idx)]"
+                :src="track.coverImage || track.artwork"
+                :alt="track.title"
+                class="sr-art-img"
+                loading="lazy"
+                @error="markImageFailed(track, idx)"
+              />
+              <div v-else class="sr-art-fallback font-display">
+                {{ getTrackMonogram(track.title) }}
+              </div>
+              <span class="sr-art-overlay font-mono">
+                {{ isTrackPlaying(track) && playerStore.isLoading ? '⏳' : (isTrackPlaying(track) && playerStore.isPlaying ? '❚❚' : '▶') }}
+              </span>
             </button>
 
+            <!-- Track Details -->
             <div class="result-track-details">
               <div class="result-track-top">
-                <span class="track-title-text font-display">{{ track.title }}</span>
-                <span class="track-source-pill font-mono" :class="getProviderPillClass(track)">
-                  {{ getProviderLabel(track) }}
-                </span>
-                <span v-if="track.license" class="track-license-pill font-mono">
-                  <a
-                    v-if="track.licenseUrl"
-                    :href="track.licenseUrl"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    @click.stop
-                  >{{ track.license }}</a>
-                  <span v-else>{{ track.license }}</span>
-                </span>
-                <button
-                  v-if="track.alternatives && track.alternatives.length > 0"
-                  class="alt-sources-pill font-mono"
-                  @click.stop="switchAlternativeSource(track, 0)"
-                  title="Click to toggle alternate source stream"
-                >
-                  +{{ track.alternatives.length }} ALT SOURCE
-                </button>
+                <h5 class="track-title-text font-display" :title="track.title">{{ track.title }}</h5>
+
+                <div class="result-badges-row font-mono">
+                  <span class="track-source-pill font-mono" :class="getProviderPillClass(track)">
+                    {{ getProviderLabel(track) }}
+                  </span>
+                  <span v-if="track.license" class="track-license-pill font-mono">
+                    <a
+                      v-if="track.licenseUrl"
+                      :href="track.licenseUrl"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >{{ track.license }}</a>
+                    <span v-else>{{ track.license }}</span>
+                  </span>
+                  <button
+                    v-if="track.alternatives && track.alternatives.length > 0"
+                    type="button"
+                    class="alt-sources-pill font-mono"
+                    @click="switchAlternativeSource(track, 0)"
+                    title="Click to toggle alternate source stream"
+                  >
+                    +{{ track.alternatives.length }} ALT SOURCE
+                  </button>
+                  <span class="result-track-time font-mono">
+                    {{ formatDuration(track.duration) }}
+                  </span>
+                </div>
               </div>
 
               <div class="result-track-sub font-mono">
-                <span>{{ track.artist || 'Unknown Artist' }}</span>
-                <span v-if="track.album">/ {{ track.album }}</span>
-                <span v-if="track.attribution" class="track-attribution">• {{ track.attribution }}</span>
+                <span class="sr-artist">{{ track.artist || 'Unknown Artist' }}</span>
+                <span v-if="track.album" class="sr-album">• {{ track.album }}</span>
+              </div>
+
+              <div v-if="track.attribution" class="track-attribution font-mono" :title="track.attribution">
+                {{ track.attribution }}
               </div>
             </div>
 
-            <div class="result-actions" @click.stop>
+            <!-- Action Controls -->
+            <div class="result-actions">
               <button
+                type="button"
+                class="result-play-btn font-mono"
+                @click="handlePlayOnlineTrack(track)"
+              >
+                {{ isTrackPlaying(track) && playerStore.isLoading ? 'LOADING...' : (isTrackPlaying(track) && playerStore.isPlaying ? 'PAUSE ❚❚' : 'PLAY ▶') }}
+              </button>
+
+              <button
+                type="button"
                 class="add-to-queue-btn font-mono"
                 @click="handleAddToQueue(track)"
                 title="Add to Up Next Queue"
               >
                 + QUEUE
               </button>
+
               <AddToPlaylistMenu :track="track">
                 <template #trigger>
                   <button
+                    type="button"
                     class="add-to-mixtape-btn font-mono"
                     title="Add to Playlist"
                   >
-                    + ADD TO PLAYLIST
+                    + PLAYLIST
                   </button>
                 </template>
               </AddToPlaylistMenu>
+
               <a
                 v-if="track.providerTrackUrl"
                 :href="track.providerTrackUrl"
@@ -216,16 +257,11 @@
                 rel="noopener noreferrer"
                 class="view-on-source-btn font-mono"
                 :title="'Open original page on ' + (track.provider || 'Source')"
-                @click.stop
               >
                 ↗ {{ (track.provider === 'jamendo' ? 'Jamendo' : (track.provider || 'Source')).toUpperCase() }}
               </a>
             </div>
-
-            <span class="result-track-time font-mono">
-              {{ formatDuration(track.duration) }}
-            </span>
-          </div>
+          </article>
         </div>
       </section>
 
@@ -370,7 +406,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, reactive, computed, watch, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { usePlaylistStore } from '../stores/playlist';
 import { usePlayerStore } from '../stores/player';
@@ -395,8 +431,17 @@ const providerStatuses = ref({});
 const showAddModal = ref(false);
 const targetTrackForAdd = ref(null);
 const isAddingToPlaylist = ref(false);
+const failedImgMap = reactive({});
 let searchDebounceTimer = null;
 let currentSearchSeq = 0;
+
+const getTrackKey = (track, idx) => track?.id || track?._id || `row-${idx}`;
+const markImageFailed = (track, idx) => {
+  failedImgMap[getTrackKey(track, idx)] = true;
+};
+const getTrackMonogram = (title) => {
+  return String(title || 'SW').trim().substring(0, 2).toUpperCase() || 'SW';
+};
 
 const genreVibes = [
   { name: 'Late Night Lo-Fi', desc: 'Analog tape warmth, dust & cracked vinyl', code: 'FREQ // 01', query: 'Lo-Fi', tint: '#FFEFE7' },
@@ -764,16 +809,18 @@ const addTrackToSelectedPlaylist = async (playlist) => {
   background-color: var(--bg, #F3EFE8);
   color: var(--ink, #111111);
   padding: 2rem;
+  max-width: 1240px;
+  margin: 0 auto;
+  width: 100%;
   box-sizing: border-box;
   font-family: var(--font-body);
 }
 
 .pg-search-header {
-  max-width: 1400px;
-  margin: 0 auto 2.5rem auto;
+  margin: 0 auto 2rem auto;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1.15rem;
 }
 
 .search-kicker-strip {
@@ -1015,12 +1062,610 @@ const addTrackToSelectedPlaylist = async (playlist) => {
   color: var(--ink-muted, #4A4740);
 }
 
+/* Portals & Discovery Idle State */
+.pg-portals-view {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.portals-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  border-bottom: var(--bw, 2px) solid var(--border, #111111);
+  padding-bottom: 0.65rem;
+}
+
+.portals-title {
+  font-size: 1.4rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.portals-subtitle {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--ink-muted, #4A4740);
+}
+
+.editorial-portals-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.editorial-portal-tile {
+  background: var(--tile-bg, #FFFFFF);
+  border: var(--bw, 2px) solid var(--border, #111111);
+  box-shadow: var(--shadow-sm, 3px 3px 0 var(--border, #111111));
+  border-radius: var(--r-md, 12px);
+  padding: 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  cursor: pointer;
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+
+.editorial-portal-tile:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 var(--border, #111111);
+}
+
+.tile-code {
+  font-size: 0.7rem;
+  font-weight: 900;
+  color: var(--ink-muted, #4A4740);
+}
+
+.tile-title {
+  font-size: 1.15rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.tile-desc {
+  font-size: 0.85rem;
+  color: #333333;
+  line-height: 1.35;
+}
+
+.tile-cta {
+  margin-top: auto;
+  padding-top: 0.45rem;
+  font-size: 0.75rem;
+  font-weight: 900;
+}
+
+.keywords-pill-strip {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.keywords-label {
+  font-size: 0.75rem;
+  font-weight: 900;
+}
+
+.keywords-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.tag-pill {
+  background: #FFFFFF;
+  border: 1.5px solid #111111;
+  box-shadow: 2px 2px 0 #111111;
+  padding: 0.25rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+/* Empty Search State */
+.pg-empty-search {
+  background: #FFFFFF;
+  border: 3px solid #111111;
+  box-shadow: 5px 5px 0 #111111;
+  padding: 3rem 1.5rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.empty-glyph {
+  font-size: 2.5rem;
+  font-weight: 900;
+}
+
+.empty-title {
+  font-size: 1.4rem;
+  font-weight: 900;
+}
+
+.empty-text {
+  color: var(--ink-muted, #4A4740);
+}
+
+.reset-search-btn {
+  background: #FFD84A;
+  border: 2px solid #111111;
+  box-shadow: 3px 3px 0 #111111;
+  padding: 0.55rem 1.15rem;
+  font-weight: 900;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+/* Active Search Results Stage */
+.pg-results-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 2.25rem;
+}
+
+.results-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  border-bottom: var(--bw, 2px) solid var(--border, #111111);
+  padding-bottom: 0.65rem;
+}
+
+.header-with-status {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.results-title {
+  font-size: 1.35rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+}
+
+.provider-status-strip {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.status-indicator {
+  font-size: 0.7rem;
+  font-weight: 900;
+  padding: 0.2rem 0.55rem;
+  border: 1.5px solid #111111;
+  background: #EFEAE1;
+}
+
+.status-indicator.status-online {
+  background: #5DE3A6;
+}
+
+.status-indicator.status-limited {
+  background: #FFD84A;
+}
+
+.status-indicator.status-down {
+  background: #FF6B5E;
+  color: #FFFFFF;
+}
+
+.results-count {
+  font-size: 0.75rem;
+  font-weight: 900;
+  padding: 0.2rem 0.55rem;
+  background: #FFD84A;
+  border: 1.5px solid #111111;
+}
+
+.online-searching-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 1.25rem;
+  background: #FFFFFF;
+  border: 2px solid #111111;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.spinner-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #4D6BFF;
+  border: 1.5px solid #111111;
+}
+
+/* Boxed Track Cards List */
+.tracks-results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+.result-track-row {
+  background: var(--surface-2, #FFFFFF);
+  border: var(--bw, 2px) solid var(--border, #111111);
+  box-shadow: var(--shadow-sm, 3px 3px 0 var(--border, #111111));
+  border-radius: var(--r-md, 12px);
+  padding: 0.9rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 0;
+  max-width: 100%;
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+
+.result-track-row:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 5px 5px 0 var(--border, #111111);
+}
+
+.result-track-row.is-active {
+  background: #FFFDF8;
+  border-color: var(--c-blue, #4D6BFF);
+  box-shadow: 4px 4px 0 var(--c-blue, #4D6BFF);
+}
+
+.sr-art-wrap {
+  position: relative;
+  width: 58px;
+  height: 58px;
+  flex-shrink: 0;
+  padding: 0;
+  background: none;
+  border: var(--bw, 2px) solid var(--border, #111111);
+  border-radius: var(--r-sm, 8px);
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.sr-art-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.sr-art-fallback {
+  width: 100%;
+  height: 100%;
+  background: var(--c-sun, #FFD84A);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: #111111;
+}
+
+.sr-art-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(17, 17, 17, 0.55);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.05rem;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.sr-art-wrap:hover .sr-art-overlay,
+.sr-art-wrap:focus-visible .sr-art-overlay,
+.result-track-row.is-active .sr-art-overlay {
+  opacity: 1;
+}
+
+.result-play-icon {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  background: #FFD84A;
+  border: 2px solid #111111;
+  box-shadow: 2px 2px 0 #111111;
+  border-radius: var(--r-sm, 8px);
+  font-weight: 900;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.result-track-details {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.result-track-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.track-title-text {
+  font-size: 1.05rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  color: #111111;
+  margin: 0;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.result-badges-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.track-source-pill,
+.track-license-pill,
+.alt-sources-pill {
+  font-size: 0.68rem;
+  font-weight: 900;
+  padding: 0.15rem 0.45rem;
+  border: 1.5px solid #111111;
+  border-radius: 4px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.track-source-pill.prov-jamendo {
+  background: #FF6B5E;
+  color: #FFFFFF;
+}
+
+.track-source-pill.prov-deezer {
+  background: #FF007F;
+  color: #FFFFFF;
+}
+
+.track-source-pill.prov-itunes,
+.track-source-pill.prov-apple {
+  background: #B9A6FF;
+  color: #111111;
+}
+
+.track-source-pill {
+  background: #FFD84A;
+  color: #111111;
+}
+
+.track-license-pill {
+  background: #EFEAE1;
+  color: #111111;
+}
+
+.track-license-pill a {
+  text-decoration: underline;
+  color: inherit;
+}
+
+.alt-sources-pill {
+  background: #5DE3A6;
+  cursor: pointer;
+}
+
+.result-track-time {
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: var(--ink-muted, #4A4740);
+  white-space: nowrap;
+}
+
+.result-track-sub {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--ink-muted, #4A4740);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.sr-artist,
+.sr-album {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.track-attribution {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #5C574E;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.result-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  flex-shrink: 0;
+}
+
+.result-play-btn,
+.add-to-queue-btn,
+.add-to-mixtape-btn,
+.view-on-source-btn {
+  padding: 0.38rem 0.65rem;
+  border: 1.5px solid #111111;
+  box-shadow: 2px 2px 0 #111111;
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  cursor: pointer;
+  text-decoration: none;
+  color: #111111;
+  background: #FFFFFF;
+  white-space: nowrap;
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+
+.result-play-btn {
+  background: #FFD84A;
+}
+
+.add-to-mixtape-btn {
+  background: #5DE3A6;
+}
+
+.view-on-source-btn {
+  background: #EFEAE1;
+}
+
+.result-play-btn:hover,
+.add-to-queue-btn:hover,
+.add-to-mixtape-btn:hover,
+.view-on-source-btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 #111111;
+}
+
+/* Mixtape Grid */
+.mixtapes-results-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.result-mixtape-card {
+  background: #FFFFFF;
+  border: 2px solid #111111;
+  box-shadow: 3px 3px 0 #111111;
+  border-radius: var(--r-md, 12px);
+  padding: 0.9rem;
+  display: flex;
+  gap: 0.85rem;
+  align-items: center;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.result-cover-box {
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  border: 2px solid #111111;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #FFD84A;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.result-cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.result-cover-fallback {
+  font-weight: 900;
+  font-size: 1.1rem;
+}
+
+.result-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.result-track-tag {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--ink-muted, #4A4740);
+}
+
+.result-name {
+  font-size: 1rem;
+  font-weight: 900;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.result-desc {
+  font-size: 0.8rem;
+  color: var(--ink-muted, #4A4740);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 1024px) {
+  .editorial-portals-grid,
+  .mixtapes-results-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .result-track-row {
+    flex-wrap: wrap;
+  }
+  .result-actions {
+    width: 100%;
+    padding-top: 0.55rem;
+    border-top: 1.5px solid rgba(17, 17, 17, 0.08);
+  }
+}
+
 @media (max-width: 768px) {
   .pg-search-root {
     padding: 1rem;
   }
-  .search-results-grid {
-    grid-template-columns: 1fr;
+  .editorial-portals-grid,
+  .mixtapes-results-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .result-track-row {
+    padding: 0.8rem;
+    gap: 0.75rem;
+  }
+  .track-title-text {
+    white-space: normal;
   }
 }
 </style>
