@@ -1,27 +1,5 @@
 <template>
   <div class="pg-search-root" data-accent="lavender">
-    <!-- Background Wash & Drifting Orbs -->
-    <div class="wash" id="wash" :style="{ backgroundColor: currentWashColor }"></div>
-    <div class="bgb" aria-hidden="true">
-      <i></i>
-      <i></i>
-      <i></i>
-    </div>
-
-    <!-- 0. Editorial Top Nav -->
-    <nav class="search-top-nav">
-      <router-link to="/" class="back-home-pill font-mono">
-        ← BACK TO HOMEPAGE
-      </router-link>
-      <div class="nav-brand font-display">
-        <span class="orb-icon">🎧</span>
-        <span>SOUNDWAVE ONLINE DISCOVERY</span>
-      </div>
-      <button class="queue-toggle-top font-mono" @click="showQueueDrawer = !showQueueDrawer">
-        UP NEXT QUEUE ({{ playerStore.queue?.length || 0 }})
-      </button>
-    </nav>
-
     <!-- 1. Editorial Search Header Stage -->
     <header class="pg-search-header">
       <div class="search-kicker-strip font-mono">
@@ -388,71 +366,6 @@
         </button>
       </div>
     </div>
-
-    <!-- Up Next Queue Drawer Overlay -->
-    <div
-      v-if="showQueueDrawer"
-      class="queue-drawer-overlay"
-      @click.self="showQueueDrawer = false"
-    >
-      <aside class="queue-drawer-panel glass" role="dialog" aria-label="Up Next Queue">
-        <div class="queue-drawer-header">
-          <div class="queue-title-wrap">
-            <h3 class="queue-title font-display">Up Next Queue</h3>
-            <span class="queue-badge font-mono">{{ playerStore.queue?.length || 0 }} TRACKS</span>
-          </div>
-          <button class="queue-close-btn font-mono" @click="showQueueDrawer = false">✕</button>
-        </div>
-
-        <div v-if="!playerStore.queue || playerStore.queue.length === 0" class="queue-empty font-mono">
-          Queue is empty. Select tracks and click "+ QUEUE" to add music.
-        </div>
-
-        <div v-else class="queue-track-list">
-          <div
-            v-for="(t, qIdx) in playerStore.queue"
-            :key="t._id || t.id || qIdx"
-            class="queue-track-row"
-            :class="{ 'is-active': playerStore.trackIndex === qIdx }"
-            @click="handlePlayQueueIndex(qIdx)"
-          >
-            <span class="queue-track-idx font-mono">{{ qIdx + 1 }}</span>
-            <div class="queue-track-meta">
-              <span class="queue-track-name font-display">{{ t.title || t[0] }}</span>
-              <span class="queue-track-sub font-mono">{{ t.artist || t[1] }}</span>
-            </div>
-            <span v-if="t.provider || t.source?.provider" class="queue-track-prov font-mono">
-              <a
-                v-if="isJamendoTrack(t) && getTrackSourceUrl(t)"
-                :href="getTrackSourceUrl(t)"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="queue-track-jamendo-link font-mono"
-                title="Open track on Jamendo"
-                @click.stop
-              >
-                ↗ JAMENDO
-              </a>
-              <template v-else>
-                {{ (t.provider || t.source?.provider || '').toUpperCase() }}
-              </template>
-            </span>
-            <button
-              class="queue-remove-btn font-mono"
-              @click.stop="playerStore.removeFromQueue(qIdx)"
-              title="Remove from queue"
-            >
-              ✕
-            </button>
-          </div>
-        </div>
-      </aside>
-    </div>
-
-    <!-- Floating Player Dock -->
-    <FloatingPlayerDock
-      @toggle-queue="showQueueDrawer = !showQueueDrawer"
-    />
   </div>
 </template>
 
@@ -464,7 +377,6 @@ import { usePlayerStore } from '../stores/player';
 import { useToastStore } from '../stores/toast';
 import { detectProviderType } from '../services/providers/detector';
 import { searchApi } from '../api/search';
-import FloatingPlayerDock from '../components/player/FloatingPlayerDock.vue';
 import AddToPlaylistMenu from '../components/playlists/AddToPlaylistMenu.vue';
 
 const router = useRouter();
@@ -475,8 +387,6 @@ const toastStore = useToastStore();
 
 const query = ref('');
 const activeCategory = ref('all'); // 'all' | 'online' | 'playlists' | 'tracks'
-const showQueueDrawer = ref(false);
-const currentWashColor = computed(() => playerStore.tint || '#d8faf6');
 
 // Online Multi-Source Search State
 const onlineTracks = ref([]);
@@ -788,12 +698,6 @@ const handlePlayOnlineTrack = async (track) => {
   }
 };
 
-const handlePlayQueueIndex = (index) => {
-  if (!playerStore.queue || !playerStore.queue[index]) return;
-  playerStore.trackIndex = index;
-  playerStore.playTrack(playerStore.queue[index], playerStore.queue, index);
-};
-
 const switchAlternativeSource = (track, altIndex) => {
   if (!track.alternatives || !track.alternatives[altIndex]) return;
   const alt = track.alternatives[altIndex];
@@ -857,63 +761,11 @@ const addTrackToSelectedPlaylist = async (playlist) => {
 
 <style scoped>
 .pg-search-root {
-  min-height: 100vh;
   background-color: var(--bg, #F3EFE8);
   color: var(--ink, #111111);
-  padding: 1.5rem 2rem calc(var(--player-h, 88px) + 2.5rem);
+  padding: 2rem;
   box-sizing: border-box;
   font-family: var(--font-body);
-}
-
-.search-top-nav {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding-bottom: 1.25rem;
-  margin-bottom: 2rem;
-  border-bottom: var(--bw, 2px) solid var(--border, #111111);
-}
-
-.back-home-pill {
-  font-size: 0.8rem;
-  font-weight: 800;
-  padding: 0.45rem 1rem;
-  background: var(--surface-2, #FFFFFF);
-  color: var(--ink, #111111);
-  border: var(--bw, 2px) solid var(--border, #111111);
-  box-shadow: var(--shadow-sm, 3px 3px 0 var(--border, #111111));
-  border-radius: var(--r-pill, 999px);
-  text-decoration: none;
-  letter-spacing: 0.04em;
-  transition: transform 0.08s ease;
-}
-
-.back-home-pill:hover {
-  background: var(--yellow, #FFD84A);
-}
-
-.nav-brand {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 1.25rem;
-  font-weight: 900;
-  letter-spacing: -0.03em;
-  color: var(--ink, #111111);
-  text-transform: uppercase;
-}
-
-.queue-toggle-top {
-  font-size: 0.78rem;
-  font-weight: 800;
-  padding: 0.4rem 0.85rem;
-  background: var(--surface-2, #FFFFFF);
-  color: var(--ink, #111111);
-  border: var(--bw, 2px) solid var(--border, #111111);
-  box-shadow: var(--shadow-sm, 3px 3px 0 var(--border, #111111));
-  border-radius: var(--r-pill, 999px);
-  cursor: pointer;
 }
 
 .pg-search-header {
@@ -1164,9 +1016,8 @@ const addTrackToSelectedPlaylist = async (playlist) => {
 }
 
 @media (max-width: 768px) {
-  .search-top-nav {
-    flex-direction: column;
-    align-items: flex-start;
+  .pg-search-root {
+    padding: 1rem;
   }
   .search-results-grid {
     grid-template-columns: 1fr;

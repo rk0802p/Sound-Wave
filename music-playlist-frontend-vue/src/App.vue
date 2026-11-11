@@ -12,7 +12,7 @@
 <script setup>
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
-import AppLayout from './components/layout/AppLayout.vue';
+import AppShell from './components/layout/AppShell.vue';
 import OfflineBanner from './components/common/OfflineBanner.vue';
 
 const route = useRoute();
@@ -22,7 +22,7 @@ const isAuthRoute = computed(() => {
 });
 
 const layout = computed(() => {
-  return isAuthRoute.value ? 'div' : AppLayout;
+  return isAuthRoute.value ? 'div' : AppShell;
 });
 </script>
 

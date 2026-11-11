@@ -1,20 +1,20 @@
 <template>
-  <div
-    class="dock glass"
+  <footer
+    class="jb-player-bar dock font-mono"
     :class="{ show: isVisible, playing: playerStore.isPlaying }"
     id="dock"
     role="region"
-    aria-label="Player"
+    aria-label="Persistent Audio Player"
     :style="{
       '--o1': playerStore.o1 || '#7ff0e6',
       '--o2': playerStore.o2 || '#19c9bd',
       '--sh': (playerStore.o2 || '#19c9bd') + '88',
     }"
   >
-    <!-- Left: Now Playing Vinyl & Metadata -->
-    <div class="now">
+    <!-- Left: Artwork, Track Metadata & Favorite Toggle -->
+    <div class="now jb-pb-track">
       <div
-        class="vin"
+        class="jb-pb-art vin"
         :title="playerStore.isPlaying ? 'Now Playing' : 'Playback Paused'"
         @click="handleTogglePlay($event)"
       >
@@ -22,18 +22,20 @@
           v-if="currentTrackArtwork"
           :src="currentTrackArtwork"
           :alt="currentTrackTitle"
-          class="vin-img"
+          class="jb-pb-cover"
           loading="lazy"
         />
-        <i v-else id="vE">{{ currentTrackEmoji }}</i>
+        <div v-else class="jb-pb-fallback font-display">
+          {{ currentTrackInitial }}
+        </div>
       </div>
-      <div class="nm">
-        <b id="nT" :title="currentTrackTitle">{{ currentTrackTitle }}</b>
-        <small id="nA" :title="currentTrackArtist">
+
+      <div class="nm jb-pb-text">
+        <b id="nT" class="jb-pb-title font-display" :title="currentTrackTitle">{{ currentTrackTitle }}</b>
+        <small id="nA" class="jb-pb-artist" :title="currentTrackArtist">
           {{ currentTrackArtist }}
           <span v-if="isUnavailable" class="unavailable-tag"> • Unavailable</span>
         </small>
-        <!-- Multi-Source Preview Metadata -->
         <div v-if="isPreviewTrack" class="dock-preview-meta">
           <span class="dock-preview-badge font-mono">30s PREVIEW</span>
           <span class="dock-provider-pill font-mono" :class="previewProviderClass">{{ previewProviderName }}</span>
@@ -56,80 +58,87 @@
           </span>
         </div>
       </div>
+
+      <button
+        type="button"
+        class="jb-pb-fav font-mono"
+        id="fav"
+        :class="{ active: isFavorite }"
+        :aria-pressed="isFavorite ? 'true' : 'false'"
+        :aria-label="isFavorite ? 'Remove from Favourites' : 'Add to Favourites'"
+        title="Like track"
+        @click="toggleFavorite($event)"
+      >
+        ♥
+      </button>
     </div>
 
-    <!-- Center: Playback Controls & Progress -->
-    <div class="ctr">
-      <div class="btns">
-        <!-- Favourite Button -->
+    <!-- Center: Playback Controls & Progress Bar -->
+    <div class="ctr jb-pb-controls">
+      <div class="btns jb-pb-buttons">
         <button
-          class="cb fav"
-          id="fav"
-          :aria-pressed="isFavorite ? 'true' : 'false'"
-          :aria-label="isFavorite ? 'Remove from Favourites' : 'Add to Favourites'"
-          @click="toggleFavorite($event)"
-        >
-          <svg viewBox="0 0 24 24"><path :d="ICONS.heart" /></svg>
-        </button>
-
-        <!-- Repeat Button (Hidden on small mobile) -->
-        <button
-          class="cb hm"
+          type="button"
+          class="jb-btn-icon hm"
           id="rep"
+          :class="{ on: playerStore.repeat !== 'off' }"
           :aria-pressed="playerStore.repeat !== 'off' ? 'true' : 'false'"
           :aria-label="'Repeat Mode: ' + playerStore.repeat"
+          :title="'Repeat: ' + playerStore.repeat"
           @click="playerStore.cycleRepeat()"
         >
-          <svg viewBox="0 0 24 24"><path :d="ICONS.rep" /></svg>
+          🔁
         </button>
 
-        <!-- Previous Button -->
         <button
-          class="cb"
+          type="button"
+          class="jb-btn-icon"
           id="prev"
           aria-label="Previous Track"
+          title="Previous track"
           @click="playerStore.prevTrack()"
         >
-          <svg viewBox="0 0 24 24"><path :d="ICONS.prev" /></svg>
+          ⏮
         </button>
 
-        <!-- Big Play/Pause Bubble Button -->
         <button
-          class="cb big orb"
+          type="button"
+          class="jb-btn-play font-display"
           id="pp"
           :aria-label="playerStore.isLoading && !playerStore.isPlaying ? 'Loading audio' : (playerStore.isPlaying ? 'Pause' : 'Play')"
+          title="Play / Pause"
           @click="handleTogglePlay($event)"
         >
           <span v-if="playerStore.isLoading && !playerStore.isPlaying" class="dock-spinner" aria-hidden="true"></span>
-          <svg v-else-if="playerStore.isPlaying" viewBox="0 0 24 24"><path :d="ICONS.pause" /></svg>
-          <svg v-else viewBox="0 0 24 24"><path :d="ICONS.play" /></svg>
+          <span v-else>{{ playerStore.isPlaying ? '❚❚' : '▶' }}</span>
         </button>
 
-        <!-- Next Button -->
         <button
-          class="cb"
+          type="button"
+          class="jb-btn-icon"
           id="next"
           aria-label="Next Track"
+          title="Next track"
           @click="playerStore.nextTrack()"
         >
-          <svg viewBox="0 0 24 24"><path :d="ICONS.next" /></svg>
+          ⏭
         </button>
 
-        <!-- Shuffle Button (Hidden on small mobile) -->
         <button
-          class="cb hm"
+          type="button"
+          class="jb-btn-icon hm"
           id="shuf"
+          :class="{ on: playerStore.shuffle }"
           :aria-pressed="playerStore.shuffle ? 'true' : 'false'"
           aria-label="Toggle Shuffle"
+          :title="'Shuffle: ' + (playerStore.shuffle ? 'On' : 'Off')"
           @click="playerStore.toggleShuffle()"
         >
-          <svg viewBox="0 0 24 24"><path :d="ICONS.shuf" /></svg>
+          🔀
         </button>
       </div>
 
-      <!-- Real Scrubbable Progress Bar with A/B Loop Markers -->
-      <div class="prog">
-        <span id="tc">{{ formatTime(playerStore.currentTime) }}</span>
+      <div class="prog jb-pb-timeline">
+        <span id="tc" class="jb-pb-time">{{ formatTime(playerStore.currentTime) }}</span>
         <div class="seek-track-wrapper">
           <input
             type="range"
@@ -154,15 +163,15 @@
             title="Loop Marker B"
           >B</div>
         </div>
-        <span id="td">{{ formatTime(playerStore.duration) }}</span>
+        <span id="td" class="jb-pb-time">{{ formatTime(playerStore.duration) }}</span>
       </div>
     </div>
 
-    <!-- Right: Secondary Controls (Practice, Speed, Info, Visualizer, Queue, Volume) -->
-    <div class="ex">
-      <!-- Play-Along Practice Mode Popover Button -->
+    <!-- Right: Practice, Speed, License, Visualizer, Volume & Queue Pill -->
+    <div class="ex jb-pb-extras">
       <button
-        class="cb practice-btn font-mono"
+        type="button"
+        class="jb-dock-chip practice-btn font-mono"
         id="practiceBtn"
         :class="{ 'is-looping': playerStore.isLooping, 'is-open': showPracticePopover }"
         :aria-pressed="playerStore.isLooping ? 'true' : 'false'"
@@ -170,12 +179,12 @@
         title="Open Play-Along & Practice Panel"
         @click="showPracticePopover = !showPracticePopover"
       >
-        <span class="loop-icon-text font-mono">A⇄B</span>
+        A⇄B
       </button>
 
-      <!-- Playback Speed Cycle Button -->
       <button
-        class="cb speed-btn font-mono"
+        type="button"
+        class="jb-dock-chip speed-btn font-mono"
         id="speedBtn"
         aria-label="Playback Speed"
         :title="'Playback Speed: ' + playerStore.playbackSpeed + 'x (Click to cycle)'"
@@ -184,20 +193,20 @@
         {{ playerStore.playbackSpeed }}x
       </button>
 
-      <!-- License / Attribution Info -->
       <button
-        class="cb"
+        type="button"
+        class="jb-btn-icon hm"
         id="lyr"
         aria-label="Track Rights & License Information"
         title="View License & Attribution"
         @click="$emit('open-info', playerStore.currentTrack)"
       >
-        <svg viewBox="0 0 24 24"><path :d="ICONS.mic" /></svg>
+        ⓘ
       </button>
 
-      <!-- Real-Time Audio Visualizer Toggle -->
       <button
-        class="cb"
+        type="button"
+        class="jb-btn-icon hm"
         id="visBtn"
         :class="{ 'is-active': showVisualizer }"
         :aria-pressed="showVisualizer ? 'true' : 'false'"
@@ -205,35 +214,20 @@
         title="Toggle Real-Time Audio Visualizer"
         @click="showVisualizer = !showVisualizer"
       >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M4 12h2M8 7v10M12 4v16M16 8v8M20 11v2" stroke-linecap="round" />
-        </svg>
+        ılı
       </button>
 
-      <!-- Queue Toggle -->
       <button
-        class="cb"
-        id="que"
-        aria-label="Toggle Queue"
-        title="View Up Next Queue"
-        @click="$emit('toggle-queue')"
-      >
-        <svg viewBox="0 0 24 24"><path :d="ICONS.que" /></svg>
-      </button>
-
-      <!-- Volume Mute Toggle -->
-      <button
-        class="cb"
+        type="button"
+        class="jb-btn-icon"
         id="mute"
         :aria-label="isMutedOrZero ? 'Unmute' : 'Mute'"
         :title="isMutedOrZero ? 'Unmute' : 'Mute'"
         @click="toggleMute"
       >
-        <svg v-if="isMutedOrZero" viewBox="0 0 24 24"><path :d="ICONS.mute" /></svg>
-        <svg v-else viewBox="0 0 24 24"><path :d="ICONS.vol" /></svg>
+        {{ isMutedOrZero ? '🔇' : '🔊' }}
       </button>
 
-      <!-- Volume Range Slider -->
       <input
         type="range"
         id="vol"
@@ -241,9 +235,21 @@
         max="100"
         :value="volumePercentage"
         :style="{ '--p': volumePercentage + '%' }"
+        class="jb-vol-slider hm"
         aria-label="Volume Slider"
         @input="handleVolumeInput"
       />
+
+      <button
+        type="button"
+        class="jb-queue-pill font-mono"
+        id="que"
+        aria-label="Toggle Queue"
+        title="View Up Next Queue"
+        @click="$emit('toggle-queue')"
+      >
+        ≡ {{ playerStore.queue?.length || 0 }}
+      </button>
     </div>
 
     <!-- Play-Along / Practice Mode Popover Panel -->
@@ -256,18 +262,18 @@
     >
       <div class="pop-header">
         <div class="pop-title font-display">⚡ PLAY-ALONG PRACTICE</div>
-        <button class="pop-close" @click="showPracticePopover = false" aria-label="Close Practice Mode">✕</button>
+        <button type="button" class="pop-close" @click="showPracticePopover = false" aria-label="Close Practice Mode">✕</button>
       </div>
 
-      <!-- Playback Speed Row -->
       <div class="pop-section">
         <div class="pop-label">PLAYBACK SPEED</div>
         <div class="speed-btn-group">
           <button
             v-for="s in [0.5, 0.75, 1, 1.25, 1.5, 2]"
             :key="s"
+            type="button"
             class="speed-chip font-mono"
-            :class="{ 'active': playerStore.playbackSpeed === s }"
+            :class="{ active: playerStore.playbackSpeed === s }"
             @click="playerStore.setPlaybackSpeed(s)"
           >
             {{ s }}x
@@ -275,7 +281,6 @@
         </div>
       </div>
 
-      <!-- A-B Loop Controls Row -->
       <div class="pop-section">
         <div class="pop-label-row">
           <span class="pop-label">A-B LOOP MARKERS</span>
@@ -295,13 +300,14 @@
         </div>
 
         <div class="loop-actions-row">
-          <button class="neo-pop-btn btn-set-a font-mono" id="btnSetA" @click="playerStore.setLoopA()">
+          <button type="button" class="neo-pop-btn btn-set-a font-mono" id="btnSetA" @click="playerStore.setLoopA()">
             SET A ({{ formatTime(playerStore.currentTime) }})
           </button>
-          <button class="neo-pop-btn btn-set-b font-mono" id="btnSetB" @click="playerStore.setLoopB()">
+          <button type="button" class="neo-pop-btn btn-set-b font-mono" id="btnSetB" @click="playerStore.setLoopB()">
             SET B ({{ formatTime(playerStore.currentTime) }})
           </button>
           <button
+            type="button"
             class="neo-pop-btn btn-toggle-loop font-mono"
             id="btnToggleLoop"
             :class="{ 'is-active': playerStore.isLooping }"
@@ -310,7 +316,7 @@
           >
             {{ playerStore.isLooping ? 'LOOP: ON' : 'LOOP: OFF' }}
           </button>
-          <button class="neo-pop-btn btn-clear-loop font-mono" id="btnClearLoop" @click="playerStore.clearLoop()">
+          <button type="button" class="neo-pop-btn btn-clear-loop font-mono" id="btnClearLoop" @click="playerStore.clearLoop()">
             CLEAR
           </button>
         </div>
@@ -322,22 +328,33 @@
       :is-open="showVisualizer"
       @close="showVisualizer = false"
     />
-  </div>
+  </footer>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { usePlayerStore } from '../../stores/player';
+import { useUiStore } from '../../stores/ui';
+import { useToastStore } from '../../stores/toast';
 import { resolvePlayableAudioUrl } from '../../services/providers/detector';
 import AudioVisualizer from './AudioVisualizer.vue';
 
 const emit = defineEmits(['open-info', 'toggle-queue', 'bubble-pop']);
 const playerStore = usePlayerStore();
+const uiStore = useUiStore();
+const toastStore = useToastStore();
+
 const isVisible = ref(true);
 const showVisualizer = ref(false);
 const showPracticePopover = ref(false);
 
-// Multi-source preview computed properties
+onMounted(() => {
+  if (typeof window !== 'undefined') {
+    window._soundwavePlayerStore = playerStore;
+  }
+  uiStore.loadFavorites();
+});
+
 const isPreviewTrack = computed(() => {
   const t = playerStore.currentTrack;
   if (!t) return false;
@@ -359,57 +376,33 @@ const previewProviderClass = computed(() => {
   return p === 'deezer' ? 'pill-deezer' : 'pill-itunes';
 });
 
-// Persistent favorites in localStorage
-const favoritesSet = ref(new Set());
-
-onMounted(() => {
-  if (typeof window !== 'undefined') {
-    window._soundwavePlayerStore = playerStore;
-  }
-  try {
-    const saved = localStorage.getItem('soundwave_favorites');
-    if (saved) {
-      favoritesSet.value = new Set(JSON.parse(saved));
-    }
-  } catch (e) {}
-});
-
-const isFavorite = computed(() => {
-  const id = playerStore.currentTrack?._id || playerStore.currentTrack?.id;
-  return id ? favoritesSet.value.has(id) : false;
-});
+const isFavorite = computed(() => uiStore.isFavoriteTrack(playerStore.currentTrack));
 
 const toggleFavorite = (event) => {
-  const id = playerStore.currentTrack?._id || playerStore.currentTrack?.id;
-  if (!id) return;
-  if (favoritesSet.value.has(id)) {
-    favoritesSet.value.delete(id);
-  } else {
-    favoritesSet.value.add(id);
-    if (event) {
-      emit('bubble-pop', { target: event.currentTarget, count: 12 });
-    }
+  const track = playerStore.currentTrack;
+  if (!track) return;
+  const added = uiStore.toggleFavorite(track);
+  if (added && event) {
+    emit('bubble-pop', { target: event.currentTarget, count: 12 });
   }
-  try {
-    localStorage.setItem('soundwave_favorites', JSON.stringify([...favoritesSet.value]));
-  } catch (e) {}
+  toastStore.show(added ? 'Added to Liked Tracks' : 'Removed from Liked Tracks', added ? 'success' : 'info');
 };
 
-// Track metadata
 const currentTrackTitle = computed(() => {
-  return playerStore.currentTrack?.title || playerStore.currentTrack?.[0] || 'Select a Song';
+  return playerStore.currentTrack?.title || playerStore.currentTrack?.[0] || 'No Track Loaded';
 });
 
 const currentTrackArtist = computed(() => {
-  return playerStore.currentTrack?.artist || playerStore.currentTrack?.[1] || 'Soundwave Audio Workstation';
+  return playerStore.currentTrack?.artist || playerStore.currentTrack?.[1] || 'Soundwave Jamendo Stream';
 });
 
 const currentTrackArtwork = computed(() => {
-  return playerStore.currentTrack?.coverImage || playerStore.currentTrack?.artwork || null;
+  const t = playerStore.currentTrack;
+  return t?.coverImage || t?.artwork || t?.albumArt || null;
 });
 
-const currentTrackEmoji = computed(() => {
-  return playerStore.currentTrack?.emoji || playerStore.currentTrack?.e || '🎵';
+const currentTrackInitial = computed(() => {
+  return currentTrackTitle.value.substring(0, 2).toUpperCase();
 });
 
 const isJamendoTrack = computed(() => {
@@ -453,7 +446,6 @@ const jamendoAttribution = computed(() => {
   return t.attribution || (t.artist ? `Music by ${t.artist} via Jamendo (Creative Commons)` : 'Jamendo Creative Commons');
 });
 
-// Real progress calculation
 const seekProgressValue = computed(() => {
   if (!playerStore.duration || playerStore.duration <= 0) return 0;
   const ratio = Math.max(0, Math.min(1, playerStore.currentTime / playerStore.duration));
@@ -472,7 +464,6 @@ const handleSeekInput = (event) => {
   playerStore.seek(targetTime);
 };
 
-// Volume calculation
 const isMutedOrZero = computed(() => {
   return playerStore.muted || playerStore.volume <= 0.01;
 });
@@ -497,7 +488,7 @@ const toggleMute = () => {
 const isUnavailable = computed(() => {
   const t = playerStore.currentTrack;
   if (!t) return false;
-  if (t.isUnavailable || playerStore.playbackState === "unavailable") return true;
+  if (t.isUnavailable || playerStore.playbackState === 'unavailable') return true;
   const audioUrl = resolvePlayableAudioUrl(t);
   const canResolve = Boolean(t.needsResolution && t.providerTrackId && t.provider && t.provider !== 'spotify');
   return !audioUrl && !canResolve;
@@ -519,166 +510,111 @@ const handleTogglePlay = (event) => {
   }
 };
 
-// Time formatting helper
 const formatTime = (seconds) => {
   if (!seconds || isNaN(seconds) || seconds < 0) return '0:00';
   const m = Math.floor(seconds / 60);
   const s = Math.floor(seconds % 60);
   return `${m}:${String(s).padStart(2, '0')}`;
 };
-
-// High-fidelity SVG Icon paths from reference
-const ICONS = {
-  play: 'M7 4v16l13-8z',
-  pause: 'M6 4h4v16H6zM14 4h4v16h-4z',
-  prev: 'M6 5h2v14H6zM20 5v14L9 12z',
-  next: 'M16 5h2v14h-2zM4 5v14l11-7z',
-  rep: 'M7 7h10v3l4-4-4-4v3H5v6h2zM17 17H7v-3l-4 4 4 4v-3h12v-6h-2z',
-  shuf: 'M10.590 9.170L5.410 4 4 5.410l5.170 5.170 1.420-1.410zM14.500 4l2.040 2.040L4 18.590 5.410 20 17.960 7.460 20 9.500V4h-5.500zm.33 9.410l-1.410 1.410 3.130 3.130L14.500 20H20v-5.500l-2.040 2.040-3.130-3.130z',
-  heart: 'M12 21s-8-5.200-8-11a4.600 4.600 0 0 1 8-3 4.600 4.600 0 0 1 8 3c0 5.800-8 11-8 11z',
-  mic: 'M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.900V21h2v-3.100A7 7 0 0 0 19 11z',
-  que: 'M4 6h12v2H4zM4 10h12v2H4zM4 14h8v2H4zM18 12h2v3h3v2h-3v3h-2v-3h-3v-2h3z',
-  vol: 'M3 9v6h4l5 4V5L7 9zm13.500 3a4.500 4.500 0 0 0-2.500-4v8a4.500 4.500 0 0 0 2.500-4z',
-  mute: 'M3 9v6h4l5 4V5L7 9zm11 1.400L15.400 9 17 10.600 18.600 9 20 10.400 18.400 12 20 13.600 18.600 15 17 13.400 15.400 15 14 13.600 15.600 12z',
-};
 </script>
 
 <style scoped>
-/* Floating Glass Dock */
-.dock {
+/* Neo-Brutalist Persistent Bottom Player Bar (matches Home "before" screenshot) */
+.jb-player-bar {
   position: fixed;
-  z-index: 50;
-  left: 50%;
-  transform: translate(-50%, 0);
-  bottom: calc(0.8rem + env(safe-area-inset-bottom, 0px));
-  width: min(1240px, calc(100% - 1.5rem));
-  max-width: calc(100vw - 1rem);
-  box-sizing: border-box;
-  display: grid;
-  grid-template-columns: 1fr minmax(0, 1.5fr) 1fr;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.7rem 1.2rem 0.7rem 0.8rem;
-  border-radius: 40px;
-  box-shadow: 0 16px 40px rgba(120, 80, 200, 0.18), 0 0 0 1px rgba(255, 255, 255, 0.9);
-  transition: transform 0.6s cubic-bezier(0.2, 1.4, 0.3, 1), background-color 0.4s;
-}
-
-/* Left: Vinyl & Metadata */
-.now {
+  bottom: 0;
+  left: 0;
+  right: 0;
+  min-height: 88px;
+  background: var(--surface, #FFFDF8);
+  border-top: var(--bw, 2px) solid var(--border, #111111);
   display: flex;
   align-items: center;
-  gap: 0.8rem;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.45rem 1.5rem calc(0.45rem + env(safe-area-inset-bottom, 0px));
+  z-index: 1000;
+  box-sizing: border-box;
+  color: var(--ink, #111111);
+}
+
+.jb-pb-track {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 290px;
   min-width: 0;
 }
 
-.vin {
-  width: 62px;
-  height: 62px;
-  flex: none;
-  border-radius: 50%;
-  background: repeating-radial-gradient(circle, #2b1d5a 0 2px, #4a2f86 2px 4px);
-  display: grid;
-  place-items: center;
-  animation: spin 4s linear infinite;
-  animation-play-state: paused;
-  box-shadow: 0 10px 20px var(--sh);
-  position: relative;
+.jb-pb-art {
+  width: 50px;
+  height: 50px;
+  flex-shrink: 0;
   cursor: pointer;
-  overflow: hidden;
-  transition: transform 0.3s;
 }
 
-.vin:hover {
-  transform: scale(1.05);
-}
-
-.vin::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background: conic-gradient(
-    transparent,
-    rgba(255, 255, 255, 0.4),
-    transparent 25%,
-    transparent 50%,
-    rgba(255, 255, 255, 0.3),
-    transparent 75%
-  );
-}
-
-.vin i {
-  position: relative;
-  width: 48%;
-  height: 48%;
-  border-radius: 50%;
-  font-style: normal;
-  display: grid;
-  place-items: center;
-  font-size: 0.95rem;
-  background: linear-gradient(135deg, var(--o1), var(--o2));
-  color: #fff;
-  z-index: 2;
-  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.5);
-}
-
-.vin-img {
+.jb-pb-cover {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 50%;
-  z-index: 1;
+  border: 1.5px solid var(--border, #111111);
+  border-radius: 6px;
 }
 
-.dock.playing .vin {
-  animation-play-state: running;
+.jb-pb-fallback {
+  width: 100%;
+  height: 100%;
+  background: var(--c-sun, #FFD84A);
+  border: 1.5px solid var(--border, #111111);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  font-weight: 900;
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.nm {
+.jb-pb-text {
   min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
-.nm b,
-.nm small {
+.jb-pb-title {
   display: block;
+  font-size: 0.92rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--ink, #111111);
+}
+
+.jb-pb-artist {
+  display: block;
+  font-size: 0.74rem;
+  color: var(--ink-muted, #4A4740);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.nm b {
-  font: 800 1.1rem "Bricolage Grotesque", sans-serif;
-  color: var(--ink);
-  line-height: 1.1;
-}
-
-.nm small {
-  color: var(--muted);
-  font-weight: 600;
-  font-size: 0.9rem;
-}
-
 .unavailable-tag {
   color: #ff4f9a;
   font-weight: 800;
-  font-size: 0.72rem;
-  letter-spacing: 0.04em;
+  font-size: 0.68rem;
   text-transform: uppercase;
 }
 
-.dock-jamendo-meta {
+.dock-jamendo-meta,
+.dock-preview-meta {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.3rem;
   margin-top: 0.15rem;
-  font-size: 0.68rem;
+  font-size: 0.64rem;
   font-weight: 700;
   line-height: 1;
 }
@@ -686,399 +622,181 @@ const ICONS = {
 .dock-jamendo-link {
   color: #ff3366;
   text-decoration: none;
-  font-size: 0.65rem;
-  letter-spacing: 0.04em;
+  font-size: 0.62rem;
   background: rgba(255, 51, 102, 0.1);
-  padding: 0.12rem 0.35rem;
+  padding: 0.1rem 0.3rem;
   border-radius: 4px;
-  transition: background 0.2s, color 0.2s;
-  display: inline-flex;
-  align-items: center;
-}
-
-.dock-jamendo-link:hover {
-  background: rgba(255, 51, 102, 0.22);
-  color: #ff1050;
-  text-decoration: underline;
 }
 
 .dock-jamendo-license {
-  color: var(--muted, #8b7bb0);
+  color: var(--ink-muted, #4A4740);
   background: rgba(0, 0, 0, 0.05);
-  padding: 0.1rem 0.3rem;
+  padding: 0.1rem 0.25rem;
   border-radius: 4px;
-  font-size: 0.62rem;
-  max-width: 120px;
+  font-size: 0.6rem;
+  max-width: 100px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-/* Center: Controls & Slider */
-.ctr {
-  display: grid;
-  gap: 0.35rem;
-  justify-items: center;
-  min-width: 0;
-}
-
-.btns {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-}
-
-.cb {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  color: var(--ink);
-  background: none;
-  border: 0;
-  cursor: pointer;
-  transition: transform 0.25s cubic-bezier(0.2, 2.4, 0.4, 1), color 0.2s;
-}
-
-.cb:hover {
-  transform: scale(1.25);
-  color: var(--o2);
-}
-
-.cb:active {
-  transform: scale(0.85);
-}
-
-.cb[aria-pressed="true"] {
-  color: var(--o2);
-  filter: brightness(0.85);
-}
-
-#visBtn.is-active,
-#visBtn[aria-pressed="true"] {
-  color: #00f2fe;
-  filter: drop-shadow(0 0 8px rgba(0, 242, 254, 0.8));
-}
-
-.cb.fav[aria-pressed="true"] {
-  color: #ff4f9a;
-  animation: beat 0.5s cubic-bezier(0.2, 2, 0.4, 1);
-}
-
-@keyframes beat {
-  40% {
-    transform: scale(1.5);
-  }
-}
-
-.cb.big {
-  width: 58px;
-  height: 58px;
-  color: #fff;
-  margin: 0 0.35rem;
-}
-
-.dock-spinner {
-  display: inline-block;
-  width: 22px;
-  height: 22px;
-  border: 2.5px solid rgba(255, 255, 255, 0.3);
-  border-top-color: #fff;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-.cb.big svg {
-  width: 26px;
-  height: 26px;
-}
-
-/* Progress bar */
-.prog {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 0.7rem;
-  width: 100%;
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--muted);
-}
-
-input[type="range"] {
-  -webkit-appearance: none;
-  appearance: none;
-  height: 8px;
-  border-radius: 9px;
-  margin: 0;
-  width: 100%;
-  background: linear-gradient(90deg, var(--o2) var(--p, 0%), rgba(43, 29, 90, 0.12) var(--p, 0%));
-  cursor: pointer;
-}
-
-input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 30% 25%, #fff, var(--o1) 40%, var(--o2));
-  box-shadow: 0 3px 8px var(--sh);
-  cursor: pointer;
-  border: 0;
-  transition: transform 0.15s ease;
-}
-
-input[type="range"]::-webkit-slider-thumb:hover {
-  transform: scale(1.2);
-}
-
-input[type="range"]::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
-  border: 0;
-  border-radius: 50%;
-  background: radial-gradient(circle at 30% 25%, #fff, var(--o1) 40%, var(--o2));
-  box-shadow: 0 3px 8px var(--sh);
-  cursor: pointer;
-}
-
-/* Right: Secondary Controls */
-.ex {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.4rem;
-}
-
-.ex input[type="range"] {
-  width: 96px;
-}
-
-svg {
-  width: 22px;
-  height: 22px;
-  fill: currentColor;
-  flex: none;
-}
-
-/* Responsive Dock */
-@media (max-width: 860px) {
-  .dock {
-    grid-template-columns: 1fr auto;
-    grid-template-rows: auto auto;
-    row-gap: 0.3rem;
-    column-gap: 0.5rem;
-    align-items: center;
-    border-radius: 30px;
-    padding: 0.45rem 0.85rem 0.5rem 0.75rem;
-    width: min(720px, calc(100% - 1.2rem));
-    bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
-  }
-  .ex {
-    display: none;
-  }
-  .now {
-    grid-column: 1;
-    grid-row: 1;
-    min-width: 0;
-  }
-  .ctr {
-    display: contents;
-  }
-  .btns {
-    grid-column: 2;
-    grid-row: 1;
-    justify-self: end;
-    gap: 0.2rem;
-  }
-  .cb.hm {
-    display: none;
-  }
-  .cb {
-    width: 36px;
-    height: 36px;
-  }
-  .cb svg {
-    width: 18px;
-    height: 18px;
-  }
-  .cb.big {
-    width: 44px;
-    height: 44px;
-    margin: 0 0.15rem;
-  }
-  .cb.big svg {
-    width: 20px;
-    height: 20px;
-  }
-  .prog {
-    grid-column: 1 / -1;
-    grid-row: 2;
-    gap: 0.45rem;
-    font-size: 0.75rem;
-    padding: 0 0.2rem;
-  }
-  .vin {
-    width: 44px;
-    height: 44px;
-  }
-  .nm b {
-    font-size: 0.96rem;
-  }
-  .nm small {
-    font-size: 0.78rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .dock {
-    width: calc(100% - 0.9rem);
-    padding: 0.4rem 0.65rem 0.45rem 0.6rem;
-    border-radius: 24px;
-    row-gap: 0.2rem;
-    column-gap: 0.35rem;
-    bottom: calc(0.35rem + env(safe-area-inset-bottom, 0px));
-  }
-  .vin {
-    width: 38px;
-    height: 38px;
-  }
-  .vin i {
-    font-size: 0.82rem;
-  }
-  .nm b {
-    font-size: 0.86rem;
-  }
-  .nm small {
-    font-size: 0.72rem;
-  }
-  .dock-jamendo-meta {
-    font-size: 0.6rem;
-    gap: 0.25rem;
-    margin-top: 0.1rem;
-  }
-  .dock-jamendo-link {
-    font-size: 0.58rem;
-    padding: 0.1rem 0.25rem;
-  }
-  .dock-jamendo-license {
-    font-size: 0.55rem;
-    max-width: 80px;
-  }
-  .btns {
-    gap: 0.1rem;
-  }
-  .cb {
-    width: 30px;
-    height: 30px;
-  }
-  .cb svg {
-    width: 15px;
-    height: 15px;
-  }
-  .cb.big {
-    width: 36px;
-    height: 36px;
-    margin: 0 0.05rem;
-  }
-  .cb.big svg {
-    width: 17px;
-    height: 17px;
-  }
-  .prog {
-    font-size: 0.7rem;
-    gap: 0.3rem;
-  }
-  input[type="range"] {
-    height: 6px;
-  }
-  input[type="range"]::-webkit-slider-thumb {
-    width: 14px;
-    height: 14px;
-  }
-  input[type="range"]::-moz-range-thumb {
-    width: 14px;
-    height: 14px;
-  }
-}
-
-/* Multi-Source Preview Metadata */
-.dock-preview-meta {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  margin-top: 0.15rem;
-  font-size: 0.68rem;
-  font-weight: 700;
-  line-height: 1;
 }
 
 .dock-preview-badge {
   background: #ffcc00;
   color: #000;
   border: 1.5px solid #000;
-  font-size: 0.62rem;
+  font-size: 0.6rem;
   font-weight: 900;
-  padding: 0.1rem 0.35rem;
+  padding: 0.08rem 0.3rem;
   border-radius: 4px;
   box-shadow: 1.5px 1.5px 0px #000;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 
 .dock-provider-pill {
-  font-size: 0.62rem;
+  font-size: 0.6rem;
   font-weight: 900;
-  padding: 0.1rem 0.35rem;
+  padding: 0.08rem 0.3rem;
   border-radius: 4px;
   border: 1.5px solid #000;
-  letter-spacing: 0.03em;
 }
 
-.pill-deezer {
-  background: #ff007f;
+.pill-deezer { background: #ff007f; color: #fff; }
+.pill-itunes { background: #fa233b; color: #fff; }
+
+.jb-pb-fav {
+  background: none;
+  border: 1.5px solid var(--border, #111111);
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.jb-pb-fav.active {
+  background: var(--c-hotpink, #FF4F9A);
   color: #fff;
 }
 
-.pill-itunes {
-  background: #fa233b;
-  color: #fff;
+.jb-pb-controls {
+  flex: 1;
+  max-width: 580px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
 }
 
-/* Practice & Speed Dock Buttons */
-.cb.practice-btn {
+.jb-pb-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.jb-btn-icon {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.15rem;
+  color: var(--ink, #111111);
+}
+
+.jb-btn-icon.on,
+.jb-btn-icon.is-active {
+  color: var(--c-blue, #4D6BFF);
+}
+
+.jb-btn-play {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--r-sm, 8px);
+  background: var(--yellow, #FFD84A);
+  border: var(--bw, 2px) solid var(--border, #111111);
+  box-shadow: 2px 2px 0 var(--border, #111111);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.05rem;
+  font-weight: 900;
+  cursor: pointer;
+  transition: transform 0.08s ease;
+}
+
+.jb-btn-play:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+.dock-spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(17, 17, 17, 0.25);
+  border-top-color: #111111;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.jb-pb-timeline {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.jb-pb-time {
   font-size: 0.72rem;
-  font-weight: 900;
-  border: 1.5px solid currentColor;
-  border-radius: 8px;
-  width: auto;
-  padding: 0 0.5rem;
-  height: 32px;
-}
-
-.cb.practice-btn.is-looping {
-  background: #00ff88;
-  color: #000;
-  border-color: #000;
-  box-shadow: 2px 2px 0px #000;
-}
-
-.cb.speed-btn {
-  font-size: 0.75rem;
-  font-weight: 900;
-  border: 1.5px solid currentColor;
-  border-radius: 8px;
-  width: auto;
-  padding: 0 0.45rem;
-  height: 32px;
+  color: var(--ink-muted, #4A4740);
+  width: 40px;
+  text-align: center;
+  flex-shrink: 0;
 }
 
 .seek-track-wrapper {
   position: relative;
-  width: 100%;
+  flex: 1;
   display: flex;
   align-items: center;
+}
+
+#seek {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 10px;
+  background: linear-gradient(90deg, var(--c-blue, #4D6BFF) var(--p, 0%), #EFEAE1 var(--p, 0%));
+  border: 1.5px solid var(--border, #111111);
+  border-radius: 999px;
+  cursor: pointer;
+  margin: 0;
+}
+
+#seek::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--yellow, #FFD84A);
+  border: 1.5px solid #111111;
+  cursor: pointer;
+}
+
+#seek::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--yellow, #FFD84A);
+  border: 1.5px solid #111111;
+  cursor: pointer;
 }
 
 .scrubber-marker {
@@ -1097,17 +815,50 @@ svg {
   z-index: 2;
 }
 
-.marker-a {
-  background: #00e5ff;
+.marker-a { background: #00e5ff; color: #000; }
+.marker-b { background: #ff007f; color: #fff; }
+
+.jb-pb-extras {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+.jb-dock-chip {
+  font-size: 0.72rem;
+  font-weight: 900;
+  background: var(--surface-2, #FFFFFF);
+  border: 1.5px solid var(--border, #111111);
+  border-radius: 6px;
+  padding: 0 0.45rem;
+  height: 28px;
+  cursor: pointer;
+}
+
+.jb-dock-chip.is-looping {
+  background: #00ff88;
   color: #000;
+  box-shadow: 2px 2px 0 #111111;
 }
 
-.marker-b {
-  background: #ff007f;
-  color: #fff;
+.jb-vol-slider {
+  width: 76px;
+  accent-color: var(--ink, #111111);
 }
 
-/* Play-Along / Practice Popover */
+.jb-queue-pill {
+  background: var(--surface-2, #FFFFFF);
+  border: var(--bw, 2px) solid var(--border, #111111);
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--r-pill, 999px);
+  font-weight: 800;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+/* Practice Popover */
 .practice-popover.neo-box {
   position: absolute;
   bottom: calc(100% + 14px);
@@ -1119,9 +870,8 @@ svg {
   box-shadow: 6px 6px 0px #000000;
   border-radius: 12px;
   padding: 1rem;
-  z-index: 60;
+  z-index: 1200;
   color: #000;
-  animation: popUp 0.2s cubic-bezier(0.2, 1.4, 0.4, 1);
 }
 
 .pop-header {
@@ -1136,8 +886,6 @@ svg {
 .pop-title {
   font-weight: 900;
   font-size: 0.92rem;
-  letter-spacing: -0.02em;
-  color: #000;
 }
 
 .pop-close {
@@ -1154,28 +902,9 @@ svg {
   place-items: center;
 }
 
-.pop-close:hover {
-  background: #ff1a1a;
-}
-
-.pop-section {
-  margin-bottom: 0.8rem;
-}
-
-.pop-label {
-  font-size: 0.72rem;
-  font-weight: 800;
-  color: #555;
-  margin-bottom: 0.35rem;
-}
-
-.pop-label-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.35rem;
-}
-
+.pop-section { margin-bottom: 0.8rem; }
+.pop-label { font-size: 0.72rem; font-weight: 800; color: #555; margin-bottom: 0.35rem; }
+.pop-label-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem; }
 .loop-active-indicator {
   font-size: 0.68rem;
   font-weight: 900;
@@ -1186,12 +915,7 @@ svg {
   border-radius: 4px;
 }
 
-.speed-btn-group {
-  display: flex;
-  gap: 0.3rem;
-  flex-wrap: wrap;
-}
-
+.speed-btn-group { display: flex; gap: 0.3rem; flex-wrap: wrap; }
 .speed-chip {
   background: #f0f0f0;
   border: 1.5px solid #000;
@@ -1200,12 +924,6 @@ svg {
   font-size: 0.75rem;
   font-weight: 800;
   cursor: pointer;
-  transition: all 0.15s;
-}
-
-.speed-chip:hover {
-  background: #e0e0e0;
-  transform: translateY(-1px);
 }
 
 .speed-chip.active {
@@ -1225,14 +943,7 @@ svg {
   padding: 0.4rem 0.6rem;
 }
 
-.marker-pill {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  font-size: 0.8rem;
-  font-weight: 800;
-}
-
+.marker-pill { display: flex; align-items: center; gap: 0.3rem; font-size: 0.8rem; font-weight: 800; }
 .marker-tag {
   background: #000;
   color: #fff;
@@ -1244,22 +955,7 @@ svg {
   font-size: 0.65rem;
 }
 
-.marker-val {
-  font-size: 0.85rem;
-  font-weight: 800;
-}
-
-.arrow-sep {
-  color: #888;
-  font-weight: 900;
-}
-
-.loop-actions-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.4rem;
-}
-
+.loop-actions-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; }
 .neo-pop-btn {
   background: #fff;
   border: 2px solid #000;
@@ -1269,73 +965,67 @@ svg {
   font-weight: 900;
   cursor: pointer;
   box-shadow: 2px 2px 0px #000;
-  transition: transform 0.1s, background-color 0.1s;
 }
 
-.neo-pop-btn:hover:not(:disabled) {
-  transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0px #000;
-}
+.neo-pop-btn:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+.btn-set-a { background: #e0f7fa; }
+.btn-set-b { background: #fce4ec; }
+.btn-toggle-loop.is-active { background: #00ff88; color: #000; }
+.btn-clear-loop { background: #ffebee; color: #c62828; }
 
-.neo-pop-btn:active:not(:disabled) {
-  transform: translate(1px, 1px);
-  box-shadow: 1px 1px 0px #000;
-}
-
-.neo-pop-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
-.btn-set-a {
-  background: #e0f7fa;
-}
-
-.btn-set-b {
-  background: #fce4ec;
-}
-
-.btn-toggle-loop.is-active {
-  background: #00ff88;
-  color: #000;
-}
-
-.btn-clear-loop {
-  background: #ffebee;
-  color: #c62828;
-}
-
-@keyframes popUp {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
+@media (max-width: 960px) {
+  .jb-pb-track {
+    width: 200px;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  .jb-vol-slider {
+    display: none;
   }
 }
 
-@media (max-width: 340px) {
-  .dock {
-    width: calc(100% - 0.5rem);
-    padding: 0.35rem 0.45rem 0.4rem;
+@media (max-width: 768px) {
+  .jb-player-bar {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    gap: 0.35rem 0.5rem;
+    padding: 0.45rem 0.75rem calc(0.45rem + env(safe-area-inset-bottom, 0px));
+    min-height: 92px;
   }
-  .nm b {
-    max-width: 80px;
-  }
-  .nm small {
-    max-width: 80px;
-  }
-}
 
-@media (prefers-reduced-motion: reduce) {
-  .vin,
-  .dock,
-  .cb {
-    animation: none !important;
-    transition: none !important;
+  .jb-pb-track {
+    width: auto;
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .jb-pb-art {
+    width: 40px;
+    height: 40px;
+  }
+
+  .jb-pb-controls {
+    display: contents;
+  }
+
+  .jb-pb-buttons {
+    grid-column: 2;
+    grid-row: 1;
+    gap: 0.35rem;
+  }
+
+  .jb-pb-timeline {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .jb-pb-extras,
+  .hm {
+    display: none;
+  }
+
+  .jb-btn-play {
+    width: 38px;
+    height: 38px;
   }
 }
 </style>

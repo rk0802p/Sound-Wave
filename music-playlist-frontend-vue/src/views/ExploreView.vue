@@ -1,19 +1,5 @@
 <template>
   <div class="pg-explore-root">
-    <!-- Top Navigation -->
-    <nav class="explore-top-nav">
-      <router-link to="/" class="nav-pill font-mono">
-        ← BACK TO HOMEPAGE
-      </router-link>
-      <div class="nav-brand font-display">
-        <span class="orb-icon">🌐</span>
-        <span>SOUNDWAVE SOCIAL DISCOVERY</span>
-      </div>
-      <router-link to="/search" class="nav-pill font-mono">
-        ONLINE SEARCH ↗
-      </router-link>
-    </nav>
-
     <!-- Header Stage -->
     <header class="explore-header">
       <div class="kicker-strip font-mono">
@@ -213,9 +199,6 @@
         </button>
       </div>
     </main>
-
-    <!-- Floating Player Dock -->
-    <FloatingPlayerDock />
   </div>
 </template>
 
@@ -225,7 +208,6 @@ import { useRouter } from 'vue-router';
 import { playlistApi } from '../api/playlists';
 import { usePlayerStore } from '../stores/player';
 import { useToastStore } from '../stores/toast';
-import FloatingPlayerDock from '../components/player/FloatingPlayerDock.vue';
 
 const router = useRouter();
 const playerStore = usePlayerStore();
@@ -421,55 +403,11 @@ onMounted(() => {
 
 <style scoped>
 .pg-explore-root {
-  min-height: 100vh;
   background-color: var(--bg, #F3EFE8);
   color: var(--ink, #111111);
-  padding: 1.5rem 2rem calc(var(--player-h, 88px) + 2.5rem);
+  padding: 2rem;
   box-sizing: border-box;
   font-family: var(--font-body);
-}
-
-.explore-top-nav {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
-  border-bottom: var(--bw, 2px) solid var(--border, #111111);
-}
-
-.nav-pill {
-  padding: 0.45rem 1rem;
-  background: var(--surface-2, #FFFFFF);
-  border: var(--bw, 2px) solid var(--border, #111111);
-  box-shadow: var(--shadow-sm, 3px 3px 0 var(--border, #111111));
-  border-radius: var(--r-pill, 999px);
-  color: var(--ink, #111111);
-  text-decoration: none;
-  font-size: 0.8rem;
-  font-weight: 800;
-  letter-spacing: 0.05em;
-  transition: transform 0.08s ease;
-}
-
-.nav-pill:active {
-  transform: translate(2px, 2px);
-  box-shadow: none;
-}
-
-.nav-pill:hover {
-  background: var(--yellow, #FFD84A);
-}
-
-.nav-brand {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 1.25rem;
-  font-weight: 900;
-  letter-spacing: -0.03em;
-  color: var(--ink, #111111);
-  text-transform: uppercase;
 }
 
 .explore-header {
