@@ -183,6 +183,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { usePlayerStore } from '../../stores/player';
 import { useToastStore } from '../../stores/toast';
+import { useUiStore } from '../../stores/ui';
 import AddToPlaylistMenu from './AddToPlaylistMenu.vue';
 
 const props = defineProps({
@@ -225,6 +226,7 @@ const emit = defineEmits([
 
 const playerStore = usePlayerStore();
 const toastStore = useToastStore();
+const uiStore = useUiStore();
 
 const isMenuOpen = ref(false);
 const imgError = ref(false);
@@ -286,37 +288,12 @@ const sourceProviderUrl = computed(() => {
   return props.track.url || props.track.source?.url || props.track.source?.pageUrl || null;
 });
 
-// Like handling via localStorage
-const isLiked = ref(false);
-const checkLiked = () => {
-  try {
-    const raw = localStorage.getItem('soundwave_favorites');
-    const ids = raw ? JSON.parse(raw) : [];
-    const id = props.track._id || props.track.id;
-    isLiked.value = ids.includes(id);
-  } catch {
-    isLiked.value = false;
-  }
-};
+// Canonical Liked handling via uiStore
+const isLiked = computed(() => uiStore.isFavoriteTrack(props.track));
 
 const toggleLike = () => {
-  try {
-    const raw = localStorage.getItem('soundwave_favorites');
-    let ids = raw ? JSON.parse(raw) : [];
-    const id = props.track._id || props.track.id;
-    if (!id) return;
-    const idx = ids.indexOf(id);
-    if (idx === -1) {
-      ids.push(id);
-      isLiked.value = true;
-      toastStore.show('Added to Liked Tracks', 'success');
-    } else {
-      ids.splice(idx, 1);
-      isLiked.value = false;
-      toastStore.show('Removed from Liked Tracks', 'info');
-    }
-    localStorage.setItem('soundwave_favorites', JSON.stringify(ids));
-  } catch {}
+  const added = uiStore.toggleFavorite(props.track);
+  toastStore.show(added ? 'Added to Liked Tracks' : 'Removed from Liked Tracks', added ? 'success' : 'info');
 };
 
 const handlePlay = () => {
@@ -373,7 +350,7 @@ const handleDocumentClick = (e) => {
 };
 
 onMounted(() => {
-  checkLiked();
+  uiStore.loadFavorites();
   document.addEventListener('click', handleDocumentClick);
 });
 

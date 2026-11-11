@@ -1,6 +1,17 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { MOOD_PLAYLISTS } from '../data/moodPlaylists';
+import { usePlaylistStore } from './playlist';
+import { usePlayerStore } from './player';
+import {
+  FAVORITES_STORAGE_KEY,
+  FAVORITE_TRACKS_META_KEY,
+  getCanonicalFavoriteId,
+  buildCatalogIndex,
+  safeParseFavoritesList,
+  safeParseFavoriteMetaMap,
+  compactTrackMeta,
+} from '../utils/favorites';
 
 export const useUiStore = defineStore('ui', () => {
   // Sidebar & Shell UI State
@@ -20,7 +31,13 @@ export const useUiStore = defineStore('ui', () => {
   const activeFilter = ref(''); // '' | 'favorites' | 'genre' | 'mood' | 'search'
   const activeMoodId = ref('');
   const sortBy = ref('default');
-  const favoritesList = ref([]);
+
+  // Persisted raw/canonical favorite IDs & lightweight track metadata map
+  const rawFavoriteIds = ref([]);
+  const savedFavoriteMeta = ref({});
+
+  const playlistStore = usePlaylistStore();
+  const playerStore = usePlayerStore();
 
   const activeMood = computed(() => {
     if (!activeMoodId.value) return null;
@@ -31,36 +48,123 @@ export const useUiStore = defineStore('ui', () => {
     );
   });
 
-  const loadFavorites = () => {
+  const catalogIndex = computed(() =>
+    buildCatalogIndex({
+      userPlaylists: playlistStore.userPlaylists || [],
+      queueTracks: playerStore.queue || [],
+      currentTrack: playerStore.currentTrack || null,
+      savedMetaMap: savedFavoriteMeta.value,
+    })
+  );
+
+  // Canonical, deduplicated, reconciled list of liked tracks that exist in the supported scope
+  const likedTracks = computed(() => {
+    const { aliasMap, tracksByCanonicalId } = catalogIndex.value;
+    const seen = new Set();
+    const resolved = [];
+
+    for (const rawId of rawFavoriteIds.value) {
+      const canonicalId = getCanonicalFavoriteId(rawId, aliasMap);
+      if (!canonicalId || seen.has(canonicalId)) continue;
+      const track = tracksByCanonicalId.get(canonicalId);
+      if (!track) continue; // Ignore stale / orphaned IDs that do not correspond to any supported track
+      seen.add(canonicalId);
+      resolved.push({
+        ...track,
+        id: track.id || canonicalId,
+        _id: track._id || canonicalId,
+        canonicalId,
+      });
+    }
+
+    return resolved;
+  });
+
+  // Canonical unique favorite IDs synchronized everywhere (header, badge, filter, cards)
+  const favoritesList = computed(() =>
+    likedTracks.value.map((t) => t.canonicalId || getCanonicalFavoriteId(t, catalogIndex.value.aliasMap))
+  );
+
+  const favoriteCount = computed(() => likedTracks.value.length);
+
+  const persistFavorites = () => {
     if (typeof localStorage === 'undefined') return;
     try {
-      const raw = localStorage.getItem('soundwave_favorites');
-      favoritesList.value = raw ? JSON.parse(raw) : [];
-    } catch {
-      favoritesList.value = [];
-    }
+      localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(rawFavoriteIds.value));
+      localStorage.setItem(FAVORITE_TRACKS_META_KEY, JSON.stringify(savedFavoriteMeta.value));
+    } catch {}
   };
 
-  const isFavoriteTrack = (track) => {
-    const id = track?._id || track?.id;
-    return id ? favoritesList.value.includes(id) : false;
+  const loadFavorites = () => {
+    if (typeof localStorage === 'undefined') {
+      rawFavoriteIds.value = [];
+      savedFavoriteMeta.value = {};
+      return;
+    }
+
+    const parsedMeta = safeParseFavoriteMetaMap(localStorage.getItem(FAVORITE_TRACKS_META_KEY));
+    savedFavoriteMeta.value = parsedMeta;
+
+    const parsedIds = safeParseFavoritesList(localStorage.getItem(FAVORITES_STORAGE_KEY));
+    const { aliasMap } = catalogIndex.value;
+
+    const seen = new Set();
+    const normalized = [];
+    for (const rawId of parsedIds) {
+      const canonical = getCanonicalFavoriteId(rawId, aliasMap);
+      if (!canonical || seen.has(canonical)) continue;
+      seen.add(canonical);
+      normalized.push(canonical);
+    }
+
+    rawFavoriteIds.value = normalized;
+    persistFavorites();
+  };
+
+  const isFavoriteTrack = (trackOrId) => {
+    if (!trackOrId) return false;
+    const canonicalId = getCanonicalFavoriteId(trackOrId, catalogIndex.value.aliasMap);
+    if (!canonicalId) return false;
+    return favoritesList.value.includes(canonicalId);
   };
 
   const toggleFavorite = (track) => {
-    const id = track?._id || track?.id;
-    if (!id) return false;
-    const idx = favoritesList.value.indexOf(id);
+    if (!track) return false;
+    const { aliasMap } = catalogIndex.value;
+    const canonicalId = getCanonicalFavoriteId(track, aliasMap);
+    if (!canonicalId) return false;
+
+    const exists = rawFavoriteIds.value.some(
+      (id) => getCanonicalFavoriteId(id, aliasMap) === canonicalId
+    );
+
     let added = false;
-    if (idx === -1) {
-      favoritesList.value.push(id);
-      added = true;
-    } else {
-      favoritesList.value.splice(idx, 1);
+    if (exists) {
+      rawFavoriteIds.value = rawFavoriteIds.value.filter(
+        (id) => getCanonicalFavoriteId(id, aliasMap) !== canonicalId
+      );
+      const nextMeta = { ...savedFavoriteMeta.value };
+      delete nextMeta[canonicalId];
+      savedFavoriteMeta.value = nextMeta;
       added = false;
+    } else {
+      // Ensure we store the canonical identity cleanly without duplicating aliases
+      const deduped = rawFavoriteIds.value.filter(
+        (id) => getCanonicalFavoriteId(id, aliasMap) !== canonicalId
+      );
+      deduped.push(canonicalId);
+      rawFavoriteIds.value = deduped;
+
+      if (typeof track === 'object') {
+        savedFavoriteMeta.value = {
+          ...savedFavoriteMeta.value,
+          [canonicalId]: compactTrackMeta(track, canonicalId),
+        };
+      }
+      added = true;
     }
-    try {
-      localStorage.setItem('soundwave_favorites', JSON.stringify(favoritesList.value));
-    } catch {}
+
+    persistFavorites();
     return added;
   };
 
@@ -152,7 +256,11 @@ export const useUiStore = defineStore('ui', () => {
     activeMoodId,
     activeMood,
     sortBy,
+    rawFavoriteIds,
     favoritesList,
+    likedTracks,
+    favoriteCount,
+    catalogIndex,
     loadFavorites,
     isFavoriteTrack,
     toggleFavorite,

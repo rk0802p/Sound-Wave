@@ -271,6 +271,7 @@ import { ref, computed, onMounted } from 'vue';
 import AppModal from '../common/AppModal.vue';
 import { usePlaylistStore } from '../../stores/playlist';
 import { useToastStore } from '../../stores/toast';
+import { useUiStore } from '../../stores/ui';
 import { searchApi } from '../../api/search';
 import { FEATURED_SONGS } from '../../data/featuredSongs';
 
@@ -293,6 +294,7 @@ const emit = defineEmits(['close', 'songs-added']);
 
 const playlistStore = usePlaylistStore();
 const toastStore = useToastStore();
+const uiStore = useUiStore();
 
 const activeTab = ref('search');
 const searchQuery = ref('');
@@ -317,16 +319,11 @@ const displaySearchTracks = computed(() => {
   return FEATURED_SONGS.slice(0, 10);
 });
 
-// Liked tracks from localStorage + featured catalog
-const likedTracksList = ref([]);
+// Canonical Liked tracks synced with uiStore
+const likedTracksList = computed(() => uiStore.likedTracks);
+
 const loadLikedTracks = () => {
-  try {
-    const raw = localStorage.getItem('soundwave_favorites');
-    const ids = raw ? JSON.parse(raw) : [];
-    likedTracksList.value = FEATURED_SONGS.filter((t) => ids.includes(t.id || t._id));
-  } catch {
-    likedTracksList.value = [];
-  }
+  uiStore.loadFavorites();
 };
 
 const isInPlaylist = (track) => {

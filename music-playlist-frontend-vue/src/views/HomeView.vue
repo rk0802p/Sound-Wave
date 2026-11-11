@@ -7,8 +7,53 @@
           <button class="jb-filter-clear-btn" @click="clearAllFilters">✕ RESET</button>
         </div>
 
-        <!-- 1. JELLYKIT-INSPIRED CATEGORY HERO -->
-        <section class="jb-hero-card" :style="{ backgroundColor: currentCategoryHeroColor }">
+        <!-- 1A. DEDICATED LIKED SONGS PLAYLIST-STYLE HEADER -->
+        <section v-if="activeFilter === 'favorites'" class="jb-liked-hero-card">
+          <div class="jb-liked-cover" aria-hidden="true">
+            <span class="jb-liked-heart">♥</span>
+          </div>
+
+          <div class="jb-liked-meta">
+            <div class="jb-liked-badges font-mono">
+              <span class="jb-liked-pill-dark">YOUR LIBRARY</span>
+              <span class="jb-liked-pill-pink">LIKED COLLECTION</span>
+            </div>
+
+            <h1 class="jb-liked-title font-display">LIKED SONGS</h1>
+
+            <p class="jb-liked-copy">
+              The tracks you’ve saved for your next listen.
+            </p>
+
+            <div class="jb-liked-stats font-mono">
+              <span><strong>{{ uiStore.favoriteCount }}</strong> {{ uiStore.favoriteCount === 1 ? 'song' : 'songs' }}</span>
+              <span class="dot-sep">•</span>
+              <span>{{ likedTotalDurationText }}</span>
+            </div>
+
+            <div class="jb-liked-actions font-mono">
+              <button
+                v-if="displayedTracks.length > 0"
+                type="button"
+                class="jb-liked-play-btn font-display"
+                @click="handlePlayAllLiked"
+              >
+                <span>{{ isLikedQueuePlaying ? '❚❚ PAUSE' : '▶ PLAY ALL' }}</span>
+              </button>
+              <router-link
+                v-else
+                to="/"
+                class="jb-liked-browse-btn font-mono"
+                @click="clearAllFilters"
+              >
+                BROWSE ALL TRACKS →
+              </router-link>
+            </div>
+          </div>
+        </section>
+
+        <!-- 1B. JELLYKIT-INSPIRED CATEGORY HERO (Home / Genre / Mood / Search) -->
+        <section v-else class="jb-hero-card" :style="{ backgroundColor: currentCategoryHeroColor }">
           <div class="jb-hero-meta">
             <div class="jb-hero-badge-row font-mono">
               <span class="jb-num-badge">{{ activeMood ? 'MOOD' : selectedGenreFilter ? 'COLLECTION' : '01' }}</span>
@@ -94,10 +139,18 @@
 
           <!-- EMPTY STATE -->
           <div v-if="displayedTracks.length === 0" class="jb-empty-box font-mono">
-            <div class="jb-empty-glyph font-display">Ø</div>
-            <h3 class="jb-empty-title font-display">No tracks found</h3>
-            <p class="jb-empty-desc">No tracks match your current filter or search criteria.</p>
-            <button class="jb-empty-btn font-mono" @click="clearAllFilters">RESET ALL FILTERS</button>
+            <div class="jb-empty-glyph font-display">{{ activeFilter === 'favorites' ? '♡' : 'Ø' }}</div>
+            <h3 class="jb-empty-title font-display">{{ activeFilter === 'favorites' ? 'No liked songs yet' : 'No tracks found' }}</h3>
+            <p class="jb-empty-desc">
+              {{
+                activeFilter === 'favorites'
+                  ? 'Tap ♥ on any track in the catalog, search results, or a playlist to save it here.'
+                  : 'No tracks match your current filter or search criteria.'
+              }}
+            </p>
+            <button class="jb-empty-btn font-mono" @click="clearAllFilters">
+              {{ activeFilter === 'favorites' ? 'BROWSE ALL TRACKS' : 'RESET ALL FILTERS' }}
+            </button>
           </div>
 
           <!-- 4-COLUMN NEO-BRUTALIST CARDS GRID -->
@@ -149,7 +202,9 @@
                 <div class="jb-tc-meta-cluster">
                   <button
                     class="jb-tc-fav-btn"
-                    :class="{ 'active': favoritesList.includes(track.id || track._id) }"
+                    :class="{ 'active': uiStore.isFavoriteTrack(track) }"
+                    :aria-pressed="uiStore.isFavoriteTrack(track) ? 'true' : 'false'"
+                    :aria-label="uiStore.isFavoriteTrack(track) ? `Unlike ${track.title}` : `Like ${track.title}`"
                     @click.stop="toggleFavorite(track, $event)"
                     title="Favorite track"
                   >
@@ -277,6 +332,11 @@ import { useToastStore } from '../stores/toast';
 import { FEATURED_SONGS } from '../data/featuredSongs';
 import { MOOD_PLAYLISTS } from '../data/moodPlaylists';
 import { getGenreColor, buildAvailableGenres } from '../utils/genres';
+import {
+  calculateTotalDurationSeconds,
+  formatPlaylistDurationReadable,
+  getCanonicalFavoriteId,
+} from '../utils/favorites';
 import AddToPlaylistMenu from '../components/playlists/AddToPlaylistMenu.vue';
 
 const router = useRouter();
@@ -322,24 +382,21 @@ const popularTracks = computed(() => {
 
 // Displayed Tracks with filtering & sorting
 const displayedTracks = computed(() => {
-  let list = [...allCuratedTracks.value];
+  let list;
 
-  // Active Mood filter
-  if (activeFilter.value === 'mood' && activeMood.value) {
-    const mSongs = activeMood.value.songs || [];
-    if (mSongs.length > 0) {
-      list = mSongs.map((s) => ({
-        ...s,
-        genreColor: getGenreColor(s.genre),
-      }));
-    } else {
-      return [];
-    }
-  }
-
-  // Favorites filter
   if (activeFilter.value === 'favorites') {
-    list = list.filter((t) => favoritesList.value.includes(t.id || t._id));
+    list = uiStore.likedTracks.map((t) => ({
+      ...t,
+      genreColor: getGenreColor(t.genre),
+    }));
+  } else if (activeFilter.value === 'mood' && activeMood.value) {
+    const mSongs = activeMood.value.songs || [];
+    list = mSongs.map((s) => ({
+      ...s,
+      genreColor: getGenreColor(s.genre),
+    }));
+  } else {
+    list = [...allCuratedTracks.value];
   }
 
   // Genre filter
@@ -362,11 +419,47 @@ const displayedTracks = computed(() => {
   if (sortBy.value === 'title') {
     list.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
   } else if (sortBy.value === 'duration') {
-    list.sort((a, b) => (a.duration || 0) - (b.duration || 0));
+    list.sort((a, b) => (Number(a.duration) || 0) - (Number(b.duration) || 0));
   }
 
   return list;
 });
+
+const likedTotalDurationText = computed(() => {
+  const totalSec = calculateTotalDurationSeconds(uiStore.likedTracks);
+  return formatPlaylistDurationReadable(totalSec);
+});
+
+const isLikedQueuePlaying = computed(() => {
+  return Boolean(
+    playerStore.isPlaying &&
+    playerStore.currentPlaylist?.id === 'liked-songs' &&
+    uiStore.isFavoriteTrack(playerStore.currentTrack)
+  );
+});
+
+const handlePlayAllLiked = () => {
+  const likedQueue = [...displayedTracks.value];
+  if (!likedQueue.length) return;
+
+  if (
+    playerStore.currentPlaylist?.id === 'liked-songs' &&
+    playerStore.currentTrack &&
+    uiStore.isFavoriteTrack(playerStore.currentTrack)
+  ) {
+    playerStore.togglePlay();
+    return;
+  }
+
+  playerStore.currentPlaylist = {
+    _id: 'liked-songs',
+    id: 'liked-songs',
+    name: 'Liked Songs',
+    songs: likedQueue,
+  };
+  playerStore.playTrack(likedQueue[0], likedQueue, 0);
+  toastStore.show(`Playing Liked Songs (${likedQueue.length} tracks)`, 'success');
+};
 
 // Hero Color & Watermark
 const currentCategoryHeroColor = computed(() => {
@@ -392,6 +485,9 @@ const activeFilterBadge = computed(() => {
 // Playback Methods
 const isCurrentTrack = (track) => {
   if (!playerStore.currentTrack || !track) return false;
+  const cId = getCanonicalFavoriteId(track, uiStore.catalogIndex.aliasMap);
+  const pId = getCanonicalFavoriteId(playerStore.currentTrack, uiStore.catalogIndex.aliasMap);
+  if (cId && pId && cId === pId) return true;
   return (
     (track._id && playerStore.currentTrack._id === track._id) ||
     (track.id && playerStore.currentTrack.id === track.id) ||
@@ -404,6 +500,16 @@ const handlePlayTrack = (track, list, index, event) => {
   if (isCurrentTrack(track)) {
     playerStore.togglePlay();
   } else {
+    if (activeFilter.value === 'favorites') {
+      playerStore.currentPlaylist = {
+        _id: 'liked-songs',
+        id: 'liked-songs',
+        name: 'Liked Songs',
+        songs: list,
+      };
+    } else if (playerStore.currentPlaylist?.id === 'liked-songs') {
+      playerStore.currentPlaylist = null;
+    }
     playerStore.playTrack(track, list, index);
   }
 };
@@ -524,6 +630,165 @@ onMounted(() => {
   border-radius: 6px;
   font-size: 0.75rem;
   cursor: pointer;
+}
+
+/* LIKED SONGS PLAYLIST HEADER */
+.jb-liked-hero-card {
+  display: flex;
+  align-items: flex-end;
+  gap: 28px;
+  padding: 26px;
+  background-color: #FFFFFF;
+  border: 3px solid #111111;
+  box-shadow: 6px 6px 0 #111111;
+  flex-wrap: wrap;
+}
+
+.jb-liked-cover {
+  width: 176px;
+  height: 176px;
+  flex-shrink: 0;
+  border: 3px solid #111111;
+  box-shadow: 4px 4px 0 #111111;
+  background: linear-gradient(135deg, #FF4F9A 0%, #FF6B5E 55%, #FFD84A 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.jb-liked-heart {
+  font-size: 4.5rem;
+  color: #FFFFFF;
+  text-shadow: 3px 3px 0 #111111;
+  line-height: 1;
+}
+
+.jb-liked-meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.jb-liked-badges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.jb-liked-pill-dark,
+.jb-liked-pill-pink {
+  font-size: 0.72rem;
+  font-weight: 900;
+  padding: 3px 9px;
+  border: 2px solid #111111;
+  box-shadow: 2px 2px 0 #111111;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.jb-liked-pill-dark {
+  background: #111111;
+  color: #FFFFFF;
+}
+
+.jb-liked-pill-pink {
+  background: #FF4F9A;
+  color: #FFFFFF;
+}
+
+.jb-liked-title {
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: #111111;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.jb-liked-copy {
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: var(--ink-muted, #4A4740);
+  margin: 0;
+}
+
+.jb-liked-stats {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #111111;
+  flex-wrap: wrap;
+}
+
+.jb-liked-stats .dot-sep {
+  font-weight: 900;
+}
+
+.jb-liked-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.jb-liked-play-btn,
+.jb-liked-browse-btn {
+  padding: 10px 22px;
+  border: 2px solid #111111;
+  box-shadow: 3px 3px 0 #111111;
+  font-size: 0.92rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  text-decoration: none;
+  color: #111111;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+
+.jb-liked-play-btn {
+  background-color: #FFD84A;
+}
+
+.jb-liked-browse-btn {
+  background-color: #5DE3A6;
+}
+
+.jb-liked-play-btn:hover,
+.jb-liked-browse-btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 #111111;
+}
+
+.jb-liked-play-btn:active,
+.jb-liked-browse-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 #111111;
+}
+
+@media (max-width: 640px) {
+  .jb-liked-hero-card {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 18px;
+    gap: 16px;
+  }
+  .jb-liked-cover {
+    width: 120px;
+    height: 120px;
+  }
+  .jb-liked-heart {
+    font-size: 3.25rem;
+  }
 }
 
 /* JELLYKIT HERO CARD */

@@ -99,10 +99,10 @@
           <span class="jb-nav-tile tile-pink">♥</span>
           <span v-if="!uiStore.isSidebarCollapsed" class="jb-nav-label">Liked Tracks</span>
           <span
-            v-if="!uiStore.isSidebarCollapsed && uiStore.favoritesList.length"
+            v-if="!uiStore.isSidebarCollapsed && uiStore.favoriteCount"
             class="jb-nav-count font-mono"
           >
-            {{ uiStore.favoritesList.length }}
+            {{ uiStore.favoriteCount }}
           </span>
         </button>
 
