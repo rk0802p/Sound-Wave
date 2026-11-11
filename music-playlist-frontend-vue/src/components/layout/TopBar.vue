@@ -185,7 +185,25 @@ const activeBreadcrumb = computed(() => {
 
 @media (max-width: 768px) {
   .jb-topbar {
-    padding: 0 1rem;
+    padding: 0 0.75rem;
+    gap: 0.45rem;
+  }
+
+  .jb-topbar-left {
+    gap: 0.35rem;
+    font-size: 0.74rem;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .jb-breadcrumb-active {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .jb-queue-toggle-btn {
+    padding: 0.32rem 0.6rem;
+    font-size: 0.72rem;
   }
 
   .jb-hamburger-btn {

@@ -31,7 +31,7 @@ const toastStore = useToastStore();
   position: fixed;
   bottom: calc(var(--dock-height, 88px) + 16px + env(safe-area-inset-bottom, 0px));
   right: 20px;
-  z-index: 1500;
+  z-index: 1200;
   pointer-events: none;
   max-width: calc(100vw - 32px);
 }

@@ -2,7 +2,7 @@ const { chromium } = require('./music-playlist-frontend-vue/node_modules/playwri
 const path = require('path');
 const fs = require('fs');
 
-const SCREENSHOTS_DIR = path.resolve(__dirname, 'screenshots');
+const SCREENSHOTS_DIR = path.resolve(__dirname, 'docs', 'screenshots');
 if (!fs.existsSync(SCREENSHOTS_DIR)) {
   fs.mkdirSync(SCREENSHOTS_DIR, { recursive: true });
 }

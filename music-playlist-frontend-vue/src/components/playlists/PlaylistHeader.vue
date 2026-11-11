@@ -740,17 +740,23 @@ onUnmounted(() => {
 
 @media (max-width: 640px) {
   .playlist-header-root {
+    flex-direction: column;
+    align-items: stretch;
     padding: 18px;
     gap: 16px;
   }
+  .header-cover-stage {
+    align-self: flex-start;
+  }
   .cover-wrapper {
-    width: 136px;
-    height: 136px;
+    width: 128px;
+    height: 128px;
   }
   .cover-fallback {
-    font-size: 2.5rem;
+    font-size: 2.35rem;
   }
   .header-meta-stage {
+    flex: none;
     min-width: 0;
     width: 100%;
   }

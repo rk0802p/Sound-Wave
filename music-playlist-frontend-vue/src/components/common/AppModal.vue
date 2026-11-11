@@ -130,6 +130,7 @@ const focusInitialElement = () => {
 watch(
   () => props.isOpen,
   (open) => {
+    if (typeof document === 'undefined') return;
     if (open) {
       document.body.style.overflow = 'hidden';
       nextTick(focusInitialElement);
@@ -141,6 +142,7 @@ watch(
 );
 
 onMounted(() => {
+  if (typeof document === 'undefined') return;
   if (props.isOpen) {
     document.body.style.overflow = 'hidden';
     nextTick(focusInitialElement);
@@ -148,6 +150,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  if (typeof document === 'undefined') return;
   document.body.style.overflow = '';
 });
 </script>

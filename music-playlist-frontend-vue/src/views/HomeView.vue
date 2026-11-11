@@ -465,6 +465,8 @@ const applyRouteFilters = () => {
   } else if (route.query.filter === 'favorites') {
     uiStore.selectFavorites();
   } else if (route.query.q) {
+    uiStore.selectedGenre = '';
+    uiStore.activeMoodId = '';
     uiStore.setSearchQuery(String(route.query.q));
   }
 };
